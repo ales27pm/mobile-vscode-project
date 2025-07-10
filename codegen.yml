@@ -1,0 +1,7 @@
+schema: "apps/backend/src/schema.ts"
+documents: "packages/shared/src/operations.ts"
+generates:
+  packages/shared/src/types.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"

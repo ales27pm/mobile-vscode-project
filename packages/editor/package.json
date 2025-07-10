@@ -1,0 +1,13 @@
+{
+  "name": "editor",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "dependencies": {
+    "lodash.debounce": "^4.0.8",
+    "react-native-monaco-editor": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}

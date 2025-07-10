@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+dist/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.*
+
+# Expo
+.expo*
+
+# Generated files
+apps/backend/installed.json

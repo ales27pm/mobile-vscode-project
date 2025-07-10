@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "MobileVSCode",
+    "slug": "mobile-vscode",
+    "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID_HERE"
+      },
+      "GRAPHQL_URL": "${GRAPHQL_URL}",
+      "WS_URL": "${WS_URL}",
+      "YWS_URL": "${YWS_URL}",
+      "LSP_URL": "${LSP_URL}",
+      "DEBUG_URL": "${DEBUG_URL}"
+    }
+  }
+}
