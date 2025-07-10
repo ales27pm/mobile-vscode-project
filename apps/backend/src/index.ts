@@ -54,13 +54,9 @@ async function start() {
   debugWsServer.on('connection', ws => {
     const adapterPath = require.resolve('vscode-node-debug2/out/src/nodeDebug.js');
     const adapterProcess = spawn('node', [adapterPath], { cwd: ROOT_DIR, stdio: 'pipe' });
-    ws.on('message', data => adapterProcess.stdin.write(`Content-Length: ${Buffer.byteLength(data.toString())}
-
-${data.toString()}`));
+    ws.on('message', data => adapterProcess.stdin.write(`Content-Length: ${Buffer.byteLength(data.toString())}\r\n\r\n${data.toString()}`));
     adapterProcess.stdout.on('data', (data) => {
-        const rawMessages = data.toString().split('
-
-');
+        const rawMessages = data.toString().split('\r\n\r\n');
         for (const rawMessage of rawMessages) {
             if (rawMessage.trim()) {
                 try {

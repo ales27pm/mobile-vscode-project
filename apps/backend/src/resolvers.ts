@@ -49,8 +49,7 @@ export default () => ({
       let out = '';
       rg.stdout.on('data', c => out += c);
       rg.on('close', () => {
-        const hits = out.split('
-').filter(Boolean).map(l => {
+        const hits = out.split('\n').filter(Boolean).map(l => {
           const o = JSON.parse(l);
           return o.type === 'match' ? { file: o.data.path.text, line: o.data.line_number, text: o.data.lines.text.trim() } : null;
         }).filter(Boolean);

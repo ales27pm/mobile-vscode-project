@@ -30,7 +30,7 @@ export function useYDoc(docId: string) {
         color: myColor,
     });
     providerRef.current = provider;
-    
+
     return () => {
       provider.disconnect();
     };
