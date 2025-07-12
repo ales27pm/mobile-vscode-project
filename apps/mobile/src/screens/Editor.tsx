@@ -5,6 +5,7 @@ import { useYDoc } from '../hooks/useYDoc';
 import { useMutation } from '@apollo/client';
 import { WriteFileDocument } from 'shared/src/types';
 import debounce from 'lodash.debounce';
+import { useDocumentStore } from '../state/documentStore';
 
 export default function Editor({ route, navigation }) {
   const { path, highlight } = route.params;
@@ -12,6 +13,7 @@ export default function Editor({ route, navigation }) {
   const [writeFile] = useMutation(WriteFileDocument);
   const [remoteCursors, setRemoteCursors] = useState([]);
   const editorRef = React.useRef<MonacoEditorRef>(null);
+  const consumeEditorAction = useDocumentStore(state => state.consumeEditorAction);
 
   const saveContent = React.useMemo(
     () =>
@@ -29,10 +31,12 @@ export default function Editor({ route, navigation }) {
 
   useEffect(() => {
     navigation.setOptions({ title: path.split('/').pop() });
-    if (highlight && editorRef.current) {
-        editorRef.current.revealLineInCenter(highlight, 0);
+    const pending = consumeEditorAction();
+    const lineToReveal = pending?.type === 'highlight-line' ? pending.payload.line : highlight;
+    if (lineToReveal && editorRef.current) {
+        editorRef.current.revealLineInCenter(lineToReveal, 0);
     }
-  }, [path, highlight, navigation]);
+  }, [path, highlight, navigation, consumeEditorAction]);
 
   useEffect(() => {
     if (!awareness) return;
