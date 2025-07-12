@@ -60,8 +60,8 @@ async function start() {
     );
 
     ws.on('message', data => {
+      const raw = data.toString();
       try {
-        const raw = data.toString();
         const parsed = JSON.parse(raw);
         const msg: IncomingMessage = incomingMessageSchema.parse(parsed);
         if (msg.id !== undefined) {
@@ -70,12 +70,20 @@ async function start() {
           connection.sendNotification(msg.method, msg.params);
         }
       } catch (err) {
-        if (err instanceof z.ZodError) {
-          console.error('Invalid message structure:', err.errors);
-        } else if (err instanceof SyntaxError) {
-          console.error('Malformed JSON:', err.message);
-        } else {
-          console.error('Unexpected error handling incoming message:', err);
+        console.error('Message processing failed:', err);
+        let errorResponse = { error: err instanceof Error ? err.message : 'Unknown error' };
+
+        try {
+          const parsedData = JSON.parse(raw);
+          if (parsedData && parsedData.id !== undefined) {
+            errorResponse = { id: parsedData.id, error: errorResponse.error };
+          }
+        } catch {
+          // Unable to parse, send generic error
+        }
+
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify(errorResponse));
         }
       }
     });
