@@ -19,8 +19,8 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: TypeScript compile check
-        run: yarn tsc --noEmit
+      - name: TypeScript compile check (all workspaces)
+        run: yarn workspaces foreach -vpt run tsc --noEmit
 
       - name: SDK compatibility validation
         run: yarn plugin-sdk-validate
