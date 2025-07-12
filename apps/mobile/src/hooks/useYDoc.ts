@@ -32,7 +32,7 @@ export function useYDoc(docId: string) {
     providerRef.current = provider;
 
     return () => {
-      provider.disconnect();
+      provider.destroy();
     };
   }, [docId, ydoc]);
 
