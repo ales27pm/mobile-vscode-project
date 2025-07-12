@@ -52,7 +52,7 @@ async function start() {
     const IncomingMessage = z.object({
       method: z.string(),
       params: z.unknown().optional(),
-      id: z.number().optional(),
+      id: z.union([z.number(), z.string()]).optional(),
     });
 
     ws.on('message', data => {
@@ -60,8 +60,14 @@ async function start() {
         const raw = data.toString();
         const parsed = JSON.parse(raw);
         const msg = IncomingMessage.parse(parsed);
-        connection.sendRequest(msg.method, msg.params);
+        if (msg.id !== undefined) {
+          connection.sendRequest(msg.method, msg.params);
+        } else {
+          connection.sendNotification(msg.method, msg.params);
+        }
       } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        ws.send(JSON.stringify({ error }));
         if (err instanceof SyntaxError) {
           console.error('Malformed JSON:', err.message);
         } else if (err instanceof z.ZodError) {
