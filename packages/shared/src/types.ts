@@ -60,9 +60,6 @@ export type MutationInstallExtensionArgs = {
 };
 
 
-export type MutationPushArgs = {
-  message: Scalars['String'];
-};
 
 
 export type MutationUninstallExtensionArgs = {
