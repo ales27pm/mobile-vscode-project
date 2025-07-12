@@ -65,7 +65,9 @@ async function start() {
             console.error('LSP request failed:', err);
           });
         } else {
-          connection.sendNotification(msg.method, msg.params);
+          connection.sendNotification(msg.method, msg.params).catch(err => {
+            console.error('LSP notification failed:', err);
+          });
         }
       } catch (err) {
         if (err instanceof z.ZodError) {
