@@ -1,0 +1,10 @@
+{
+  "name": "react-native-monaco-editor",
+  "version": "0.1.0",
+  "main": "src/index.tsx",
+  "types": "src/index.d.ts",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}
