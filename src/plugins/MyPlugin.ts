@@ -26,7 +26,7 @@ export class MyPlugin implements Plugin<MyIntents> {
     this.id = id
   }
 
-  init(ctx: MyContext): void {
+  init(ctx: PluginContext<MyIntents>): void {
     // all handlers get correct payload types
     ctx.on('createNode', this.handleCreateNode.bind(this))
     ctx.on('deleteNode', this.handleDeleteNode.bind(this))
