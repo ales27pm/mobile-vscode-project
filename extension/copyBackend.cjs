@@ -2,7 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 function copyRecursive(src, dest) {
-  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(src)) {
+    console.error(`copyRecursive: Source path does not exist: ${src}`);
+    return;
+  }
   if (fs.statSync(src).isDirectory()) {
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src)) {
