@@ -42,7 +42,7 @@ export interface PluginBus<IM extends IntentMap> {
 /** The core Plugin interface */
 export interface Plugin<IM extends IntentMap> {
   /** Called once when your plugin is loaded */
-  init(ctx: PluginContext<IM>): void
+  init(ctx: PluginContext<IM>): void | Promise<void>
   /** The unique ID for your plugin */
   readonly id: string
 }
