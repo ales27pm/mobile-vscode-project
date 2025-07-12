@@ -27,6 +27,6 @@
     "plugin-sdk-validate": "^1.0.0"
   },
   "peerDependencies": {
-    "@your-sdk/core": "^1.2.3"
+    "@crdt-sdk/core": "^1.2.3"
   }
 }
