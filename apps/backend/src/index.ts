@@ -16,6 +16,13 @@ import resolvers from './resolvers';
 import { pubsub } from './pubsub';
 import { PORT, ROOT_DIR } from '../config';
 
+const IncomingMessage = z.object({
+  jsonrpc: z.literal('2.0'),
+  method: z.string().min(1),
+  params: z.unknown().optional(),
+  id: z.union([z.number(), z.string(), z.null()]).optional(),
+});
+
 async function start() {
   const app = express();
   const httpServer = createServer(app);
@@ -49,23 +56,22 @@ async function start() {
       new StreamMessageReader(lsProcess.stdout),
       new StreamMessageWriter(lsProcess.stdin)
     );
-    const IncomingMessage = z.object({
-      method: z.string(),
-      params: z.unknown().optional(),
-      id: z.number().optional(),
-    });
 
     ws.on('message', data => {
       try {
         const raw = data.toString();
         const parsed = JSON.parse(raw);
         const msg = IncomingMessage.parse(parsed);
-        connection.sendRequest(msg.method, msg.params);
+        if (msg.id !== undefined) {
+          connection.sendRequest(msg.method, msg.params);
+        } else {
+          connection.sendNotification(msg.method, msg.params);
+        }
       } catch (err) {
-        if (err instanceof SyntaxError) {
-          console.error('Malformed JSON:', err.message);
-        } else if (err instanceof z.ZodError) {
+        if (err instanceof z.ZodError) {
           console.error('Invalid message structure:', err.errors);
+        } else if (err instanceof SyntaxError) {
+          console.error('Malformed JSON:', err.message);
         } else {
           console.error('Unexpected error handling incoming message:', err);
         }
