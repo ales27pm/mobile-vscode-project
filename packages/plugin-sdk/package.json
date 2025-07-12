@@ -1,0 +1,13 @@
+{
+  "name": "@mobilevscode/plugin-sdk",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
