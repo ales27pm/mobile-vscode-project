@@ -1,0 +1,8 @@
+[
+  {
+    "id": "sample.hello-world",
+    "name": "Hello World",
+    "description": "Adds a command that prints Hello World",
+    "version": "1.0.0"
+  }
+]
