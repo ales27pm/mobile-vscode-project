@@ -73,11 +73,18 @@ async function start() {
             console.error('Notification failed:', err);
           });
         }
-      } catch (err) {
-        const error = err instanceof Error ? err.message : 'Unknown error';
-        let errorResponse = { error };
+            let errorResponse = { error };
+            let parsedData;
   
-        if (parsed && parsed.id !== undefined) {
+            try {
+              parsedData = JSON.parse(raw);
+            } catch {
+              // parsedData remains undefined
+            }
+
+            if (parsedData && parsedData.id !== undefined) {
+              errorResponse = { id: parsedData.id, error };
+            }
           errorResponse = { id: parsed.id, error };
         }
   
