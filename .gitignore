@@ -21,3 +21,8 @@ dist/
 
 # Generated files
 apps/backend/installed.json
+
+# Build & Compilation Artifacts
+build/
+out/
+*.tsbuildinfo
