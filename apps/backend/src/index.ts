@@ -9,6 +9,7 @@ import { createMessageConnection, StreamMessageReader, StreamMessageWriter } fro
 import { setupWSConnection } from 'y-websocket/bin/utils.js';
 import chokidar from 'chokidar';
 import debounce from 'lodash.debounce';
+import { z } from 'zod';
 
 import typeDefs from './schema';
 import resolvers from './resolvers';
@@ -48,12 +49,26 @@ async function start() {
       new StreamMessageReader(lsProcess.stdout),
       new StreamMessageWriter(lsProcess.stdin)
     );
+    const IncomingMessage = z.object({
+      method: z.string(),
+      params: z.unknown().optional(),
+      id: z.number().optional(),
+    });
+
     ws.on('message', data => {
       try {
-        const message = JSON.parse(data.toString());
-        connection.sendRequest(message.method, message.params);
-      } catch (error) {
-        console.error('Invalid JSON received:', error);
+        const raw = data.toString();
+        const parsed = JSON.parse(raw);
+        const msg = IncomingMessage.parse(parsed);
+        connection.sendRequest(msg.method, msg.params);
+      } catch (err) {
+        if (err instanceof SyntaxError) {
+          console.error('Malformed JSON:', err.message);
+        } else if (err instanceof z.ZodError) {
+          console.error('Invalid message structure:', err.errors);
+        } else {
+          console.error('Unexpected error handling incoming message:', err);
+        }
       }
     });
     connection.onNotification((method, params) =>
