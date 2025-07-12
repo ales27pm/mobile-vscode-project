@@ -1,0 +1,10 @@
+**/*.ts
+**/*.tsx
+**/*.map
+**/*.spec.*
+**/tsconfig.json
+.vscode/**
+.git/**
+README.md
+**/jest.config.js
+**/tests/**

@@ -41,6 +41,11 @@ yarn start:backend
 yarn start:mobile
 ```
 
+### 4. Package the VS Code extension
+```bash
+python3 scripts/build_vsix.py
+```
+
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.

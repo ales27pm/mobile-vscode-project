@@ -1,11 +1,32 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
+  "name": "mobile-vscode-server",
+  "displayName": "Mobile VSCode Server",
+  "publisher": "codex",
+  "version": "0.1.0",
+  "description": "Provides GraphQL, Git and Y.js back-end for mobile client",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
   "main": "dist/index.js",
+  "activationEvents": [
+    "onCommand:mobile-vscode-server.start"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mobile-vscode-server.start",
+        "title": "Start Mobile VSCode Server"
+      }
+    ]
+  },
   "scripts": {
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "test": "jest"
+    "test": "jest",
+    "vscode:prepublish": "yarn build"
   },
   "dependencies": {
     "apollo-server-express": "^3.10.4",
