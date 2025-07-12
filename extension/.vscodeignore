@@ -1,0 +1,7 @@
+**/*.ts
+**/*.map
+**/tsconfig.json
+.vscode/**
+.git/**
+README.md
+LICENSE

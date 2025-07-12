@@ -1,0 +1,29 @@
+name: Build VSIX
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build extension
+        run: yarn workspace extension run vscode:prepublish
+      - name: Install vsce
+        run: npm install -g vsce
+      - name: Package VSIX
+        run: vsce package --out mobile-vscode-server.vsix
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v3
+        with:
+          name: vscode-extension
+          path: mobile-vscode-server.vsix
