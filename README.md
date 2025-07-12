@@ -20,8 +20,18 @@ A mobile IDE powered by GraphQL, Y.js, LSP & DAP, built within a professional mo
 # Copy the example environment file
 cp .env.example .env
 
-# IMPORTANT: Open .env and update the IP address (e.g., 192.168.1.100)
-# to match your computer's local network IP.
+# IMPORTANT: Open .env and update the IP address placeholders
+# (e.g., 192.168.1.100) to match your computer's local network IP.
 
 # Install all dependencies for all workspaces
 yarn install
+```
+
+### 2. Start the development servers
+```bash
+# Start the backend API
+yarn start:backend
+
+# In another terminal, start the mobile app
+yarn start:mobile
+```
