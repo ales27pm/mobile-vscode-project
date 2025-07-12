@@ -71,7 +71,9 @@ async function start() {
       } catch (err) {
         const error = err instanceof Error ? err.message : 'Unknown error';
         const errorResponse = parsed?.id !== undefined ? { id: parsed.id, error } : { error };
-        ws.send(JSON.stringify(errorResponse));
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify(errorResponse));
+        }
         if (err instanceof SyntaxError) {
           console.error('Malformed JSON:', err.message);
         } else if (err instanceof z.ZodError) {
