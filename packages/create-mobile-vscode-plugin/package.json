@@ -1,0 +1,11 @@
+{
+  "name": "generator-mobile-vscode-plugin",
+  "version": "1.0.0",
+  "description": "Yeoman generator for MobileVSCode plugins",
+  "files": [
+    "generators"
+  ],
+  "dependencies": {
+    "yeoman-generator": "^5.7.0"
+  }
+}
