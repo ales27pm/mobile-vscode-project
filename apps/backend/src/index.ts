@@ -16,12 +16,14 @@ import resolvers from './resolvers';
 import { pubsub } from './pubsub';
 import { PORT, ROOT_DIR } from '../config';
 
-const IncomingMessage = z.object({
+const incomingMessageSchema = z.object({
   jsonrpc: z.literal('2.0'),
   method: z.string().min(1),
   params: z.unknown().optional(),
   id: z.union([z.number(), z.string(), z.null()]).optional(),
 });
+
+type IncomingMessage = z.infer<typeof incomingMessageSchema>;
 
 async function start() {
   const app = express();
@@ -61,7 +63,7 @@ async function start() {
       try {
         const raw = data.toString();
         const parsed = JSON.parse(raw);
-        const msg = IncomingMessage.parse(parsed);
+        const msg: IncomingMessage = incomingMessageSchema.parse(parsed);
         if (msg.id !== undefined) {
           connection.sendRequest(msg.method, msg.params);
         } else {
