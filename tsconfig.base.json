@@ -8,7 +8,10 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "rootDir": ".",
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "react-native-monaco-editor": ["./packages/react-native-monaco-editor/src"]
+    }
   },
   "exclude": [
     "node_modules",
