@@ -1,5 +1,11 @@
+export interface PluginIntent {
+    type: string;
+    payload?: unknown;
+    // Add more fields as needed to represent intent structure
+}
+
 export interface PluginBus {
-    onIntent(intentType: string, callback: (intent: any) => void): void;
+    onIntent(intentType: string, callback: (intent: PluginIntent) => void): void;
     publishOutput(output: any): void;
 }
 export interface PluginContext {
