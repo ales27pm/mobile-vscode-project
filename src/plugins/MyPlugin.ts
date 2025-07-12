@@ -50,8 +50,8 @@ export class MyPlugin implements Plugin<MyIntents> {
 }
 
 /** Export a factory so consumers get a real instance */
-export default (bus: PluginBus<MyContext, MyIntents>) => {
-  if (!bus) {
+export default (id: string, bus: PluginBus<MyIntents>) =>
+  new MyPlugin(id, bus)
     throw new Error('PluginBus is required for MyPlugin initialization')
   }
   return new MyPlugin(bus)
