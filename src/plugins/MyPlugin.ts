@@ -13,19 +13,18 @@ export interface MyIntents extends IntentMap {
   // …add more as needed
 }
 
-/** Strongly‐typed context for your plugin */
-export interface MyContext extends PluginContext<MyIntents> {}
 
-export class MyPlugin implements Plugin<MyIntents, MyContext> {
+
+export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
   public readonly id: string
 
   constructor(
-    private readonly bus: PluginBus<MyIntents, MyContext>,
+    private readonly bus: PluginBus<MyIntents, PluginContext<MyIntents>>,
   ) {
     this.id = 'my-plugin'
   }
 
-  init(ctx: MyContext): void {
+  init(ctx: PluginContext<MyIntents>): void {
     // all handlers get correct payload types
     ctx.on('createNode', this.handleCreateNode.bind(this))
     ctx.on('deleteNode', this.handleDeleteNode.bind(this))
@@ -47,5 +46,5 @@ export class MyPlugin implements Plugin<MyIntents, MyContext> {
 }
 
 /** Export a factory so consumers get a real instance */
-export default (bus: PluginBus<MyIntents, MyContext>) =>
+export default (bus: PluginBus<MyIntents, PluginContext<MyIntents>>) =>
   new MyPlugin(bus)
