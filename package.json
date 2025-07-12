@@ -11,7 +11,7 @@
     "build": "yarn workspace mobile-vscode-server build",
     "start:backend": "yarn workspace mobile-vscode-server start",
     "start:mobile": "yarn workspace mobile start",
-    "test": "yarn workspaces run test",
+    "test": "yarn workspace mobile-vscode-server test && yarn workspace shared test",
     "plugin-sdk-validate": "plugin-sdk-validate"
   },
   "devDependencies": {
