@@ -41,6 +41,17 @@ yarn start:backend
 yarn start:mobile
 ```
 
+## Packaging the VS Code Extension
+
+Build and package the backend as a VS Code extension:
+
+```bash
+python3 build_vsix.py
+```
+
+The script installs dependencies, builds the backend and extension, and outputs
+`mobile-vscode-server.vsix` for installation or distribution.
+
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.

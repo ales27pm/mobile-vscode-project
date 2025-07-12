@@ -1,11 +1,27 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "dist/index.js",
+  "name": "mobile-vscode-server",
+  "displayName": "Mobile VSCode Server",
+  "publisher": "mobilevs",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": ["Other"],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:mobile-vscode-server.start"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mobile-vscode-server.start",
+        "title": "Start Mobile VSCode Server"
+      }
+    ]
+  },
   "scripts": {
-    "build": "tsc -b",
-    "start": "node dist/index.js",
-    "test": "jest"
+    "build": "tsc -p . && yarn workspace backend build && node ./copyBackend.cjs",
+    "vscode:prepublish": "npm run build"
   },
   "dependencies": {
     "apollo-server-express": "^3.10.4",
@@ -25,13 +41,6 @@
     "y-websocket": "^1.5.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.17",
-    "@types/jest": "^29.5.2",
-    "@types/jsonwebtoken": "^9.0.2",
-    "@types/lodash.debounce": "^4.0.7",
-    "@types/node": "^18.16.18",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
     "typescript": "^5.1.3"
   }
 }
