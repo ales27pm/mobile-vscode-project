@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { TextInput } from 'react-native';
 
 export type MonacoEditorRef = {
   focus: () => void;
@@ -14,12 +14,28 @@ export interface MonacoEditorProps {
 }
 
 const MonacoEditor = React.forwardRef<MonacoEditorRef, MonacoEditorProps>(
-  function MonacoEditor(_props, ref) {
-    React.useImperativeHandle(ref, () => ({
-      focus: () => {},
-      revealLineInCenter: () => {},
-    }));
-    return <View />;
+  function MonacoEditor({ value, onChangeText, style }, ref) {
+    const inputRef = React.useRef<TextInput>(null);
+
+    const focus = () => {
+      inputRef.current?.focus();
+    };
+
+    const revealLineInCenter = (_lineNumber: number) => {
+      // Not implemented, but keeps API surface compatible
+    };
+
+    React.useImperativeHandle(ref, () => ({ focus, revealLineInCenter }));
+
+    return (
+      <TextInput
+        ref={inputRef}
+        multiline
+        value={value}
+        onChangeText={onChangeText}
+        style={style}
+      />
+    );
   }
 );
 
