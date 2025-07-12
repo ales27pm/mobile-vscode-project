@@ -60,7 +60,11 @@ async function start() {
         const raw = data.toString();
         const parsed = JSON.parse(raw);
         const msg = IncomingMessage.parse(parsed);
-        connection.sendRequest(msg.method, msg.params);
+        if (msg.id !== undefined) {
+          connection.sendRequest(msg.method, msg.params);
+        } else {
+          connection.sendNotification(msg.method, msg.params);
+        }
       } catch (err) {
         if (err instanceof z.ZodError) {
           console.error('Invalid message structure:', err.errors);
