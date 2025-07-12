@@ -4,7 +4,8 @@
     "strict": true,
     "paths": {
       "shared/*": ["../../packages/shared/src/*"],
-      "packages/*": ["../../packages/*"]
+      "packages/*": ["../../packages/*"],
+      "react-native-monaco-editor": ["../../packages/react-native-monaco-editor/src"]
     }
   }
 }
