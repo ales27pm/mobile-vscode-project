@@ -27,7 +27,12 @@ cp .env.example .env
 yarn install
 ```
 
-### 2. Start the development servers
+### 2. Generate GraphQL types
+```bash
+yarn codegen
+```
+
+### 3. Start the development servers
 ```bash
 # Start the backend API
 yarn start:backend
