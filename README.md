@@ -19,10 +19,8 @@ A mobile IDE powered by GraphQL, Y.js, LSP & DAP, built within a professional mo
 ```bash
 # Copy the example environment file
 cp .env.example .env
-
-# IMPORTANT: Open .env and update the IP address placeholders
-# (e.g., 192.168.1.100) to match your computer's local network IP.
-
+# Open `.env` and replace the IP address placeholders with your
+# computer's local network IP (for example, 192.168.1.100).
 # Install all dependencies for all workspaces
 yarn install
 ```
