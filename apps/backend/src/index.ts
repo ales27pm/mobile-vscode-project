@@ -62,8 +62,11 @@ async function start() {
         const parsed = JSON.parse(raw);
         const msg = IncomingMessage.parse(parsed);
         if (msg.id !== undefined) {
-          connection.sendRequest(msg.method, msg.params).catch(err => {
+          connection.sendRequest(msg.method, msg.params).then(result => {
+            ws.send(JSON.stringify({ id: msg.id, result }));
+          }).catch(err => {
             console.error('LSP request failed:', err);
+            ws.send(JSON.stringify({ id: msg.id, error: { code: -32603, message: 'Internal error' } }));
           });
         } else {
           connection.sendNotification(msg.method, msg.params);
