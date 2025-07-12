@@ -49,5 +49,5 @@ export class MyPlugin implements Plugin<MyIntents, MyContext> {
 }
 
 /** Export a factory so consumers get a real instance */
-export default (bus: PluginBus<MyContext, MyIntents>) =>
+export default (bus: PluginBus<MyIntents, MyContext>) =>
   new MyPlugin(bus)
