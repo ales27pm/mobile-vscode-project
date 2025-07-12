@@ -16,8 +16,14 @@ export interface MonacoEditorProps {
 const MonacoEditor = React.forwardRef<MonacoEditorRef, MonacoEditorProps>(
   function MonacoEditor(_props, ref) {
     React.useImperativeHandle(ref, () => ({
-      focus: () => {},
-      revealLineInCenter: () => {},
+      focus: () => {
+        /* Stub implementation for native focus */
+        console.debug('MonacoEditor.focus called');
+      },
+      revealLineInCenter: (lineNumber: number) => {
+        /* Stub implementation for scrolling */
+        console.debug('MonacoEditor.revealLineInCenter called', lineNumber);
+      },
     }));
     return <View />;
   }
