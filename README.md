@@ -35,3 +35,7 @@ yarn start:backend
 # In another terminal, start the mobile app
 yarn start:mobile
 ```
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
