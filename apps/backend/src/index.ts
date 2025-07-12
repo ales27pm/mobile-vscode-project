@@ -44,9 +44,21 @@ async function start() {
         cwd: ROOT_DIR,
         env: { ...process.env, NODE_OPTIONS: '--no-experimental-fetch' }
     });
-    const connection = createMessageConnection(new StreamMessageReader(lsProcess.stdout), new StreamMessageWriter(lsProcess.stdin));
-    ws.on('message', data => connection.sendRequest(JSON.parse(data.toString()).method, JSON.parse(data.toString()).params));
-    connection.onNotification((method, params) => ws.send(JSON.stringify({ method, params })));
+    const connection = createMessageConnection(
+      new StreamMessageReader(lsProcess.stdout),
+      new StreamMessageWriter(lsProcess.stdin)
+    );
+    ws.on('message', data => {
+      try {
+        const message = JSON.parse(data.toString());
+        connection.sendRequest(message.method, message.params);
+      } catch (error) {
+        console.error('Invalid JSON received:', error);
+      }
+    });
+    connection.onNotification((method, params) =>
+      ws.send(JSON.stringify({ method, params }))
+    );
     ws.on('close', () => connection.dispose());
   });
 
