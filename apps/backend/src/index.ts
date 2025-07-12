@@ -19,7 +19,7 @@ import { PORT, ROOT_DIR } from '../config';
 const IncomingMessage = z.object({
   method: z.string(),
   params: z.unknown().optional(),
-  id: z.number().optional(),
+  id: z.union([z.number(), z.string()]).optional(),
 });
 
 async function start() {
