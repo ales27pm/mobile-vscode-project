@@ -35,7 +35,7 @@ export class MyPlugin implements Plugin<MyContext, MyIntents> {
     payload: MyIntents['createNode'],
   ): CRDTResult {
     // …your logic here
-    this.bus.emit('createNode', payload)
+    // this.bus.emit('nodeCreated', { id: newNodeId, name: payload.name })
     return { success: true }
   }
 
@@ -43,7 +43,7 @@ export class MyPlugin implements Plugin<MyContext, MyIntents> {
     payload: MyIntents['deleteNode'],
   ): CRDTResult {
     // …your logic here
-    this.bus.emit('deleteNode', payload)
+    // this.bus.emit('nodeDeleted', { id: payload.id })
     return { success: true }
   }
 }
