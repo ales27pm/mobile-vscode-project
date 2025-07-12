@@ -1,5 +1,5 @@
 import React from 'react';
-import { SectionList, Text, TouchableOpacity, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { SectionList, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useQuery } from '@apollo/client';
 import { ListDirectoryDocument } from 'shared/src/types';

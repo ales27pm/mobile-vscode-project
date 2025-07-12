@@ -14,7 +14,7 @@ export interface MyIntents extends IntentMap {
 }
 
 /** Strongly‐typed context for your plugin */
-export interface MyContext extends PluginContext<MyIntents> {}
+export type MyContext = PluginContext<MyIntents>;
 
 export class MyPlugin implements Plugin<MyIntents, MyContext> {
   public readonly id: string
