@@ -16,12 +16,12 @@ export interface MyIntents extends IntentMap {
 /** Strongly‐typed context for your plugin */
 export interface MyContext extends PluginContext<MyIntents> {}
 
-export class MyPlugin implements Plugin<MyContext, MyIntents> {
+export class MyPlugin implements Plugin<MyIntents> {
   public readonly id: string
 
   constructor(
     id: string,
-    private readonly bus: PluginBus<MyContext, MyIntents>,
+    private readonly bus: PluginBus<MyIntents>,
   ) {
     this.id = id
   }
