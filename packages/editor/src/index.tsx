@@ -50,6 +50,7 @@ export const MonacoEditorComponent = React.forwardRef<MonacoEditorRef, EditorPro
   useEffect(() => {
     const editor = editorRef.current?.getEditor();
     if (!editor) return;
+
     const decorations = remoteCursors.map((c) => ({
       range: new monaco.Range(c.position.lineNumber, c.position.column, c.position.lineNumber, c.position.column),
       options: {
@@ -62,6 +63,13 @@ export const MonacoEditorComponent = React.forwardRef<MonacoEditorRef, EditorPro
       },
     }));
     decorationIds.current = editor.deltaDecorations(decorationIds.current, decorations);
+
+    // Cleanup function to remove remote cursor decorations on unmount or editor change
+    return () => {
+      if (editor && decorationIds.current && decorationIds.current.length > 0) {
+        decorationIds.current = editor.deltaDecorations(decorationIds.current, []);
+      }
+    };
   }, [remoteCursors]);
 
   return (
