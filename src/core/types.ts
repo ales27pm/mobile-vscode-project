@@ -27,7 +27,7 @@ export interface PluginContext<IM extends IntentMap> {
    * Fire an intent on the bus and get a CRDTResult back.
    * Return type can be specialized if you need.
    */
-  intent<K extends keyof IM>(
+  sendIntent<K extends keyof IM>(
     intent: K,
     payload: IM[K],
   ): Promise<CRDTResult>
