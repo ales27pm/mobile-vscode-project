@@ -20,9 +20,10 @@ export class MyPlugin implements Plugin<MyContext, MyIntents> {
   public readonly id: string
 
   constructor(
+    id: string,
     private readonly bus: PluginBus<MyContext, MyIntents>,
   ) {
-    this.id = 'my-plugin'
+    this.id = id
   }
 
   init(ctx: MyContext): void {
