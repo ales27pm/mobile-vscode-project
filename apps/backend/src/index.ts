@@ -61,7 +61,10 @@ async function start() {
         const parsed = JSON.parse(raw);
         const msg = IncomingMessage.parse(parsed);
         if (msg.id !== undefined) {
-          connection.sendRequest(msg.method, msg.params);
+          connection.sendRequest(msg.method, msg.params).catch(err => {
+            console.error('Request failed:', err);
+            ws.send(JSON.stringify({ id: msg.id, error: err.message }));
+          });
         } else {
           connection.sendNotification(msg.method, msg.params);
         }
