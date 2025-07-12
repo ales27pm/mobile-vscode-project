@@ -71,7 +71,9 @@ async function start() {
         }
       } catch (err) {
         console.error('Message processing failed:', err);
-        let errorResponse = { error: err instanceof Error ? err.message : 'Unknown error' };
+        let errorResponse: { error: string; id?: string | number | null } = {
+          error: err instanceof Error ? err.message : 'Unknown error',
+        };
 
         try {
           const parsedData = JSON.parse(raw);
@@ -99,7 +101,7 @@ async function start() {
   apolloServer.applyMiddleware({ app, path: '/graphql' });
 
   httpServer.on('upgrade', (req, socket, head) => {
-    const { pathname } = new URL(req.url!, `http://${req.headers.host}`);
+    const { pathname } = new URL(req.url || '', `http://${req.headers.host}`);
     if (pathname === '/graphql') wsServer.handleUpgrade(req, socket, head, ws => wsServer.emit('connection', ws, req));
     else if (pathname === '/yws') yWsServer.handleUpgrade(req, socket, head, ws => yWsServer.emit('connection', ws, req));
     else if (pathname === '/lsp') lspWsServer.handleUpgrade(req, socket, head, ws => lspWsServer.emit('connection', ws, req));
