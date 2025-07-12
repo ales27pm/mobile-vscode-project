@@ -7,7 +7,7 @@ module.exports = class extends Generator {
         type: 'input',
         name: 'name',
         message: 'Your plugin ID (e.g., my-cool-plugin)',
-        default: this.appname.replace(/\s+/g, '-'),
+        default: (typeof this.appname === 'string' ? this.appname : 'plugin').replace(/\s+/g, '-'),
       },
     ]).then((props) => {
       this.props = props;
