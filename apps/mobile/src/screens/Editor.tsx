@@ -13,9 +13,19 @@ export default function Editor({ route, navigation }) {
   const [remoteCursors, setRemoteCursors] = useState([]);
   const editorRef = React.useRef<MonacoEditorRef>(null);
 
-  const saveContent = debounce((content: string) => {
-    writeFile({ variables: { path, content } });
-  }, 1000);
+  const saveContent = React.useMemo(
+    () =>
+      debounce((content: string) => {
+        writeFile({ variables: { path, content } });
+      }, 1000),
+    [writeFile, path]
+  );
+
+  useEffect(() => {
+    return () => {
+      saveContent.cancel();
+    };
+  }, [saveContent]);
 
   useEffect(() => {
     navigation.setOptions({ title: path.split('/').pop() });
