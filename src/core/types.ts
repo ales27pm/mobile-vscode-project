@@ -40,13 +40,9 @@ export interface PluginBus<IM extends IntentMap> {
 }
 
 /** The core Plugin interface */
-export interface Plugin<
-  CTX extends PluginContext<IM>,
-  IM extends IntentMap
-> {
+export interface Plugin<IM extends IntentMap> {
   /** Called once when your plugin is loaded */
-  init(ctx: CTX): void
-
+  init(ctx: PluginContext<IM>): void
   /** The unique ID for your plugin */
   readonly id: string
 }
