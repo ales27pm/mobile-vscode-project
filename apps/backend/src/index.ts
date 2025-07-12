@@ -71,7 +71,12 @@ async function start() {
         }
       } catch (err) {
         const error = err instanceof Error ? err.message : 'Unknown error';
-        const errorResponse = parsed?.id !== undefined ? { id: parsed.id, error } : { error };
+        let errorResponse = { error };
+  
+        if (parsed && parsed.id !== undefined) {
+          errorResponse = { id: parsed.id, error };
+        }
+  
         if (ws.readyState === ws.OPEN) {
           ws.send(JSON.stringify(errorResponse));
         }
