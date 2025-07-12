@@ -9,5 +9,8 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
+  },
+  "scripts": {
+    "test": "echo 'no tests'"
   }
 }

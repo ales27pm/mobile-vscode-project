@@ -44,33 +44,24 @@ async function start() {
         cwd: ROOT_DIR,
         env: { ...process.env, NODE_OPTIONS: '--no-experimental-fetch' }
     });
-    const connection = createMessageConnection(new StreamMessageReader(lsProcess.stdout), new StreamMessageWriter(lsProcess.stdin));
-    ws.on('message', data => connection.sendRequest(JSON.parse(data.toString()).method, JSON.parse(data.toString()).params));
-    connection.onNotification((method, params) => ws.send(JSON.stringify({ method, params })));
+    const connection = createMessageConnection(
+      new StreamMessageReader(lsProcess.stdout),
+      new StreamMessageWriter(lsProcess.stdin)
+    );
+    ws.on('message', data => {
+      try {
+        const message = JSON.parse(data.toString());
+        connection.sendRequest(message.method, message.params);
+      } catch (error) {
+        console.error('Invalid JSON received:', error);
+      }
+    });
+    connection.onNotification((method, params) =>
+      ws.send(JSON.stringify({ method, params }))
+    );
     ws.on('close', () => connection.dispose());
   });
 
-  const debugWsServer = new WebSocketServer({ noServer: true });
-  debugWsServer.on('connection', ws => {
-    const adapterPath = require.resolve('vscode-node-debug2/out/src/nodeDebug.js');
-    const adapterProcess = spawn('node', [adapterPath], { cwd: ROOT_DIR, stdio: 'pipe' });
-    ws.on('message', data => adapterProcess.stdin.write(`Content-Length: ${Buffer.byteLength(data.toString())}\r\n\r\n${data.toString()}`));
-    adapterProcess.stdout.on('data', (data) => {
-        const rawMessages = data.toString().split('\r\n\r\n');
-        for (const rawMessage of rawMessages) {
-            if (rawMessage.trim()) {
-                try {
-                    const contentPart = rawMessage.substring(rawMessage.indexOf('{'));
-                    const message = JSON.parse(contentPart);
-                    ws.send(JSON.stringify(message));
-                } catch (e) {
-                    console.error('Debug adapter parse error:', e, 'Raw chunk:', rawMessage);
-                }
-            }
-        }
-    });
-    ws.on('close', () => adapterProcess.kill());
-  });
 
   const apolloServer = new ApolloServer({ schema });
   await apolloServer.start();
@@ -81,7 +72,6 @@ async function start() {
     if (pathname === '/graphql') wsServer.handleUpgrade(req, socket, head, ws => wsServer.emit('connection', ws, req));
     else if (pathname === '/yws') yWsServer.handleUpgrade(req, socket, head, ws => yWsServer.emit('connection', ws, req));
     else if (pathname === '/lsp') lspWsServer.handleUpgrade(req, socket, head, ws => lspWsServer.emit('connection', ws, req));
-    else if (pathname === '/debug') debugWsServer.handleUpgrade(req, socket, head, ws => debugWsServer.emit('connection', ws, req));
     else socket.destroy();
   });
 

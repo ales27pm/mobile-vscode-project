@@ -7,6 +7,9 @@ dist/
 
 # Logs
 *.log
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
 
 # Environment variables
 .env
@@ -18,3 +21,8 @@ dist/
 
 # Generated files
 apps/backend/installed.json
+
+# Build & Compilation Artifacts
+build/
+out/
+*.tsbuildinfo
