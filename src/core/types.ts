@@ -35,8 +35,8 @@ export interface PluginContext<IM extends IntentMap> {
 
 /** The bus your plugin uses to emit & listen */
 export interface PluginBus<
-  CTX extends PluginContext<IM>,
-  IM extends IntentMap
+  IM extends IntentMap,
+  CTX extends PluginContext<IM>
 > {
   emit<K extends keyof IM>(intent: K, payload: IM[K]): void
   on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => void): void
@@ -44,8 +44,8 @@ export interface PluginBus<
 
 /** The core Plugin interface */
 export interface Plugin<
-  CTX extends PluginContext<IM>,
-  IM extends IntentMap
+  IM extends IntentMap,
+  CTX extends PluginContext<IM>
 > {
   /** Called once when your plugin is loaded */
   init(ctx: CTX): void
