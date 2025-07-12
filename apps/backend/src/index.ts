@@ -17,6 +17,7 @@ import { pubsub } from './pubsub';
 import { PORT, ROOT_DIR } from '../config';
 
 const IncomingMessage = z.object({
+  jsonrpc: z.literal("2.0"),
   method: z.string().min(1),
   params: z.unknown().optional(),
   id: z.union([z.number(), z.string(), z.null()]).optional(),
