@@ -63,7 +63,8 @@ async function start() {
         if (msg.id !== undefined) {
           connection.sendRequest(msg.method, msg.params).catch(err => {
             console.error('Request failed:', err);
-            ws.send(JSON.stringify({ id: msg.id, error: err.message }));
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            ws.send(JSON.stringify({ id: msg.id, error: errorMessage }));
           });
         } else {
           connection.sendNotification(msg.method, msg.params);
