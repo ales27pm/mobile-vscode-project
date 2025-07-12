@@ -17,7 +17,7 @@ import { pubsub } from './pubsub';
 import { PORT, ROOT_DIR } from '../config';
 
 const IncomingMessage = z.object({
-  method: z.string(),
+  method: z.string().min(1),
   params: z.unknown().optional(),
   id: z.union([z.number(), z.string(), z.null()]).optional(),
 });
