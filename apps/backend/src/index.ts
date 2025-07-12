@@ -69,7 +69,9 @@ async function start() {
             ws.send(JSON.stringify({ id: msg.id, error: { code: -32603, message: 'Internal error' } }));
           });
         } else {
-          connection.sendNotification(msg.method, msg.params);
+          connection.sendNotification(msg.method, msg.params).catch(err => {
+            console.error('LSP notification failed:', err);
+          });
         }
       } catch (err) {
         if (err instanceof z.ZodError) {
