@@ -25,10 +25,10 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
   }
 
   const normalizedBase = path.normalize(base + path.sep);
-  const normalizedFinal = path.normalize(finalPath);
+  const normalizedFinal = path.normalize(finalPath + path.sep);
 
-  if (!normalizedFinal.startsWith(normalizedBase) && normalizedFinal !== path.normalize(base)) {
-    throw new Error('Path traversal attempt detected.');
+  if (!normalizedFinal.startsWith(normalizedBase)) {
+      throw new Error('Path traversal attempt detected.');
   }
 
   return finalPath;
