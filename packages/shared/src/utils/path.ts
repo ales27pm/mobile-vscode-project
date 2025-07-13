@@ -27,7 +27,11 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
   const normalizedBase = path.normalize(base + path.sep);
   const normalizedFinal = path.normalize(finalPath + path.sep);
 
-  if (!normalizedFinal.startsWith(normalizedBase)) {
+  const isWindows = process.platform === 'win32';
+  const baseCheck = isWindows ? normalizedBase.toLowerCase() : normalizedBase;
+  const finalCheck = isWindows ? normalizedFinal.toLowerCase() : normalizedFinal;
+
+  if (!finalCheck.startsWith(baseCheck)) {
       throw new Error('Path traversal attempt detected.');
   }
 
