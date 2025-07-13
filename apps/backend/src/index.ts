@@ -71,16 +71,19 @@ async function start() {
         }
       } catch (err) {
         console.error('Message processing failed:', err);
-        let errorResponse = { error: err instanceof Error ? err.message : 'Unknown error' };
-
+        let parsedData: unknown;
         try {
-          const parsedData = JSON.parse(raw);
-          if (parsedData && parsedData.id !== undefined) {
-            errorResponse = { id: parsedData.id, error: errorResponse.error };
-          }
+          parsedData = JSON.parse(raw);
         } catch {
-          // Unable to parse, send generic error
+          // Ignore parse errors; respond with generic error
         }
+
+        const errorResponse: { error: string; id?: string | number | null } = {
+          error: err instanceof Error ? err.message : 'Unknown error',
+          ...(parsedData && (parsedData as any).id !== undefined
+            ? { id: (parsedData as any).id }
+            : {}),
+        };
 
         if (ws.readyState === ws.OPEN) {
           ws.send(JSON.stringify(errorResponse));
