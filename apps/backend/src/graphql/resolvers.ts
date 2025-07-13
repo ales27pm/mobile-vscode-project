@@ -15,7 +15,12 @@ const getWorkspace = (uri: string): vscode.WorkspaceFolder => {
 const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string): vscode.Uri => {
     const workspacePath = fs.realpathSync.native(workspace.uri.fsPath);
     const targetPath = path.resolve(workspace.uri.fsPath, relativePath);
-    const parentReal = fs.realpathSync.native(path.dirname(targetPath));
+    try {
+        const parentReal = fs.realpathSync.native(path.dirname(targetPath));
+        const finalPath = path.join(parentReal, path.basename(targetPath));
+    } catch (err) {
+        throw new Error('Invalid file path or path does not exist.');
+    }
     const finalPath = path.join(parentReal, path.basename(targetPath));
 
     if (!finalPath.startsWith(workspacePath + path.sep) && finalPath !== workspacePath) {
