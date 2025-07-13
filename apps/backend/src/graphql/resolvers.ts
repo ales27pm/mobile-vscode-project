@@ -42,7 +42,10 @@ export function getResolvers() {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
                 const searchFn = (vscode.workspace as any).findTextInFiles;
-                const versionParts = vscode.version.split('.').map(part => parseInt(part, 10) || 0);
+                const versionParts = vscode.version.split('.').map(part => {
+                  const num = parseInt(part.replace(/[^\d]/g, ''), 10);
+                  return isNaN(num) ? 0 : num;
+                });
                 const [major = 0, minor = 0] = versionParts;
                 const useCallbackApi = major > 1 || (major === 1 && minor >= 92);
 
