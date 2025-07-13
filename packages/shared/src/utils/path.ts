@@ -20,8 +20,8 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
   try {
     const parent = fs.realpathSync.native(path.dirname(target));
     finalPath = path.join(parent, path.basename(target));
-  } catch {
-    throw new Error('Invalid file path: parent directory does not exist. If creating a new file, ensure the parent directory exists.');
+  } catch (error) {
+    throw new Error(`Invalid file path: ${error instanceof Error ? error.message : 'Unknown error'}. If creating a new file, ensure the parent directory exists.`);
   }
 
   const normalizedBase = path.normalize(base + path.sep);
