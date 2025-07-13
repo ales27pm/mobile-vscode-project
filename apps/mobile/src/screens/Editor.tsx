@@ -8,8 +8,8 @@ import debounce from 'lodash.debounce';
 import { useDocumentStore } from '../state/documentStore';
 
 export default function Editor({ route, navigation }) {
-  const { path } = route.params;
-  const { ydoc, isLoading, awareness } = useYDoc(path);
+  const { workspaceUri, path } = route.params;
+  const { ydoc, isLoading, awareness } = useYDoc(workspaceUri, path);
   const [writeFile] = useMutation(WriteFileDocument);
   const [remoteCursors, setRemoteCursors] = useState([]);
   const editorRef = React.useRef<MonacoEditorRef>(null);
@@ -18,7 +18,7 @@ export default function Editor({ route, navigation }) {
   const saveContent = React.useMemo(
     () =>
       debounce((content: string) => {
-        writeFile({ variables: { path, content } });
+        writeFile({ variables: { workspaceUri, path, content } });
       }, 1000),
     [writeFile, path]
   );

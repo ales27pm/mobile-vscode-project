@@ -4,7 +4,8 @@ import { useLazyQuery } from '@apollo/client';
 import { SearchDocument, SearchQuery, SearchQueryVariables } from 'shared/src/types';
 import { useDocumentStore } from '../state/documentStore';
 
-export default function Search({ navigation }) {
+export default function Search({ navigation, route }) {
+  const { workspaceUri } = route.params;
   const [query, setQuery] = useState('');
   const [fetchSearch, { data, loading }] = useLazyQuery<SearchQuery, SearchQueryVariables>(SearchDocument);
   const setEditorAction = useDocumentStore(state => state.setEditorAction);
@@ -31,9 +32,9 @@ export default function Search({ navigation }) {
         placeholder="Search for code..."
         style={styles.input}
         returnKeyType="search"
-        onSubmitEditing={() => fetchSearch({ variables: { query } })}
+        onSubmitEditing={() => fetchSearch({ variables: { workspaceUri, query } })}
       />
-      <Button title="Search" onPress={() => fetchSearch({ variables: { query } })} disabled={loading || !query} />
+      <Button title="Search" onPress={() => fetchSearch({ variables: { workspaceUri, query } })} disabled={loading || !query} />
       {loading && <ActivityIndicator />}
       <SectionList
         sections={sections}

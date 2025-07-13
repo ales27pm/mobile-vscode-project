@@ -1,51 +1,66 @@
 # MobileVSCode
 
-A mobile IDE powered by GraphQL, Y.js, LSP & DAP, built within a professional monorepo structure.
+A mobile IDE client for your local Visual Studio Code instance, powered by GraphQL and Y.js for real-time collaborative editing.
 
-## Key Improvements & Architecture
+## Architecture
 
--   **Unified Server Architecture**: All real-time services (GraphQL Subscriptions, Y.js collaborative editing, Language Server Protocol, Debug Adapter Protocol) are consolidated onto a single port (4000) with proper WebSocket upgrade handling.
--   **High-Performance Collaborative Editing**: Uses a delta-based synchronization strategy between Y.js and the Monaco Editor, ensuring excellent performance even with large files. Includes multi-user cursor awareness.
--   **Enhanced Security**: Includes robust path traversal protection in the file system API, validation of all user-provided IDs, and secure environment variable handling via `.env` files.
--   **Professional Tooling**:
-    -   **GraphQL Code Generator**: Ensures end-to-end type safety between the backend and mobile client.
-    -   **Jest**: Test configurations are set up for each workspace.
-    -   **CI/CD**: A GitHub Actions pipeline is included for automated linting, building, and testing.
-    -   **Yarn Workspaces**: Scripts are configured for easy monorepo management.
+This project enables you to control your local VS Code environment from a mobile device. It consists of two main parts:
 
-## Execution Instructions
+1. **VS Code Extension (Backend)**: Runs on your desktop inside VS Code. It exposes the file system, Git, and other VS Code APIs through a secure GraphQL and WebSocket server.
+2. **React Native App (Frontend)**: The mobile client that connects to the VS Code extension, allowing you to browse files, make edits, run searches, and use Git.
 
-### 1. Set up Environment
+### Key Features
+
+- **True VS Code Integration**: The backend is a VS Code extension, meaning it has full access to your configured environment, settings, and workspace context.
+- **High-Performance Collaborative Editing**: Uses a delta-based synchronization strategy between Y.js and the Monaco Editor, ensuring excellent performance even with large files. Includes multi-user cursor awareness.
+- **Secure by Design**: Includes robust path traversal protection in the file system API and leverages VS Code's own APIs for secure operations.
+- **Professional Tooling**:
+    - **GraphQL Code Generator**: Ensures end-to-end type safety.
+    - **Yarn Workspaces**: Provides easy monorepo management.
+    - **Launch & Debug**: Pre-configured for running and debugging the extension in the VS Code host.
+
+## How to Run
+
+### 1. Set up the Environment
+
 ```bash
-# Copy the example environment file
+# Copy the example environment file for the mobile app
 cp .env.example .env
-# Open `.env` and replace the IP address placeholders with your
-# computer's local network IP (for example, 192.168.1.100).
+
+# Open .env and replace the placeholder IP with your
+# computer's local network IP (e.g., 192.168.1.100).
+
 # Install all dependencies for all workspaces
 yarn install
 ```
 
-### 2. Generate GraphQL types
-```bash
-yarn codegen
-```
+### 2. Run the Backend (VS Code Extension)
 
-### 3. Start the development servers
-```bash
-# Start the backend API
-yarn start:backend
+Open this project folder in VS Code.
+Press `F5` or go to Run -> Start Debugging. This will compile the extension and launch a new **Extension Development Host** window.
+In the new window, open the Command Palette (Cmd/Ctrl + Shift + P) and run the command: **Start Mobile VSCode Server**.
+You will see a notification with a one-time pairing token. You will need this for the mobile app.
 
-# In another terminal, start the mobile app
+### 3. Run the Frontend (Mobile App)
+
+In a separate terminal, start the mobile app:
+
+```bash
+# Start the mobile app (Expo)
 yarn start:mobile
 ```
 
-### 4. Package the VS Code extension
+Scan the QR code with the Expo Go app on your mobile device.
+Enter the pairing token from the VS Code notification to connect the app to your desktop.
+
+### 4. (Optional) Package the Extension
+
+To create a distributable .vsix file for the extension:
+
 ```bash
-python3 scripts/build_vsix.py
+yarn package:extension
 ```
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License.
-See the [LICENSE](./LICENSE) file for details.
-
+This project is licensed under the MIT License. See the LICENSE file for details.

@@ -9,12 +9,12 @@ const colors = ['#30bced', '#6eeb83', '#ffbc42', '#ecd444', '#ee6352', '#9ac2c9'
 const myColor = colors[Math.floor(Math.random() * colors.length)];
 const myName = `User ${Math.floor(Math.random() * 100)}`;
 
-export function useYDoc(docId: string) {
+export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
 
   const { loading } = useQuery(ReadFileDocument, {
-    variables: { path: docId },
+    variables: { workspaceUri, path: docId },
     fetchPolicy: 'network-only',
     onCompleted: (data) => {
       if (data?.readFile && ydoc.getText('monaco').length === 0) {
@@ -24,7 +24,7 @@ export function useYDoc(docId: string) {
   });
 
   useEffect(() => {
-    const provider = new WebsocketProvider(YWS_URL, docId, ydoc);
+    const provider = new WebsocketProvider(YWS_URL, `${workspaceUri}:${docId}`, ydoc);
     provider.awareness.setLocalStateField('user', {
         name: myName,
         color: myColor,

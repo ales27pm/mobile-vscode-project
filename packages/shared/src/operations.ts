@@ -3,8 +3,17 @@
 import { gql } from '@apollo/client';
 
 gql`
-  query ListDirectory($path: String) {
-    listDirectory(path: $path) {
+  query ListWorkspaces {
+    listWorkspaces {
+      name
+      uri
+    }
+  }
+`;
+
+gql`
+  query ListDirectory($workspaceUri: String!, $path: String) {
+    listDirectory(workspaceUri: $workspaceUri, path: $path) {
       name
       path
       isDirectory
@@ -13,8 +22,14 @@ gql`
 `;
 
 gql`
-  query Search($query: String!) {
-    search(query: $query) {
+  query ReadFile($workspaceUri: String!, $path: String!) {
+    readFile(workspaceUri: $workspaceUri, path: $path)
+  }
+`;
+
+gql`
+  query Search($workspaceUri: String!, $query: String!) {
+    search(workspaceUri: $workspaceUri, query: $query) {
       file
       line
       text
@@ -23,8 +38,8 @@ gql`
 `;
 
 gql`
-  query GitStatus {
-    gitStatus {
+  query GitStatus($workspaceUri: String!) {
+    gitStatus(workspaceUri: $workspaceUri) {
       branch
       changes
     }
@@ -43,20 +58,26 @@ gql`
 `;
 
 gql`
-    query ReadFile($path: String!) {
-        readFile(path: $path)
-    }
-`;
-
-gql`
-  mutation Commit($message: String!) {
-    commit(message: $message)
+  mutation PairWithServer($pairingToken: String!) {
+    pairWithServer(pairingToken: $pairingToken)
   }
 `;
 
 gql`
-  mutation Push {
-    push
+  mutation WriteFile($workspaceUri: String!, $path: String!, $content: String!) {
+    writeFile(workspaceUri: $workspaceUri, path: $path, content: $content)
+  }
+`;
+
+gql`
+  mutation Commit($workspaceUri: String!, $message: String!) {
+    commit(workspaceUri: $workspaceUri, message: $message)
+  }
+`;
+
+gql`
+  mutation Push($workspaceUri: String!) {
+    push(workspaceUri: $workspaceUri)
   }
 `;
 
@@ -70,12 +91,6 @@ gql`
   mutation UninstallExtension($id: String!) {
     uninstallExtension(id: $id)
   }
-`;
-
-gql`
-    mutation WriteFile($path: String!, $content: String!) {
-        writeFile(path: $path, content: $content)
-    }
 `;
 
 gql`
