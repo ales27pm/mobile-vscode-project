@@ -26,7 +26,7 @@ export function startServer(context: vscode.ExtensionContext) {
     }
 
     const app = express();
-    app.use(express.json());
+    app.use(express.json({ limit: '10mb' }));
     
     const keyPath = join(context.extensionPath, 'certs/server.key');
     const certPath = join(context.extensionPath, 'certs/server.crt');
