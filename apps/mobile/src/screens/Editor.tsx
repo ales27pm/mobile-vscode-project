@@ -16,7 +16,12 @@ export default function Editor({ route, navigation }) {
     color: string;
     name: string;
   }
-  const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
+
+  export default function Editor({ route, navigation }) {
+    const { path } = route.params;
+    const { ydoc, isLoading, awareness } = useYDoc(path);
+    const [writeFile] = useMutation(WriteFileDocument);
+    const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
   const editorRef = React.useRef<MonacoEditorRef>(null);
   const consumeEditorAction = useDocumentStore(state => state.consumeEditorAction);
 
