@@ -52,7 +52,7 @@ export function getResolvers() {
                     { pattern: query },
                     { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
                     (result: any) => {
-                        if ('preview' in result) {
+                        if ('preview' in result && result.ranges && result.ranges.length > 0) {
                             results.push({
                                 file: vscode.workspace.asRelativePath(result.uri, false),
                                 line: result.ranges[0].start.line + 1,
