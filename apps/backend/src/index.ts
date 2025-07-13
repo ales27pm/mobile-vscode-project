@@ -105,7 +105,13 @@ async function start() {
   apolloServer.applyMiddleware({ app, path: '/graphql' });
 
   httpServer.on('upgrade', (req, socket, head) => {
-    const { pathname } = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    try {
+      const { pathname } = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    } catch (error) {
+      console.error('Invalid URL in upgrade request:', error);
+      socket.destroy();
+      return;
+    }
     if (pathname === '/graphql') wsServer.handleUpgrade(req, socket, head, ws => wsServer.emit('connection', ws, req));
     else if (pathname === '/yws') yWsServer.handleUpgrade(req, socket, head, ws => yWsServer.emit('connection', ws, req));
     else if (pathname === '/lsp') lspWsServer.handleUpgrade(req, socket, head, ws => lspWsServer.emit('connection', ws, req));
