@@ -32,15 +32,10 @@ export function createAuthContext(): AuthContext {
     };
 }
 
-// Extend the Express Request type to include the user payload
-declare module 'express-serve-static-core' {
-    interface Request {
-        user?: string | jwt.JwtPayload
-    }
-}
+type RequestWithUser = Request & { user?: string | jwt.JwtPayload };
 
 export function pairingMiddleware(authContext: AuthContext) {
-    return (req: Request, res: any, next: any) => {
+    return (req: RequestWithUser, res: any, next: any) => {
         if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
             return res.status(400).json({ error: 'Invalid request body' });
         }
@@ -69,7 +64,7 @@ export function pairingMiddleware(authContext: AuthContext) {
 }
 
 export function jwtAuthMiddleware(authContext: AuthContext) {
-    return (req: Request, res: any, next: any) => {
+    return (req: RequestWithUser, res: any, next: any) => {
         const authHeader = req.headers.authorization;
         if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Malformed or missing Authorization header' });
