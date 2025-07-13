@@ -26,6 +26,7 @@ export function startServer(context: vscode.ExtensionContext) {
     }
 
     const app = express();
+    app.use(express.json());
     
     const keyPath = join(context.extensionPath, 'certs/server.key');
     const certPath = join(context.extensionPath, 'certs/server.crt');
@@ -60,10 +61,10 @@ export function startServer(context: vscode.ExtensionContext) {
         yjsWsServer.on('connection', setupWSConnection);
 
         httpServer.on('upgrade', (req, socket, head) => {
-            const { pathname } = new URL(req.url!, `https://${req.headers.host}`);
-            if (pathname === '/graphql') {
+            const url = new URL(req.url!, `https://${req.headers.host}`);
+            if (url.pathname === '/graphql') {
                 gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
-            } else if (pathname.startsWith('/yjs')) {
+            } else if (url.pathname.startsWith('/yjs')) {
                 yjsWsServer.handleUpgrade(req, socket, head, ws => yjsWsServer.emit('connection', ws, req));
             } else {
                 socket.destroy();
