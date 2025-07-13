@@ -47,19 +47,22 @@ export function getResolvers() {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
                 try {
-                    await (vscode.workspace as any).findTextInFiles(
-                        { pattern: query },
-                        { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
-                        result => {
-                            if ('preview' in result && result.preview && result.ranges && result.ranges.length > 0) {
-                                results.push({
-                                    file: vscode.workspace.asRelativePath(result.uri, false),
-                                    line: result.ranges[0].start.line + 1,
-                                    text: result.preview.text.trim()
-                                });
+                    const workspace_api = vscode.workspace as any;
+                    if (typeof workspace_api.findTextInFiles === 'function') {
+                        await workspace_api.findTextInFiles(
+                            { pattern: query },
+                            { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
+                            result => {
+                                if ('preview' in result && result.preview && result.ranges && result.ranges.length > 0) {
+                                    results.push({
+                                        file: vscode.workspace.asRelativePath(result.uri, false),
+                                        line: result.ranges[0].start.line + 1,
+                                        text: result.preview.text.trim()
+                                    });
+                                }
                             }
-                        }
-                    );
+                        );
+                    }
                 } catch (error) {
                     console.error('Search operation failed:', error);
                 }
