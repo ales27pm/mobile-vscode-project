@@ -2,6 +2,11 @@
 /node_modules
 /.pnp
 .pnp.js
+.pnp.cjs
+.pnp.loader.mjs
+
+# Ignore workspace build outputs
+apps/**/dist
 
 # Build artifacts
 /dist
