@@ -14,7 +14,7 @@ export function useYDoc(workspaceUri: string, docId: string) {
   const providerRef = useRef<WebsocketProvider | null>(null);
   const roomName = `${workspaceUri}|${docId}`
     .replace(/[^a-zA-Z0-9]/g, '_')
-    .substring(0, 80) + '_' + Buffer.from(`${workspaceUri}|${docId}`).toString('base64').substring(0, 19);
+    .substring(0, 80) + '_' + btoa(`${workspaceUri}|${docId}`).substring(0, 19);
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
