@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 import simpleGit from 'simple-git';
 import { pubsub } from './pubsub';
 
@@ -13,21 +11,13 @@ const getWorkspace = (uri: string): vscode.WorkspaceFolder => {
 };
 
 const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string): vscode.Uri => {
-    const workspacePath = fs.realpathSync.native(workspace.uri.fsPath);
-    const targetPath = path.resolve(workspace.uri.fsPath, relativePath);
-    try {
-        const parentReal = fs.realpathSync.native(path.dirname(targetPath));
-        const finalPath = path.join(parentReal, path.basename(targetPath));
-    } catch (err) {
-        throw new Error('Invalid file path or path does not exist.');
-    }
-    const finalPath = path.join(parentReal, path.basename(targetPath));
-
-    if (!finalPath.startsWith(workspacePath + path.sep) && finalPath !== workspacePath) {
+    const fileUri = vscode.Uri.joinPath(workspace.uri, relativePath);
+    // VScode's path logic already handles normalization.
+    // The check below ensures the path is within the workspace folder.
+    if (!fileUri.fsPath.startsWith(workspace.uri.fsPath)) {
         throw new Error('Path traversal attempt detected.');
     }
-
-    return vscode.Uri.file(finalPath);
+    return fileUri;
 };
 
 export function getResolvers() {
@@ -55,12 +45,22 @@ export function getResolvers() {
             search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
-                await vscode.workspace.findTextInFiles({ pattern: query }, r => {
-                    const rel = vscode.workspace.asRelativePath(r.uri, false);
-                    const preview = r.preview.text.trim();
-                    const line = r.ranges[0].start.line + 1;
-                    results.push({ file: rel, line, text: preview });
-                }, new vscode.RelativePattern(workspace, '**/*'));
+                const searchResults = await vscode.workspace.findTextInFiles(
+                    new vscode.TextSearchQuery(query, { isCaseSensitive: false, isRegExp: false, isWordMatch: false }),
+                    { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' }
+                );
+
+                for (const uri in searchResults) {
+                    const fileUri = vscode.Uri.parse(uri);
+                    const relativePath = vscode.workspace.asRelativePath(fileUri, false);
+                    searchResults[uri].forEach(match => {
+                        results.push({
+                            file: relativePath,
+                            line: match.range.start.line + 1,
+                            text: match.preview.text.trim()
+                        });
+                    });
+                }
                 return results;
             },
             gitStatus: async (_: any, { workspaceUri }: { workspaceUri: string }) => {
@@ -70,7 +70,7 @@ export function getResolvers() {
                 const s = await git.status();
                 return {
                     branch: s.current || 'detached',
-                    changes: s.files.map(f => `${f.path} (${f.working_dir})`),
+                    changes: s.files.map(f => `${f.working_dir} ${f.path}`),
                 };
             },
             extensions: () => {
