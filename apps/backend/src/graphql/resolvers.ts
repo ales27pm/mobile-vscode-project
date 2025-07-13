@@ -42,10 +42,7 @@ export function getResolvers() {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
                 const searchFn: any = (vscode.workspace as any).findTextInFiles;
-                const versionParts = vscode.version.split('.');
-                const major = parseInt(versionParts[0] || '0', 10);
-                const minor = parseInt(versionParts[1] || '0', 10);
-                const useCallbackApi = !isNaN(major) && !isNaN(minor) && (major > 1 || (major === 1 && minor >= 92));
+                const useCallbackApi = typeof searchFn === 'function' && searchFn.length >= 3;
 
                 if (useCallbackApi) {
                     await new Promise<void>((resolve) => {
