@@ -71,12 +71,19 @@ async function start() {
         }
       } catch (err) {
         console.error('Message processing failed:', err);
-        let errorResponse: { error: string; id?: string | number | null } = {
-          error: err instanceof Error ? err.message : 'Unknown error',
-        };
-
+        let id: string | number | null | undefined = undefined;
         try {
           const parsedData = JSON.parse(raw);
+          if ('id' in parsedData) {
+            id = parsedData.id;
+          }
+        } catch (e) {
+          // Ignore JSON parse errors, id will remain undefined
+        }
+        let errorResponse: { error: string; id?: string | number | null } = {
+          error: err instanceof Error ? err.message : 'Unknown error',
+          ...(id !== undefined ? { id } : {}),
+        };
           if (parsedData && parsedData.id !== undefined) {
             errorResponse = { id: parsedData.id, error: errorResponse.error };
           }
