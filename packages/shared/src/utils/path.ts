@@ -24,10 +24,10 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
     throw new Error('Invalid file path: parent directory does not exist. If creating a new file, ensure the parent directory exists.');
   }
 
-  const normalizedBase = path.normalize(base + path.sep);
-  const normalizedFinal = path.normalize(finalPath + path.sep);
+  const normalizedBase = path.normalize(base);
+  const normalizedFinal = path.normalize(finalPath);
 
-  if (!normalizedFinal.startsWith(normalizedBase)) {
+  if (!normalizedFinal.startsWith(normalizedBase + path.sep) && normalizedFinal !== normalizedBase) {
     throw new Error('Path traversal attempt detected.');
   }
 
