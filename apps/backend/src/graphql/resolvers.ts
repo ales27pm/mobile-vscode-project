@@ -49,6 +49,10 @@ export function getResolvers() {
             search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
+                if (!query || typeof query !== 'string' || query.length > 1000) {
+                    throw new Error('Invalid search query');
+                }
+
                 try {
                     await (vscode.workspace as any).findTextInFiles(
                         { pattern: query },
