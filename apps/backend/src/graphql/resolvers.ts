@@ -51,7 +51,7 @@ export function getResolvers() {
                         { pattern: query },
                         { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
                         result => {
-                            if ('preview' in result && result.ranges.length > 0) {
+                            if ('preview' in result && result.preview && result.ranges && result.ranges.length > 0) {
                                 results.push({
                                     file: vscode.workspace.asRelativePath(result.uri, false),
                                     line: result.ranges[0].start.line + 1,
