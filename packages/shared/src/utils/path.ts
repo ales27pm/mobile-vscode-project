@@ -20,8 +20,8 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
   try {
     const parent = fs.realpathSync.native(path.dirname(target));
     finalPath = path.join(parent, path.basename(target));
-  } catch {
-    throw new Error('Invalid file path or path does not exist.');
+  } catch (error) {
+    throw new Error(`Invalid file path or path does not exist: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   const normalizedBase = path.normalize(base + path.sep);
