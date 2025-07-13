@@ -12,7 +12,7 @@ export default function Editor({ route, navigation }) {
   const { ydoc, isLoading, awareness } = useYDoc(path);
   const [writeFile] = useMutation(WriteFileDocument);
   interface RemoteCursor {
-    position: any;
+    position: { line: number; column: number };
     color: string;
     name: string;
   }
