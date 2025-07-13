@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
 import simpleGit from 'simple-git';
 import { pubsub } from './pubsub';
 
@@ -13,21 +12,15 @@ const getWorkspace = (uri: string): vscode.WorkspaceFolder => {
 };
 
 const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string): vscode.Uri => {
-    const workspacePath = fs.realpathSync.native(workspace.uri.fsPath);
-    const targetPath = path.resolve(workspace.uri.fsPath, relativePath);
-    try {
-        const parentReal = fs.realpathSync.native(path.dirname(targetPath));
-        const finalPath = path.join(parentReal, path.basename(targetPath));
-    } catch (err) {
-        throw new Error('Invalid file path or path does not exist.');
-    }
-    const finalPath = path.join(parentReal, path.basename(targetPath));
-
-    if (!finalPath.startsWith(workspacePath + path.sep) && finalPath !== workspacePath) {
+    const fileUri = vscode.Uri.joinPath(workspace.uri, relativePath);
+    const workspacePath = workspace.uri.fsPath.endsWith(path.sep)
+        ? workspace.uri.fsPath
+        : workspace.uri.fsPath + path.sep;
+    const normalizedFilePath = path.normalize(fileUri.fsPath) + path.sep;
+    if (!normalizedFilePath.startsWith(workspacePath)) {
         throw new Error('Path traversal attempt detected.');
     }
-
-    return vscode.Uri.file(finalPath);
+    return fileUri;
 };
 
 export function getResolvers() {
@@ -55,12 +48,19 @@ export function getResolvers() {
             search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
-                await vscode.workspace.findTextInFiles({ pattern: query }, r => {
-                    const rel = vscode.workspace.asRelativePath(r.uri, false);
-                    const preview = r.preview.text.trim();
-                    const line = r.ranges[0].start.line + 1;
-                    results.push({ file: rel, line, text: preview });
-                }, new vscode.RelativePattern(workspace, '**/*'));
+                await (vscode.workspace as any).findTextInFiles(
+                    { pattern: query },
+                    { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
+                    (result: any) => {
+                        if ('preview' in result) {
+                            results.push({
+                                file: vscode.workspace.asRelativePath(result.uri, false),
+                                line: result.ranges[0].start.line + 1,
+                                text: result.preview.text.trim()
+                            });
+                        }
+                    }
+                );
                 return results;
             },
             gitStatus: async (_: any, { workspaceUri }: { workspaceUri: string }) => {
@@ -70,7 +70,7 @@ export function getResolvers() {
                 const s = await git.status();
                 return {
                     branch: s.current || 'detached',
-                    changes: s.files.map(f => `${f.path} (${f.working_dir})`),
+                    changes: s.files.map(f => `${f.working_dir} ${f.path}`),
                 };
             },
             extensions: () => {
