@@ -1,28 +1,46 @@
 # Dependencies
-node_modules/
-**/node_modules/
+/node_modules
+/.pnp
+.pnp.js
 
 # Build artifacts
-dist/
+/dist
+/build
+/.expo
+*.vsix
 
 # Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.log
-.pnp.cjs
-.pnp.loader.mjs
-.yarn/
 
 # Environment variables
 .env
-.env.*
-!.env.example
+.env*.local
 
-# Expo
-.expo*
+# IDE config
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
 
-# Generated files
-apps/backend/installed.json
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Build & Compilation Artifacts
-build/
-out/
-*.tsbuildinfo
+# Test output
+/coverage
+/reports
+junit.xml
+
+# Misc
+installed.json
+.yarn

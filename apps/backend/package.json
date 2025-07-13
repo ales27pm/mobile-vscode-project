@@ -3,14 +3,11 @@
   "displayName": "Mobile VSCode Server",
   "publisher": "codex",
   "version": "0.1.0",
-  "description": "Provides GraphQL, Git and Y.js back-end for mobile client",
+  "description": "Provides GraphQL, Git and Y.js back-end for the Mobile VSCode client",
+  "main": "./dist/extension.js",
   "engines": {
     "vscode": "^1.60.0"
   },
-  "categories": [
-    "Other"
-  ],
-  "main": "dist/index.js",
   "activationEvents": [
     "onCommand:mobile-vscode-server.start"
   ],
@@ -19,40 +16,51 @@
       {
         "command": "mobile-vscode-server.start",
         "title": "Start Mobile VSCode Server"
+      },
+      {
+        "command": "mobile-vscode-server.stop",
+        "title": "Stop Mobile VSCode Server"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Mobile VSCode Server",
+      "properties": {
+        "mobile-vscode-server.port": {
+          "type": "number",
+          "default": 4000,
+          "description": "Port for the server to listen on."
+        },
+        "mobile-vscode-server.jwtSecret": {
+          "type": "string",
+          "description": "A persistent secret for signing JWTs. If not set, a temporary one is generated on each launch, requiring re-pairing.",
+          "default": ""
+        }
+      }
+    }
   },
   "scripts": {
-    "build": "tsc -b",
-    "start": "node dist/index.js",
-    "test": "jest --passWithNoTests",
-    "vscode:prepublish": "yarn build"
+    "build": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@graphql-tools/schema": "^9.0.0",
     "apollo-server-express": "^3.10.4",
-    "chokidar": "^3.5.3",
-    "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "graphql": "^16.6.0",
     "graphql-subscriptions": "^2.0.0",
-    "graphql-tools": "^8.3.20",
     "graphql-ws": "^5.11.0",
     "jsonwebtoken": "^9.0.0",
-    "lodash.debounce": "^4.0.8",
     "simple-git": "^3.19.0",
-    "typescript-language-server": "^0.11.2",
-    "vscode-jsonrpc": "^8.1.0",
     "ws": "^8.12.0",
-    "y-websocket": "^1.5.0",
-    "zod": "^3.22.4"
+    "y-websocket": "^1.5.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.2",
     "@types/jsonwebtoken": "^9.0.2",
-    "@types/lodash.debounce": "^4.0.7",
     "@types/node": "^18.16.18",
+    "@types/vscode": "^1.60.0",
     "@types/ws": "^8.18.1",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",

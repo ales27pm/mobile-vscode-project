@@ -1,21 +1,13 @@
 import Constants from 'expo-constants';
 
-type AppConfig = {
-  GRAPHQL_URL: string;
-  WS_URL: string;
-  YWS_URL: string;
-  LSP_URL: string;
-  DEBUG_URL: string;
-};
+const LOCAL_IP = Constants.expoConfig?.extra?.LOCAL_IP || 'localhost';
 
-const config = Constants.expoConfig?.extra as AppConfig;
-
-if (!config || !config.GRAPHQL_URL) {
-  console.warn("Environment variables are not set via .env. Using default localhost values. This will not work on a physical device.");
+if (LOCAL_IP === 'YOUR_COMPUTER_IP_HERE') {
+  console.warn("Please update the LOCAL_IP in your .env file. It is still set to the placeholder value.");
 }
 
-export const GRAPHQL_URL = config?.GRAPHQL_URL || 'http://localhost:4000/graphql';
-export const WS_URL = config?.WS_URL || 'ws://localhost:4000/graphql';
-export const YWS_URL = config?.YWS_URL || 'ws://localhost:4000/yws';
-export const LSP_URL = config?.LSP_URL || 'ws://localhost:4000/lsp';
-export const DEBUG_URL = config?.DEBUG_URL || 'ws://localhost:4000/debug';
+const PORT = 4000;
+
+export const GRAPHQL_URL = `https://${LOCAL_IP}:${PORT}/graphql`;
+export const WS_URL = `wss://${LOCAL_IP}:${PORT}/graphql`;
+export const YWS_URL = `wss://${LOCAL_IP}:${PORT}/yjs`;

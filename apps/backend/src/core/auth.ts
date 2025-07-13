@@ -1,0 +1,77 @@
+import * as vscode from 'vscode';
+import { Express, Request } from 'express';
+import * as jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
+import { updateStatusBar } from '../ui/statusBar';
+
+export interface AuthContext {
+    jwtSecret: string;
+    pairingToken: string;
+    isPaired: boolean;
+}
+
+export function createAuthContext(): AuthContext {
+    const config = vscode.workspace.getConfiguration('mobile-vscode-server');
+    let jwtSecret = config.get<string>('jwtSecret');
+
+    if (!jwtSecret) {
+        jwtSecret = randomBytes(32).toString('hex');
+        console.warn('No persistent JWT secret found in settings. Generating a temporary secret for this session.');
+    }
+
+    const newPairingToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const tooltip = `Pairing Token: ${newPairingToken}`;
+    
+    updateStatusBar(true, tooltip);
+    vscode.window.showInformationMessage(`MobileVSCode Pairing Token: ${newPairingToken}`);
+    
+    return {
+        jwtSecret,
+        pairingToken: newPairingToken,
+        isPaired: false,
+    };
+}
+
+// Extend the Express Request type to include the user payload
+declare module 'express-serve-static-core' {
+    interface Request {
+        user?: string | jwt.JwtPayload
+    }
+}
+
+export function setupAuthMiddleware(app: Express, authContext: AuthContext) {
+    app.use('/graphql', (req: Request, res, next) => {
+        const body = req.body;
+        
+        // Handle pairing mutation separately
+        if (body.operationName === 'pairWithServer') {
+            if (body.variables.pairingToken === authContext.pairingToken && !authContext.isPaired) {
+                authContext.isPaired = true;
+                const clientToken = jwt.sign({ paired: true }, authContext.jwtSecret, { expiresIn: '30d' });
+                
+                updateStatusBar(true, 'Client Paired');
+                vscode.window.showInformationMessage('MobileVSCode Client Paired Successfully.');
+
+                return res.json({ data: { pairWithServer: clientToken } });
+            } else {
+                 return res.status(401).json({ error: 'Invalid pairing token' });
+            }
+        }
+
+        // Verify JWT for all other operations
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized: No token provided' });
+        }
+
+        try {
+            const decoded = jwt.verify(token, authContext.jwtSecret);
+            req.user = decoded;
+            next();
+        } catch (err) {
+            return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+        }
+    });
+}

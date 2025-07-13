@@ -3,8 +3,9 @@ import { View, Button, Text, FlatList, ActivityIndicator, StyleSheet } from 'rea
 import { useQuery, useMutation } from '@apollo/client';
 import { GitStatusDocument, CommitDocument, PushDocument } from 'shared/src/types';
 
-export default function Git() {
-  const { data, loading, refetch } = useQuery(GitStatusDocument);
+export default function Git({ route }) {
+  const { workspaceUri } = route.params;
+  const { data, loading, refetch } = useQuery(GitStatusDocument, { variables: { workspaceUri } });
   const [commit, { loading: cLoading }] = useMutation(CommitDocument, { onCompleted: () => refetch() });
   const [push, { loading: pLoading }] = useMutation(PushDocument, { onCompleted: () => refetch() });
 
@@ -22,8 +23,8 @@ export default function Git() {
                 ListEmptyComponent={<Text style={styles.change}>No changes detected.</Text>}
             />
             <View style={styles.actions}>
-                <Button title="Commit All" onPress={() => commit({ variables: { message: 'Commit from mobile' } })} disabled={cLoading || pLoading} />
-                <Button title="Push" onPress={() => push()} disabled={cLoading || pLoading}/>
+                <Button title="Commit All" onPress={() => commit({ variables: { workspaceUri, message: 'Commit from mobile' } })} disabled={cLoading || pLoading} />
+                <Button title="Push" onPress={() => push({ variables: { workspaceUri } })} disabled={cLoading || pLoading}/>
             </View>
         </>
       )}

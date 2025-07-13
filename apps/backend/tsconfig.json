@@ -1,12 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "outDir": "dist"
+    "module": "commonjs",
+    "outDir": "dist",
+    "rootDir": "src"
   },
   "include": [
-    "src/**/*.ts",
-    "config.ts",
-    "marketplace.json"
+    "src/**/*.ts"
   ]
 }

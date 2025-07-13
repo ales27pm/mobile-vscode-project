@@ -2,14 +2,17 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
+    "lib": ["es2020", "dom"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "rootDir": ".",
-    "outDir": "dist",
+    "baseUrl": ".",
     "paths": {
+      "shared/*": ["packages/shared/src/*"],
+      "packages/*": ["packages/*"],
       "react-native-monaco-editor": ["./packages/react-native-monaco-editor/src"]
     }
   },

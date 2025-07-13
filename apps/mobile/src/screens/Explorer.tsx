@@ -1,5 +1,5 @@
 import React from 'react';
-import { SectionList, Text, TouchableOpacity, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { SectionList, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useQuery } from '@apollo/client';
 import { ListDirectoryDocument } from 'shared/src/types';
@@ -8,8 +8,8 @@ import Editor from './Editor';
 const Stack = createNativeStackNavigator();
 
 function FileList({ navigation, route }) {
-  const path = route.params?.path || '';
-  const { data, loading, refetch } = useQuery(ListDirectoryDocument, { variables: { path } });
+  const { workspaceUri, path = '' } = route.params || {};
+  const { data, loading, refetch } = useQuery(ListDirectoryDocument, { variables: { workspaceUri, path } });
 
   if (loading) return <ActivityIndicator style={StyleSheet.absoluteFill} />;
 
@@ -27,9 +27,9 @@ function FileList({ navigation, route }) {
         <TouchableOpacity style={styles.item}
           onPress={() => {
               if (item.isDirectory) {
-                  navigation.push('FileList', { path: item.path, title: item.name });
+                  navigation.push('FileList', { workspaceUri, path: item.path, title: item.name });
               } else {
-                  navigation.navigate('Editor', { path: item.path });
+                  navigation.navigate('Editor', { workspaceUri, path: item.path });
               }
           }}
         >
@@ -46,7 +46,7 @@ export default function Explorer() {
       <Stack.Screen
         name="FileList"
         component={FileList}
-        initialParams={{ path: '' }}
+        initialParams={{ workspaceUri: route.params?.workspaceUri, path: '' }}
         options={({ route }) => ({ title: route.params?.title || 'Root' })}
       />
       <Stack.Screen
