@@ -42,6 +42,9 @@ export function getResolvers() {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
                 const searchFn = (vscode.workspace as any).findTextInFiles;
+                if (typeof searchFn !== 'function') {
+                    throw new Error('findTextInFiles method not available in current VSCode API version');
+                }
                 const versionParts = vscode.version.split('.').map(part => {
                   const num = parseInt(part.replace(/[^\d]/g, ''), 10);
                   return isNaN(num) ? 0 : num;
