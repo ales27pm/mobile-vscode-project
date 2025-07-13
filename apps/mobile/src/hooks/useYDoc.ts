@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Buffer } from 'buffer';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { YWS_URL } from '../config';
@@ -12,7 +13,15 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const roomName = `${workspaceUri}|${docId}`; // Unique room per file per workspace
+  const encode = (value: string) =>
+    typeof globalThis.btoa === 'function'
+      ? globalThis.btoa(value)
+      : Buffer.from(value, 'utf-8').toString('base64');
+  const roomName = encode(`${workspaceUri}|${docId}`).replace(/[+/=]/g, (m) => ({
+    '+': '-',
+    '/': '_',
+    '=': '',
+  }[m] || m));
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
@@ -36,11 +45,8 @@ export function useYDoc(workspaceUri: string, docId: string) {
     providerRef.current = provider;
 
     return () => {
-      if (providerRef.current) {
-        providerRef.current.destroy();
-        providerRef.current = null;
-        ydoc.getText('monaco').delete(0, ydoc.getText('monaco').length);
-      }
+      providerRef.current?.destroy();
+      providerRef.current = null;
     };
   }, [roomName, ydoc]);
 
