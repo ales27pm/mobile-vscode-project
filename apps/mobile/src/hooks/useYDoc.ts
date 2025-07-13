@@ -12,6 +12,7 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
+  const roomName = `${encodeURIComponent(workspaceUri)}_${encodeURIComponent(docId)}`; // Unique room per file per workspace
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
@@ -24,7 +25,10 @@ export function useYDoc(workspaceUri: string, docId: string) {
   });
 
   useEffect(() => {
-    const provider = new WebsocketProvider(YWS_URL, `${workspaceUri}:${docId}`, ydoc);
+    // Ensure we don't create providers until we have the necessary info
+    if (!workspaceUri || !docId) return;
+
+    const provider = new WebsocketProvider(YWS_URL, roomName, ydoc);
     provider.awareness.setLocalStateField('user', {
         name: myName,
         color: myColor,
@@ -32,9 +36,10 @@ export function useYDoc(workspaceUri: string, docId: string) {
     providerRef.current = provider;
 
     return () => {
-      provider.destroy();
+      providerRef.current?.destroy();
+      providerRef.current = null;
     };
-  }, [docId, ydoc]);
+  }, [roomName, ydoc]);
 
   return { ydoc, isLoading: loading, awareness: providerRef.current?.awareness };
 }
