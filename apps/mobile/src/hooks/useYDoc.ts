@@ -21,7 +21,7 @@ export function useYDoc(workspaceUri: string, docId: string) {
     '+': '-',
     '/': '_',
     '=': '',
-  }[m]!));
+  }[m] || m));
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
