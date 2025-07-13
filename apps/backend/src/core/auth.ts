@@ -41,7 +41,7 @@ declare module 'express-serve-static-core' {
 
 export function pairingMiddleware(authContext: AuthContext) {
     return (req: Request, res: any, next: any) => {
-        if (!req.body || typeof req.body !== 'object') {
+        if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
             return res.status(400).json({ error: 'Invalid request body' });
         }
         
