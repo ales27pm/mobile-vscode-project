@@ -46,19 +46,23 @@ export function getResolvers() {
             search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
-                await (vscode.workspace as any).findTextInFiles(
-                    { pattern: query },
-                    { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
-                    result => {
-                        if ('preview' in result && result.ranges.length > 0) {
-                            results.push({
-                                file: vscode.workspace.asRelativePath(result.uri, false),
-                                line: result.ranges[0].start.line + 1,
-                                text: result.preview.text.trim()
-                            });
+                try {
+                    await (vscode.workspace as any).findTextInFiles(
+                        { pattern: query },
+                        { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
+                        result => {
+                            if ('preview' in result && result.ranges.length > 0) {
+                                results.push({
+                                    file: vscode.workspace.asRelativePath(result.uri, false),
+                                    line: result.ranges[0].start.line + 1,
+                                    text: result.preview.text.trim()
+                                });
+                            }
                         }
-                    }
-                );
+                    );
+                } catch (error) {
+                    console.error('Search operation failed:', error);
+                }
                 return results;
             },
             gitStatus: async (_: any, { workspaceUri }: { workspaceUri: string }) => {
