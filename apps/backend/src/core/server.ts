@@ -26,7 +26,17 @@ export function startServer(context: vscode.ExtensionContext) {
     }
 
     const app = express();
-    app.use(express.json({ limit: '10mb' }));
+    app.use(express.json({ 
+        limit: '10mb',
+        strict: false,
+        type: 'application/json'
+    }));
+    app.use((error: any, req: any, res: any, next: any) => {
+        if (error instanceof SyntaxError && 'body' in error) {
+            return res.status(400).json({ error: 'Invalid JSON payload' });
+        }
+        next(error);
+    });
     
     const keyPath = join(context.extensionPath, 'certs/server.key');
     const certPath = join(context.extensionPath, 'certs/server.crt');
