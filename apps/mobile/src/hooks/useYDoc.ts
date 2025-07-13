@@ -12,14 +12,10 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const roomName = btoa(encodeURIComponent(`${workspaceUri}|${docId}`)).replace(/[+/=]/g, (match) => {
-    switch (match) {
-      case '+': return '-';
-      case '/': return '_';
-      case '=': return '';
-      default: return match;
-    }
-  });
+  const roomName = btoa(`${workspaceUri}|${docId}`)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
