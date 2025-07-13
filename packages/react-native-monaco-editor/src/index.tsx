@@ -24,6 +24,8 @@ const MonacoEditor = React.forwardRef<MonacoEditorRef, MonacoEditorProps>(
         /* Stub implementation for scrolling */
         if (Number.isInteger(lineNumber) && lineNumber >= 1) {
           console.debug('MonacoEditor.revealLineInCenter called', lineNumber);
+        } else {
+          console.warn('MonacoEditor.revealLineInCenter called with invalid lineNumber:', lineNumber);
         }
       }
     }));
