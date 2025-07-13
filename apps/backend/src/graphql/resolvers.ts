@@ -16,8 +16,9 @@ const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string
     const workspacePath = workspace.uri.fsPath.endsWith(path.sep)
         ? workspace.uri.fsPath
         : workspace.uri.fsPath + path.sep;
-    const normalizedFilePath = path.normalize(fileUri.fsPath);
-    if (!normalizedFilePath.startsWith(workspacePath) && normalizedFilePath !== workspacePath.slice(0, -1)) {
+    const normalizedFilePath = path.resolve(path.normalize(fileUri.fsPath));
+    const normalizedWorkspacePath = path.resolve(workspacePath.slice(0, -1));
+    if (!normalizedFilePath.startsWith(normalizedWorkspacePath + path.sep) && normalizedFilePath !== normalizedWorkspacePath) {
         throw new Error('Path traversal attempt detected.');
     }
     return fileUri;
