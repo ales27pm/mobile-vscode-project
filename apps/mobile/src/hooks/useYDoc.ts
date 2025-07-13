@@ -39,7 +39,7 @@ export function useYDoc(workspaceUri: string, docId: string) {
       providerRef.current?.destroy();
       providerRef.current = null;
     };
-  }, [workspaceUri, docId, roomName, ydoc]);
+  }, [workspaceUri, docId, ydoc]);
 
   return { ydoc, isLoading: loading, awareness: providerRef.current?.awareness };
 }
