@@ -25,7 +25,7 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
   }
 
   const normalizedBase = path.normalize(base + path.sep);
-  const normalizedFinal = path.normalize(finalPath + path.sep);
+  const normalizedFinal = path.normalize(finalPath);
 
   const isWindows = process.platform === 'win32';
   const baseCheck = isWindows ? normalizedBase.toLowerCase() : normalizedBase;
