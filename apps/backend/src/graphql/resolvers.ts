@@ -46,10 +46,10 @@ export function getResolvers() {
             search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
-                await vscode.workspace.findTextInFiles(
+                await (vscode.workspace as any).findTextInFiles(
                     { pattern: query },
                     { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
-                    result => {
+                    (result: any) => {
                         if ('preview' in result) {
                             results.push({
                                 file: vscode.workspace.asRelativePath(result.uri, false),
