@@ -61,8 +61,9 @@ async function start() {
 
     ws.on('message', data => {
       const raw = data.toString();
+      let parsed: any;
       try {
-        const parsed = JSON.parse(raw);
+        parsed = JSON.parse(raw);
         const msg: IncomingMessage = incomingMessageSchema.parse(parsed);
         if (msg.id !== undefined) {
           connection.sendRequest(msg.method, msg.params);
@@ -71,18 +72,10 @@ async function start() {
         }
       } catch (err) {
         console.error('Message processing failed:', err);
-        let parsedData: unknown;
-        try {
-          parsedData = JSON.parse(raw);
-        } catch {
-          // Ignore parse errors; respond with generic error
-        }
 
         const errorResponse: { error: string; id?: string | number | null } = {
           error: err instanceof Error ? err.message : 'Unknown error',
-          ...(parsedData && (parsedData as any).id !== undefined
-            ? { id: (parsedData as any).id }
-            : {}),
+          ...(parsed && parsed.id !== undefined ? { id: parsed.id } : {}),
         };
 
         if (ws.readyState === ws.OPEN) {

@@ -64,7 +64,7 @@ export default function Editor({ route, navigation }) {
         ref={editorRef}
         doc={ydoc.getText('monaco')}
         language={(() => {
-          const match = /\.([^.\/]+)$/.exec(path);
+          const match = /\.([^./]+)$/.exec(path);
           return match ? match[1] : 'plaintext';
         })()}
         onContentChange={saveContent}
