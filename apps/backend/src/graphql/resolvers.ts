@@ -42,7 +42,8 @@ export function getResolvers() {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
                 const searchFn: any = (vscode.workspace as any).findTextInFiles;
-                const [major, minor] = vscode.version.split('.').map(Number);
+                const versionParts = vscode.version.split('.').map(part => parseInt(part, 10) || 0);
+                const [major = 0, minor = 0] = versionParts;
                 const useCallbackApi = major > 1 || (major === 1 && minor >= 92);
 
                 if (useCallbackApi) {
