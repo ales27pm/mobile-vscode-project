@@ -36,7 +36,11 @@ export function useYDoc(workspaceUri: string, docId: string) {
     providerRef.current = provider;
 
     return () => {
-      provider.destroy();
+      if (providerRef.current) {
+        providerRef.current.destroy();
+        providerRef.current = null;
+        ydoc.getText('monaco').delete(0, ydoc.getText('monaco').length);
+      }
     };
   }, [roomName, ydoc]);
 
