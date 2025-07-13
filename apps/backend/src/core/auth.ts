@@ -39,29 +39,39 @@ declare module 'express-serve-static-core' {
     }
 }
 
-export function setupAuthMiddleware(app: Express, authContext: AuthContext) {
-    app.use('/graphql', (req: Request, res, next) => {
-        const body = req.body;
-        
-        // Handle pairing mutation separately
-        if (body.operationName === 'pairWithServer') {
-            if (body.variables.pairingToken === authContext.pairingToken && !authContext.isPaired) {
-                authContext.isPaired = true;
-                const clientToken = jwt.sign({ paired: true }, authContext.jwtSecret, { expiresIn: '30d' });
-                
-                updateStatusBar(true, 'Client Paired');
-                vscode.window.showInformationMessage('MobileVSCode Client Paired Successfully.');
-
-                return res.json({ data: { pairWithServer: clientToken } });
-            } else {
-                 return res.status(401).json({ error: 'Invalid pairing token' });
-            }
+export function pairingMiddleware(authContext: AuthContext) {
+    return (req: Request, res: any, next: any) => {
+        const { operationName, variables } = req.body || {};
+        if (operationName !== 'pairWithServer') {
+            return next();
         }
 
-        // Verify JWT for all other operations
-        const authHeader = req.headers.authorization;
-        const token = authHeader?.split(' ')[1];
+        if (authContext.isPaired) {
+            return res.status(403).json({ error: 'Server already paired' });
+        }
 
+        if (variables?.pairingToken !== authContext.pairingToken) {
+            return res.status(401).json({ error: 'Invalid pairing token' });
+        }
+
+        authContext.isPaired = true;
+        const clientToken = jwt.sign({ paired: true }, authContext.jwtSecret, { expiresIn: '30d' });
+
+        updateStatusBar(true, 'Client Paired');
+        vscode.window.showInformationMessage('MobileVSCode Client Paired Successfully.');
+
+        return res.json({ data: { pairWithServer: clientToken } });
+    };
+}
+
+export function jwtAuthMiddleware(authContext: AuthContext) {
+    return (req: Request, res: any, next: any) => {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Malformed or missing Authorization header' });
+        }
+
+        const token = authHeader.split(' ')[1];
         if (!token) {
             return res.status(401).json({ error: 'Unauthorized: No token provided' });
         }
@@ -70,8 +80,13 @@ export function setupAuthMiddleware(app: Express, authContext: AuthContext) {
             const decoded = jwt.verify(token, authContext.jwtSecret);
             req.user = decoded;
             next();
-        } catch (err) {
+        } catch {
             return res.status(401).json({ error: 'Unauthorized: Invalid token' });
         }
-    });
+    };
+}
+
+export function setupAuthMiddleware(app: Express, authContext: AuthContext) {
+    app.use('/graphql', pairingMiddleware(authContext));
+    app.use('/graphql', jwtAuthMiddleware(authContext));
 }

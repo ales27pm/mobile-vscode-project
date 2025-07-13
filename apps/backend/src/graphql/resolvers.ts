@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import simpleGit from 'simple-git';
 import { pubsub } from './pubsub';
 
@@ -11,11 +13,16 @@ const getWorkspace = (uri: string): vscode.WorkspaceFolder => {
 };
 
 const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string): vscode.Uri => {
-    const fileUri = vscode.Uri.joinPath(workspace.uri, relativePath);
-    if (!fileUri.fsPath.startsWith(workspace.uri.fsPath)) {
+    const workspacePath = fs.realpathSync.native(workspace.uri.fsPath);
+    const targetPath = path.resolve(workspace.uri.fsPath, relativePath);
+    const parentReal = fs.realpathSync.native(path.dirname(targetPath));
+    const finalPath = path.join(parentReal, path.basename(targetPath));
+
+    if (!finalPath.startsWith(workspacePath + path.sep) && finalPath !== workspacePath) {
         throw new Error('Path traversal attempt detected.');
     }
-    return fileUri;
+
+    return vscode.Uri.file(finalPath);
 };
 
 export function getResolvers() {
@@ -91,12 +98,22 @@ export function getResolvers() {
               return true;
             },
             installExtension: async (_: any, { id }: { id: string }) => {
-                await vscode.commands.executeCommand('workbench.extensions.installExtension', id);
-                return true;
+                try {
+                    await vscode.commands.executeCommand('workbench.extensions.installExtension', id);
+                    return true;
+                } catch (err) {
+                    console.error(err);
+                    return false;
+                }
             },
             uninstallExtension: async (_: any, { id }: { id: string }) => {
-                await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', id);
-                return true;
+                try {
+                    await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', id);
+                    return true;
+                } catch (err) {
+                    console.error(err);
+                    return false;
+                }
             }
         },
         Subscription: {
