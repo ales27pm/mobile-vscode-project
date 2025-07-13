@@ -22,8 +22,10 @@ const MonacoEditor = React.forwardRef<MonacoEditorRef, MonacoEditorProps>(
       },
       revealLineInCenter: (lineNumber: number) => {
         /* Stub implementation for scrolling */
-        console.debug('MonacoEditor.revealLineInCenter called', lineNumber);
-      },
+        if (lineNumber > 0) {
+          console.debug('MonacoEditor.revealLineInCenter called', lineNumber);
+        }
+      }
     }));
     return <View />;
   }
