@@ -84,9 +84,6 @@ async function start() {
           error: err instanceof Error ? err.message : 'Unknown error',
           ...(id !== undefined ? { id } : {}),
         };
-          if (parsedData && parsedData.id !== undefined) {
-            errorResponse = { id: parsedData.id, error: errorResponse.error };
-          }
         } catch {
           // Unable to parse, send generic error
         }
