@@ -12,7 +12,7 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const roomName = `${workspaceUri}|${docId}`; // Unique room per file per workspace
+  const roomName = `${workspaceUri}|${docId}`.replace(/[^a-zA-Z0-9]/g, '_');
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
@@ -36,11 +36,8 @@ export function useYDoc(workspaceUri: string, docId: string) {
     providerRef.current = provider;
 
     return () => {
-      if (providerRef.current) {
-        providerRef.current.destroy();
-        providerRef.current = null;
-        ydoc.getText('monaco').delete(0, ydoc.getText('monaco').length);
-      }
+      providerRef.current?.destroy();
+      providerRef.current = null;
     };
   }, [roomName, ydoc]);
 
