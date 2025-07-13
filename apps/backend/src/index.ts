@@ -105,8 +105,10 @@ async function start() {
   apolloServer.applyMiddleware({ app, path: '/graphql' });
 
   httpServer.on('upgrade', (req, socket, head) => {
+    let pathname: string;
     try {
-      const { pathname } = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+      const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+      pathname = url.pathname;
     } catch (error) {
       console.error('Invalid URL in upgrade request:', error);
       socket.destroy();
