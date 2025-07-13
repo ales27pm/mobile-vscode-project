@@ -12,7 +12,7 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const roomName = Buffer.from(`${workspaceUri}|${docId}`).toString('base64').replace(/[^a-zA-Z0-9]/g, '_');
+  const roomName = btoa(`${workspaceUri}|${docId}`).replace(/[^a-zA-Z0-9]/g, '_');
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
