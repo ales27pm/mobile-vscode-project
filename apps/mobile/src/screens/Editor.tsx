@@ -63,7 +63,10 @@ export default function Editor({ route, navigation }) {
       <EditorComponent
         ref={editorRef}
         doc={ydoc.getText('monaco')}
-        language={(path.split('.').pop())}
+        language={(() => {
+          const match = /\.([^.\/]+)$/.exec(path);
+          return match ? match[1] : 'plaintext';
+        })()}
         onContentChange={saveContent}
         onCursorChange={(position) => awareness?.setLocalStateField('cursor', position)}
         remoteCursors={remoteCursors}
