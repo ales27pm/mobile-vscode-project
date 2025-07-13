@@ -35,7 +35,7 @@ export function createAuthContext(): AuthContext {
 type RequestWithUser = Request & { user?: string | jwt.JwtPayload };
 
 export function pairingMiddleware(authContext: AuthContext) {
-    return (req: RequestWithUser, res: any, next: any) => {
+    return (req: RequestWithUser, res: Response, next: NextFunction) => {
         if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
             return res.status(400).json({ error: 'Invalid request body' });
         }
