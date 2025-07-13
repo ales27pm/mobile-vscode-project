@@ -11,6 +11,7 @@ import { setupWSConnection } from 'y-websocket/bin/utils.js';
 
 import { createAuthContext, setupAuthMiddleware } from './auth';
 import { getResolvers } from '../graphql/resolvers';
+import schemaTypeDefs from '../schema';
 import { updateStatusBar } from '../ui/statusBar';
 import { initializeFileSystemWatcher, disposeFileSystemWatcher } from '../watchers/fileSystemWatcher';
 
@@ -37,8 +38,7 @@ export function startServer(context: vscode.ExtensionContext) {
 
     httpServer = https.createServer({ key, cert }, app);
 
-    const typeDefs = fs.readFileSync(join(context.extensionPath, 'src/schema.ts'), 'utf-8');
-    const schema = makeExecutableSchema({ typeDefs, resolvers: getResolvers() });
+    const schema = makeExecutableSchema({ typeDefs: schemaTypeDefs, resolvers: getResolvers() });
 
     const authContext = createAuthContext();
     setupAuthMiddleware(app, authContext);
