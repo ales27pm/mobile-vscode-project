@@ -7,9 +7,10 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { join } from 'path';
-import { setupWSConnection } from 'y-websocket/bin/utils.js';
+import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
 
-import { createAuthContext, setupAuthMiddleware } from './auth';
+import { ensureAuthContext, setupAuthMiddleware } from './auth';
+import { bindState } from '../crdt/persistence';
 import { getResolvers } from '../graphql/resolvers';
 import schemaTypeDefs from '../schema';
 import { updateStatusBar } from '../ui/statusBar';
@@ -19,9 +20,14 @@ let httpServer: https.Server | null = null;
 let apolloServer: ApolloServer | null = null;
 let wsServerCleanup: (() => void) | null = null;
 
-export function startServer(context: vscode.ExtensionContext) {
+export async function startServer(context: vscode.ExtensionContext) {
     if (httpServer) {
         vscode.window.showWarningMessage('MobileVSCode Server is already running.');
+        return;
+    }
+
+    const authContext = await ensureAuthContext();
+    if (!authContext) {
         return;
     }
 
@@ -41,7 +47,6 @@ export function startServer(context: vscode.ExtensionContext) {
 
     const schema = makeExecutableSchema({ typeDefs: schemaTypeDefs, resolvers: getResolvers() });
 
-    const authContext = createAuthContext();
     setupAuthMiddleware(app, authContext);
 
     apolloServer = new ApolloServer({
@@ -58,6 +63,17 @@ export function startServer(context: vscode.ExtensionContext) {
         const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
 
         const yjsWsServer = new WebSocketServer({ noServer: true });
+
+        setPersistence({
+            bindState: (docName: string, ydoc: Doc) => {
+                bindState(docName, ydoc);
+            },
+            writeState: (_docName: string, _ydoc: Doc) => {
+                // Persistence is handled by debounced savers in bindState
+            },
+            provider: null,
+        });
+
         yjsWsServer.on('connection', setupWSConnection);
 
         httpServer.on('upgrade', (req, socket, head) => {
