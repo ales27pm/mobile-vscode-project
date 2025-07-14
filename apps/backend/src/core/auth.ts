@@ -10,21 +10,39 @@ export interface AuthContext {
     isPaired: boolean;
 }
 
-export function createAuthContext(): AuthContext {
+/**
+ * Ensures a persistent JWT secret exists and creates the authentication context.
+ * If no secret is found, the user is prompted to generate one which is then
+ * stored in the global settings. If the user cancels, `null` is returned and
+ * server startup should be aborted.
+ */
+export async function ensureAuthContext(): Promise<AuthContext | null> {
     const config = vscode.workspace.getConfiguration('mobile-vscode-server');
     let jwtSecret = config.get<string>('jwtSecret');
 
     if (!jwtSecret) {
+        const action = await vscode.window.showWarningMessage(
+            'MobileVSCode requires a persistent secret key to secure sessions. Without it, you will need to re-pair your mobile device every time you restart VS Code.',
+            'Create & Save Secret',
+            'Cancel'
+        );
+
+        if (action !== 'Create & Save Secret') {
+            vscode.window.showErrorMessage('MobileVSCode Server startup cancelled. A secret key is required.');
+            return null;
+        }
+
         jwtSecret = randomBytes(32).toString('hex');
-        console.warn('No persistent JWT secret found in settings. Generating a temporary secret for this session.');
+        await config.update('jwtSecret', jwtSecret, vscode.ConfigurationTarget.Global);
+        await vscode.window.showInformationMessage('A new persistent secret has been generated and saved to your global settings.');
     }
 
     const newPairingToken = Math.random().toString(36).substring(2, 8).toUpperCase();
     const tooltip = `Pairing Token: ${newPairingToken}`;
-    
+
     updateStatusBar(true, tooltip);
     vscode.window.showInformationMessage(`MobileVSCode Pairing Token: ${newPairingToken}`);
-    
+
     return {
         jwtSecret,
         pairingToken: newPairingToken,
