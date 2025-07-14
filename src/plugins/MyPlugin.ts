@@ -20,7 +20,7 @@ export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
   private nodes = new Map<string, { name: string }>()
 
   constructor(
-    private readonly bus: PluginBus<MyIntents, PluginContext<MyIntents>>,
+    private readonly bus: PluginBus<MyIntents>,
   ) {
     this.id = 'my-plugin'
   }
@@ -48,5 +48,4 @@ export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
 }
 
 /** Export a factory so consumers get a real instance */
-export default (bus: PluginBus<MyIntents, PluginContext<MyIntents>>) =>
-  new MyPlugin(bus)
+export default (bus: PluginBus<MyIntents>) => new MyPlugin(bus)
