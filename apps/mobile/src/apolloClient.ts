@@ -8,7 +8,7 @@ import { useAuthStore } from './state/authStore';
 
 const httpLink = new HttpLink({
   uri: GRAPHQL_URL,
-  fetch: fetch as unknown as typeof fetch,
+  fetch,
 });
 
 const authLink = setContext((_, { headers }) => {
