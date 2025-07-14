@@ -73,6 +73,10 @@ The server exposes two real-time endpoints for maximum efficiency:
 git clone https://github.com/your-username/mobile-vscode-project.git
 cd mobile-vscode-project
 
+# Configure the upstream remote so you can pull the latest changes
+git remote add upstream https://github.com/ales27pm/mobile-vscode-project.git
+git fetch upstream
+
 # Install all dependencies for all packages
 yarn install
 
