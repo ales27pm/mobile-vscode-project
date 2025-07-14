@@ -282,7 +282,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:^7.11.6, @babel/core@npm:^7.12.3, @babel/core@npm:^7.13.16, @babel/core@npm:^7.14.0, @babel/core@npm:^7.20.0, @babel/core@npm:^7.23.9":
+"@babel/core@npm:*, @babel/core@npm:^7.11.6, @babel/core@npm:^7.12.3, @babel/core@npm:^7.13.16, @babel/core@npm:^7.14.0, @babel/core@npm:^7.20.0, @babel/core@npm:^7.23.9, @babel/core@npm:^7.28.0":
   version: 7.28.0
   resolution: "@babel/core@npm:7.28.0"
   dependencies:
@@ -1667,7 +1667,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/preset-env@npm:^7.20.0":
+"@babel/preset-env@npm:*, @babel/preset-env@npm:^7.20.0":
   version: 7.28.0
   resolution: "@babel/preset-env@npm:7.28.0"
   dependencies:
@@ -6961,10 +6961,14 @@ __metadata:
   resolution: "editor@workspace:packages/editor"
   dependencies:
     lodash.debounce: "npm:^4.0.8"
+    react: "npm:18.2.0"
+    react-native: "npm:0.71.8"
     react-native-monaco-editor: "npm:^0.1.0"
+    react-native-webview: "npm:11.26.0"
   peerDependencies:
     react: "*"
     react-native: "*"
+    react-native-webview: "*"
   languageName: unknown
   linkType: soft
 
@@ -11941,6 +11945,7 @@ __metadata:
     typescript: "npm:^5.1.3"
     ws: "npm:^8.12.0"
     y-websocket: "npm:^1.5.0"
+    yjs: "npm:^13.5.43"
   languageName: unknown
   linkType: soft
 
@@ -11983,6 +11988,7 @@ __metadata:
     react-native: "npm:0.71.8"
     react-native-monaco-editor: "npm:^0.1.0"
     react-native-safe-area-context: "npm:4.5.0"
+    react-native-screens: "npm:^3.20.0"
     react-native-url-polyfill: "npm:^1.3.0"
     react-native-vector-icons: "npm:^9.2.0"
     react-native-webview: "npm:11.26.0"
@@ -13245,6 +13251,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-freeze@npm:^1.0.0":
+  version: 1.0.4
+  resolution: "react-freeze@npm:1.0.4"
+  peerDependencies:
+    react: ">=17.0.0"
+  checksum: 10c0/8f51257c261bfefff86f618e958683536248f708019632d309ee5ebdd52f25d3c130660d06fb6f0f4fdef79f00f8ec7177233a872c2321f7d46b7e77ccc522a1
+  languageName: node
+  linkType: hard
+
 "react-is@npm:^16.12.0 || ^17.0.0 || ^18.0.0, react-is@npm:^18.0.0, react-is@npm:^18.2.0":
   version: 18.3.1
   resolution: "react-is@npm:18.3.1"
@@ -13302,6 +13317,19 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 10c0/cd9dfe25803b7b120940c243d9c9f10b0b61d262ad5875245909cdbf0025684241189b2796d35028519fee0e7a94e6f47bcaf2e23fc7801875d5f633a7778296
+  languageName: node
+  linkType: hard
+
+"react-native-screens@npm:^3.20.0":
+  version: 3.37.0
+  resolution: "react-native-screens@npm:3.37.0"
+  dependencies:
+    react-freeze: "npm:^1.0.0"
+    warn-once: "npm:^0.1.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/a8de8dc21f522567de1600ae79a5ec472ffe3db8bc90d4ca8b58deae6e732e35d090a52f26cbc7591d635385f83b2784382d543dbb8d2b5fe40ed1f7bffe940b
   languageName: node
   linkType: hard
 
