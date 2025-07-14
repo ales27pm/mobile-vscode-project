@@ -9,7 +9,7 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import { join } from 'path';
 import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
 
-import { ensureAuthContext, setupAuthMiddleware } from './auth';
+import { ensureAuthContext, setupAuthMiddleware, RequestWithUser } from './auth';
 import { bindState } from '../crdt/persistence';
 import { getResolvers } from '../graphql/resolvers';
 import schemaTypeDefs from '../schema';
@@ -51,7 +51,7 @@ export async function startServer(context: vscode.ExtensionContext) {
 
     apolloServer = new ApolloServer({
         schema,
-        context: ({ req }) => ({ user: (req as any).user }),
+        context: ({ req }) => ({ user: (req as RequestWithUser).user }),
     });
 
     apolloServer.start().then(() => {
@@ -68,7 +68,7 @@ export async function startServer(context: vscode.ExtensionContext) {
             bindState: (docName: string, ydoc: Doc) => {
                 bindState(docName, ydoc);
             },
-            writeState: (_docName: string, _ydoc: Doc) => {
+            writeState: () => {
                 // Persistence is handled by debounced savers in bindState
             },
             provider: null,
@@ -77,7 +77,14 @@ export async function startServer(context: vscode.ExtensionContext) {
         yjsWsServer.on('connection', setupWSConnection);
 
         httpServer.on('upgrade', (req, socket, head) => {
-            const url = new URL(req.url!, `https://${req.headers.host}`);
+            if (!req.url) {
+                console.error('HTTP upgrade request missing URL. Destroying socket.');
+                socket.destroy();
+                return;
+            }
+            const host = req.headers.host || 'localhost:3000';
+            const protocol = 'https'; // Server uses HTTPS certificates
+            const url = new URL(req.url, `${protocol}://${host}`);
             if (url.pathname === '/graphql') {
                 gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
             } else if (url.pathname.startsWith('/yjs')) {
