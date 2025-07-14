@@ -44,8 +44,17 @@ export const getDebugProvider = () => ({
       await vscode.debug.stopDebugging(activeSession);
       return true;
     },
-    stepOver: () => { console.warn('Step Over functionality not yet implemented'); return false; },
-    stepInto: () => { console.warn('Step Into functionality not yet implemented'); return false; },
+    // Remove these methods entirely or implement them properly:
+    // stepOver: async () => {
+    //   if (!activeSession) return false;
+    //   await vscode.debug.stepOver(activeSession);
+    //   return true;
+    // },
+    // stepInto: async () => {
+    //   if (!activeSession) return false;
+    //   await vscode.debug.stepInto(activeSession);
+    //   return true;
+    // },
   },
 });
 
