@@ -13,16 +13,15 @@ export const getGitProvider = () => ({
       const git = getGit(workspaceUri);
       if (!(await git.checkIsRepo())) return { branch: 'Not a repo', staged: [], unstaged: [] };
       const s = await git.status();
-      const unstaged = [
-        ...s.not_added,
-        ...s.created,
-        ...s.deleted,
-        ...s.modified,
-        ...s.renamed.map(r => r.to),
-      ].filter(f => !s.staged.includes(f));
+      const unstaged = s.files
+        .filter(f => f.working_dir !== ' ')
+        .map(f => f.path);
+      const staged = s.files
+        .filter(f => f.index !== ' ')
+        .map(f => f.path);
       return {
         branch: s.current || 'detached',
-        staged: s.staged,
+        staged,
         unstaged,
       };
     },

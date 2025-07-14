@@ -28,13 +28,10 @@ describe('gitProvider', () => {
   it('gitStatus returns correct status', async () => {
     mockGit.status.mockResolvedValue({
       current: 'main',
-      staged: ['a.txt'],
-      not_added: [],
-      created: [],
-      deleted: [],
-      modified: ['b.txt'],
-      renamed: [],
-      files: [{ path: 'a.txt' }, { path: 'b.txt' }],
+      files: [
+        { path: 'a.txt', index: 'A', working_dir: ' ' },
+        { path: 'b.txt', index: ' ', working_dir: 'M' },
+      ],
     });
 
     const status = await provider.Query.gitStatus(null, args);
