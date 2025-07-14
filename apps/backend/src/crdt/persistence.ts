@@ -58,8 +58,11 @@ const createDebouncedSave = (docId: string) => {
             try {
                 await fs.promises.rename(tempFilePath, filePath);
             } catch (renameError) {
-                await fs.promises.unlink(tempFilePath).catch(() => {
-                    /* ignore cleanup errors */
+                await fs.promises.unlink(tempFilePath).catch((err) => {
+                    console.warn(
+                        `[CRDT] Failed to clean up temp file ${tempFilePath}:`,
+                        err
+                    );
                 });
                 throw renameError;
             }
@@ -70,8 +73,11 @@ const createDebouncedSave = (docId: string) => {
             const tempFilePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs.tmp`);
             try {
                 await fs.promises.unlink(tempFilePath);
-            } catch {
-                /* ignore cleanup errors */
+            } catch (err) {
+                console.warn(
+                    `[CRDT] Failed to remove temp file ${tempFilePath}:`,
+                    err
+                );
             }
         }
     }, 2000);
