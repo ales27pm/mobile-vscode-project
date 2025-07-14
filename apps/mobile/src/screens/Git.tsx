@@ -23,7 +23,7 @@ export default function Git({ route }) {
     } 
   });
   const [push, { loading: pLoading }] = useMutation(PushDocument);
-  import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
+  const [getDiff] = useLazyQuery(GitDiffDocument);
 
   const handleViewDiff = async (file: string) => {
     const res = await getDiff({ variables: { workspaceUri, file } });
