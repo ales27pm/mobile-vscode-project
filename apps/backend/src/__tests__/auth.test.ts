@@ -19,11 +19,11 @@ describe('auth utilities', () => {
     const res: any = { status: jest.fn(() => res), json: jest.fn() };
     const next = jest.fn();
     pairingMiddleware(ctx)(req, res, next);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        pairWithServer: expect.stringMatching(/^[\w-]+\.[\w-]+\.[\w-]+$/)
-      })
-    }));
+    const response = res.json.mock.calls[0][0];
+    const token = response.data.pairWithServer;
+    expect(token).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
+    const decoded = jwt.verify(token, ctx.jwtSecret);
+    expect(decoded).toHaveProperty('ok', true);
     expect(ctx.isPaired).toBe(true);
   });
 
