@@ -68,6 +68,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       if (remoteCursors && remoteCursors.length > 0) {
         const script = `
           (function() {
+            window.__remoteCursorDecorationIds = window.__remoteCursorDecorationIds || [];
             const cursors = ${JSON.stringify(remoteCursors)};
             const decorations = cursors.map(c => ({
               range: new monaco.Range(c.position.lineNumber, c.position.column, c.position.lineNumber, c.position.column),
@@ -78,10 +79,20 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 after: { content: \`${'${'}c.name\`}\` }
               }
             }));
-            editor.deltaDecorations([], decorations);
+            window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds, decorations);
           })();
         `;
         webviewRef.current?.injectJavaScript(script);
+      } else {
+        // Remove remote cursor decorations if no remote cursors
+        const clearScript = `
+          (function() {
+            if (window.__remoteCursorDecorationIds && window.__remoteCursorDecorationIds.length > 0) {
+              window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds, []);
+            }
+          })();
+        `;
+        webviewRef.current?.injectJavaScript(clearScript);
       }
     }, [remoteCursors]);
 
