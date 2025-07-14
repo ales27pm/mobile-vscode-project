@@ -78,8 +78,6 @@ window.MonacoEnvironment = { getWorkerUrl: function() {
     `;
     return URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
 } };
-            `);
-        } };
 
         require(['vs/editor/editor.main'], function () {
             const editor = monaco.editor.create(document.getElementById('container'), {
