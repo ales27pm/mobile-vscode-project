@@ -18,9 +18,9 @@ export function useYDoc(workspaceUri: string, docId: string) {
       ? globalThis.btoa(value)
       : Buffer.from(value, 'utf-8').toString('base64'), []);
   const roomName = useMemo(() => 
-    encode(`${workspaceUri}|${docId}`).replace(/[+/=]/g, (m) => {
-      const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
-      return replacements[m] || m;
+    const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
+    return replacements[m];
+  });
     }), [workspaceUri, docId, encode]);
 
   const { loading } = useQuery(ReadFileDocument, {
