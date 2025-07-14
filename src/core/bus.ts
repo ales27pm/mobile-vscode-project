@@ -41,8 +41,7 @@ export class BasicPluginContext<IM extends IntentMap>
     this.bus.on(intent, cb)
   }
 
-  async intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult> {
-    const [result] = await this.bus.emit(intent, payload)
-    return result ?? { success: true }
+  async intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
+    return await this.bus.emit(intent, payload)
   }
 }
