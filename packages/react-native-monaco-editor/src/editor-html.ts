@@ -35,7 +35,9 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
     <script src="https://unpkg.com/monaco-editor@0.33.0/min/vs/loader.js"></script>
     <script>
         const postMessage = (type, payload) => {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type, payload }));
+            if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type, payload }));
+            }
         };
 
         require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.33.0/min/vs' } });
