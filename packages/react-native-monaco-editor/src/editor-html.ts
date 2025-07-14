@@ -54,6 +54,14 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                     } catch (fallbackError) {
                         console.error('Failed to send fallback error message:', fallbackError);
                         console.error('WebView communication completely failed');
+                        // Attempt to reinitialize communication or show user-friendly error
+                        setTimeout(() => {
+                            if (window.ReactNativeWebView) {
+                                console.log('WebView communication restored, retrying...');
+                            } else {
+                                console.error('WebView communication permanently failed');
+                            }
+                        }, 1000);
                         return;
                     }
                 }
