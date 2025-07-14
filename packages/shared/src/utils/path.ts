@@ -25,7 +25,7 @@ export function resolveWorkspacePath(workspacePath: string, relativePath: string
   }
 
   const relativeToBase = path.relative(base, finalPath);
-  if (relativeToBase.startsWith('..')) {
+  if (relativeToBase.startsWith('..') || path.isAbsolute(relativeToBase)) {
       throw new Error('Path traversal attempt detected.');
   }
 
