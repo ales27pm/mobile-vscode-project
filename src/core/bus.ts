@@ -26,6 +26,7 @@ export class InMemoryBus<IM extends IntentMap>
       try {
         return await Promise.resolve(cb(payload as IM[K]))
       } catch (error) {
+        console.error(`Plugin bus error in intent ${String(intent)}:`, error)
         return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
       }
     })
