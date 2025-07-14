@@ -17,6 +17,8 @@ describe('authStore', () => {
   });
 
   test('loadToken reads from storage', async () => {
+    // Clear any existing state
+    await AsyncStorage.removeItem('token');
     await AsyncStorage.setItem('token', 'stored');
     useAuthStore.setState({ token: null });
     await useAuthStore.getState().loadToken();
