@@ -2,7 +2,7 @@ export const workspace = { getConfiguration: () => ({ get: () => undefined }) };
 const statusBarItem = new StatusBarItem();
 export const window = { 
   showInformationMessage: jest.fn(), 
-  createStatusBarItem: jest.fn(() => new StatusBarItem())
+  createStatusBarItem: jest.fn(() => statusBarItem)
 };
 export const StatusBarAlignment = { Right: 0 };
 export class ThemeColor {
