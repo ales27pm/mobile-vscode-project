@@ -14,8 +14,12 @@ vscode.debug.onDidTerminateDebugSession(() => {
 });
 
 vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
-  if (e.event === 'output') {
-    pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'output', body: (e as any).body?.output ?? '' } });
+  try {
+    if (e.event === 'output') {
+      pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'output', body: (e as any).body?.output ?? '' } });
+    }
+  } catch (error) {
+    console.error('Error handling debug session custom event:', error);
   }
 });
 
