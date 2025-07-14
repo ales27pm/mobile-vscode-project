@@ -31,7 +31,7 @@ const readDirectory: jest.Mock = __mocks.readDirectory;
 const readFile: jest.Mock = __mocks.readFile;
 const writeFile: jest.Mock = __mocks.writeFile;
 const getWorkspaceFolder: jest.Mock = __mocks.getWorkspaceFolder;
-const workspaceFolder = __mocks.workspaceFolder;
+const {workspaceFolder} = __mocks;
 
 beforeEach(() => {
     (fs.realpathSync.native as jest.Mock).mockImplementation((p: string) => p);
