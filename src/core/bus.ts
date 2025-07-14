@@ -43,7 +43,7 @@ export class InMemoryBus<IM extends IntentMap>
     const wrapped = (payload: unknown) => {
       // Add runtime validation here if needed
       if (payload === null || payload === undefined) {
-        throw new Error('Payload cannot be null or undefined')
+        throw new Error(`Intent '${String(intent)}' received null or undefined payload`)
       }
       return Promise.resolve(cb(payload as IM[K]))
     }
