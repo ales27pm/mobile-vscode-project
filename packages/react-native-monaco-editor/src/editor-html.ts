@@ -37,7 +37,12 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
         const postMessage = (type, payload) => {
             if (window.ReactNativeWebView) {
                 try {
-                    window.ReactNativeWebView.postMessage(JSON.stringify({ type, payload }));
+                    const safePayload = JSON.parse(JSON.stringify(payload, (key, value) => {
+                        if (typeof value === 'function') return '[Function]';
+                        if (typeof value === 'undefined') return null;
+                        return value;
+                    }));
+                    window.ReactNativeWebView.postMessage(JSON.stringify({ type, payload: safePayload }));
                 } catch (error) {
                     console.error('Failed to serialize message:', error);
                     // Send fallback message with error info
