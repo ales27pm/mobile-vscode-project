@@ -45,7 +45,7 @@ describe('auth utilities', () => {
     const next = jest.fn();
     jwtAuthMiddleware(ctx)(req, res, next);
     expect(next).toHaveBeenCalled();
-    expect(req.user).toBeDefined();
+    expect(req.user).toEqual({ ok: true });
   });
 
   test('jwtAuthMiddleware rejects invalid token', () => {
