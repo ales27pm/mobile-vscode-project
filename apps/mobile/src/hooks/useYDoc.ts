@@ -17,6 +17,10 @@ export function useYDoc(workspaceUri: string, docId: string) {
     typeof globalThis.btoa === 'function'
       ? globalThis.btoa(value)
       : Buffer.from(value, 'utf-8').toString('base64');
+
+  export function useYDoc(workspaceUri: string, docId: string) {
+    const ydoc = useRef(new Y.Doc()).current;
+    const providerRef = useRef<WebsocketProvider | null>(null);
   const roomName = useMemo(() => {
     const encoded = encode(`${workspaceUri}|${docId}`);
     const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
