@@ -23,7 +23,9 @@ const cache = new LRUCache<string, Y.Doc>({
                 console.error(`[CRDT] Error during saver cleanup for ${key}:`, error);
             }
         }
-        doc.destroy();
+        if (doc) {
+            doc.destroy();
+        }
     }
 });
 
