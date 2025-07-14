@@ -13,14 +13,12 @@ export class InMemoryBus<IM extends IntentMap>
   async emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
     const fns = this.listeners[intent as string] || []
     const results = await Promise.allSettled(fns.map(fn => fn(payload)))
-  
-    // Log rejected promises for debugging
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        console.warn(`Plugin listener ${index} failed:`, result.reason)
-      }
-    })
-  
+
+    const failures = results.filter(result => result.status === 'rejected')
+    if (failures.length > 0) {
+      const errors = failures.map(f => (f as PromiseRejectedResult).reason)
+      throw new Error(`Plugin execution failed: ${errors.join(', ')}`)
+    }
     return results
       .filter(result => result.status === 'fulfilled')
       .map(result => (result as PromiseFulfilledResult<CRDTResult>).value)
