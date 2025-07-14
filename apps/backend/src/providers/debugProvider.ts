@@ -20,11 +20,11 @@ vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
       pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'output', body: output } });
     }
 
-    function getOutputFromBody(body: any): string {
+    const getOutputFromBody = (body: any): string => {
       return body && typeof body === 'object' && 'output' in body && typeof body.output === 'string' 
         ? body.output 
         : '';
-    }
+    };
   } catch (error) {
     console.error('Error handling debug session custom event:', error);
   }
