@@ -42,7 +42,7 @@ export function getResolvers() {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
                 const searchFn = vscode.workspace.findTextInFiles;
-                const useCallbackApi = typeof searchFn === 'function' && searchFn.length >= 3;
+                const useCallbackApi = vscode.version && parseFloat(vscode.version) >= 1.60;
 
                 if (useCallbackApi) {
                     await new Promise<void>((resolve, reject) => {
