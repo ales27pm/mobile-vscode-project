@@ -21,7 +21,7 @@ This repository is a monorepo managed with Yarn Workspaces. Key directories are:
 
 - **Node.js** v18 or newer
 - **Yarn** v1 (Classic)
-- **Visual Studio Code**
+- **Visual Studio Code** v1.74 or newer
 - **Expo Go** installed on your iOS or Android device
 
 ## Development Setup
