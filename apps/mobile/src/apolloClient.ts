@@ -6,7 +6,10 @@ import { setContext } from '@apollo/client/link/context';
 import { GRAPHQL_URL, WS_URL } from './config';
 import { useAuthStore } from './state/authStore';
 
-const httpLink = new HttpLink({ uri: GRAPHQL_URL, fetch: fetch as any });
+const httpLink = new HttpLink({
+  uri: GRAPHQL_URL,
+  fetch: fetch as unknown as typeof fetch,
+});
 
 const authLink = setContext((_, { headers }) => {
   const token = useAuthStore.getState().token;
