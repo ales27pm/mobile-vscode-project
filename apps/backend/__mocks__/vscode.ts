@@ -1,6 +1,6 @@
 const vscode = {
   workspace: {
-    workspaceFolders: [] as any[],
+    workspaceFolders: [] as unknown[],
     getWorkspaceFolder: jest.fn(),
     fs: {
       readDirectory: jest.fn(),
@@ -15,10 +15,12 @@ const vscode = {
     parse: (s: string) => ({ fsPath: s.replace('file://',''), toString: () => s }),
     file: (p: string) => ({ fsPath: p, toString: () => `file://${p}` }),
   },
-  RelativePattern: function(workspace: any, pattern: string) { return { baseUri: workspace.uri, pattern }; } as any,
+  RelativePattern: function(workspace: { uri: { fsPath: string } }, pattern: string) {
+    return { baseUri: workspace.uri, pattern } as unknown;
+  },
   FileType: { Directory: 2 },
   commands: { executeCommand: jest.fn() },
-  extensions: { all: [] as any[] },
+  extensions: { all: [] as unknown[] },
   window: {
     showWarningMessage: jest.fn(),
     showErrorMessage: jest.fn(),

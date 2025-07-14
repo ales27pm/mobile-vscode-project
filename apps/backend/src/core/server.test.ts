@@ -21,10 +21,15 @@ class FakeApolloServer {
     applyMiddleware = applyMiddleware;
     stop = stop;
 }
-jest.mock('apollo-server-express', () => ({
-    ApolloServer: jest.fn(() => new FakeApolloServer()),
-    gql: (literals: any, ...placeholders: any[]) => literals.reduce((acc: string, lit: string, i: number) => acc + placeholders[i - 1] + lit)
-}), { virtual: true });
+jest.mock(
+    'apollo-server-express',
+    () => ({
+        ApolloServer: jest.fn(() => new FakeApolloServer()),
+        gql: (literals: TemplateStringsArray, ...placeholders: string[]) =>
+            literals.reduce((acc, lit, i) => acc + (placeholders[i - 1] ?? '') + lit),
+    }),
+    { virtual: true }
+);
 
 jest.mock('@graphql-tools/schema', () => ({ makeExecutableSchema: jest.fn(() => 'schema') }), { virtual: true });
 
@@ -36,19 +41,23 @@ jest.mock('graphql-ws/lib/use/ws', () => ({ useServer: jest.fn(() => ({ dispose:
 jest.mock('y-websocket/bin/utils.js', () => ({ setupWSConnection: jest.fn(), setPersistence: jest.fn() }), { virtual: true });
 
 jest.mock('yjs', () => ({}), { virtual: true });
-jest.mock('lodash.debounce', () => (fn: any, wait = 300) => {
-    let timeout: NodeJS.Timeout | undefined;
-    const debounced = (...args: any[]) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => fn(...args), wait);
-    };
-    // expose flush for tests
-    (debounced as any).flush = () => {
-        clearTimeout(timeout);
-        fn();
-    };
-    return debounced;
-}, { virtual: true });
+jest.mock(
+    'lodash.debounce',
+    () =>
+        (fn: (...args: unknown[]) => void, wait = 300) => {
+            let timeout: NodeJS.Timeout | undefined;
+            const debounced = (...args: unknown[]) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => fn(...args), wait);
+            };
+            (debounced as unknown as { flush(): void }).flush = () => {
+                clearTimeout(timeout);
+                fn();
+            };
+            return debounced;
+        },
+    { virtual: true }
+);
 
 jest.mock('fs', () => ({
     existsSync: jest.fn(() => true),

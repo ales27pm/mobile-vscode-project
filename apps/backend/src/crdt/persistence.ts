@@ -47,7 +47,7 @@ function ensureSnapshotDirectory() {
 }
 
 const createDebouncedSave = (docId: string) => {
-    return debounce(async (doc: Y.Doc) => {
+    return debounce<(doc: Y.Doc) => Promise<void>>(async (doc: Y.Doc) => {
         try {
             ensureSnapshotDirectory();
             if (!snapshotDirAbs) return;
@@ -90,8 +90,10 @@ export function bindState(docName: string, ydoc: Y.Doc) {
     if (!snapshotDirAbs) return;
 
     if (cache.has(docName)) {
-        const cached = cache.get(docName)!;
-        Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(cached));
+        const cached = cache.get(docName);
+        if (cached) {
+            Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(cached));
+        }
     } else {
         const docPath = path.join(snapshotDirAbs, `${encodeURIComponent(docName)}.yjs`);
         if (fs.existsSync(docPath)) {
@@ -108,12 +110,14 @@ export function bindState(docName: string, ydoc: Y.Doc) {
         cache.set(docName, docCopy);
     }
 
-    if (!debouncedSavers.has(docName)) {
-        debouncedSavers.set(docName, createDebouncedSave(docName));
+    let saver = debouncedSavers.get(docName);
+    if (!saver) {
+        saver = createDebouncedSave(docName);
+        debouncedSavers.set(docName, saver);
     }
 
-    const saver = debouncedSavers.get(docName)!;
-    ydoc.on('update', () => saver(ydoc));
+    const runSaver = saver;
+    ydoc.on('update', () => runSaver(ydoc));
 }
 
 // cleanup handled by LRU cache dispose

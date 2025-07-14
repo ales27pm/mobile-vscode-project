@@ -1,6 +1,13 @@
 const use = jest.fn();
 const json = jest.fn(() => 'json');
-const expressMock: any = jest.fn(() => ({ use }));
+
+interface ExpressMock extends jest.Mock {
+  json: jest.Mock;
+  __mocks: { use: jest.Mock; json: jest.Mock; expressMock: jest.Mock };
+}
+
+const expressMock = jest.fn(() => ({ use })) as ExpressMock;
 expressMock.json = json;
-(expressMock as any).__mocks = { use, json, expressMock };
+expressMock.__mocks = { use, json, expressMock };
+
 export = expressMock;

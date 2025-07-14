@@ -13,11 +13,13 @@ vscode.debug.onDidTerminateDebugSession(() => {
   pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'stop', body: 'Session terminated.' } });
 });
 
-const getOutputFromBody = (body: any): string => {
-  return body && typeof body === 'object' && 'output' in body && typeof body.output === 'string' 
-    ? body.output 
+const getOutputFromBody = (body: unknown): string =>
+  typeof body === 'object' &&
+  body !== null &&
+  'output' in body &&
+  typeof (body as { output: unknown }).output === 'string'
+    ? (body as { output: string }).output
     : '';
-};
 
 vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
   try {

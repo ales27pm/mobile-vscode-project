@@ -11,8 +11,11 @@ const getWorkspaceFolder: jest.Mock = vscode.workspace.getWorkspaceFolder as jes
 let workspaceFolder: vscode.WorkspaceFolder;
 
 beforeEach(() => {
-    workspaceFolder = { name: 'test', uri: { fsPath: '/workspace/test', toString: () => 'file:///workspace/test' } } as any;
-    (vscode.workspace as any).workspaceFolders = [workspaceFolder];
+    workspaceFolder = {
+        name: 'test',
+        uri: { fsPath: '/workspace/test', toString: () => 'file:///workspace/test' },
+    } as unknown as vscode.WorkspaceFolder;
+    (vscode.workspace as unknown as { workspaceFolders: vscode.WorkspaceFolder[] | undefined }).workspaceFolders = [workspaceFolder];
     (fs.realpathSync.native as jest.Mock).mockImplementation((p: string) => p);
     readDirectory.mockResolvedValue([['file.txt', 0], ['folder', 2]]);
     readFile.mockResolvedValue(Buffer.from('content'));

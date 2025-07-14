@@ -21,11 +21,17 @@ beforeEach(() => {
     (pubsub.publish as jest.Mock).mockClear();
     createFileSystemWatcher.mockImplementation(() => {
         return {
-            onDidCreate: (cb: Callback) => { onCreate = cb; },
-            onDidChange: (cb: Callback) => { onChange = cb; },
-            onDidDelete: (cb: Callback) => { onDelete = cb; },
-            dispose
-        } as any;
+            onDidCreate: (cb: Callback) => {
+                onCreate = cb;
+            },
+            onDidChange: (cb: Callback) => {
+                onChange = cb;
+            },
+            onDidDelete: (cb: Callback) => {
+                onDelete = cb;
+            },
+            dispose,
+        } as unknown as vscode.FileSystemWatcher;
     });
     getWorkspaceFolder.mockReturnValue({ uri: { fsPath: '/workspace/test' } });
     asRelativePath.mockImplementation((uri: vscode.Uri) => uri.fsPath.replace('/workspace/test/', ''));
@@ -39,9 +45,9 @@ it('publishes events for file changes', () => {
     initializeFileSystemWatcher();
     expect(createFileSystemWatcher).toHaveBeenCalledWith('**/*');
     const uri = { fsPath: '/workspace/test/foo.txt' } as vscode.Uri;
-    onCreate!(uri);
-    onChange!(uri);
-    onDelete!(uri);
+    onCreate?.(uri);
+    onChange?.(uri);
+    onDelete?.(uri);
     expect(pubsub.publish).toHaveBeenCalledTimes(3);
     expect(pubsub.publish).toHaveBeenCalledWith('FS_EVENT', { fsEvent: { event: 'create', path: 'foo.txt' } });
     expect(pubsub.publish).toHaveBeenCalledWith('FS_EVENT', { fsEvent: { event: 'change', path: 'foo.txt' } });
