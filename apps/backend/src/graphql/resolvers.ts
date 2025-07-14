@@ -46,8 +46,12 @@ export function getResolvers() {
                     throw new Error('findTextInFiles method not available in current VSCode API version');
                 }
                 const versionParts = vscode.version.split('.').slice(0, 2).map(part => {
-                  const num = parseInt(part.replace(/[^\d]/g, ''), 10);
-                  return isNaN(num) ? 0 : num;
+                  const cleaned = part.replace(/[^\d]/g, '');
+                  const num = parseInt(cleaned, 10);
+                  if (isNaN(num) || cleaned === '') {
+                    throw new Error(`Invalid VSCode version format: ${vscode.version}`);
+                  }
+                  return num;
                 });
                 const [major = 0, minor = 0] = versionParts;
                 const useCallbackApi = major > 1 || (major === 1 && minor >= 92);
