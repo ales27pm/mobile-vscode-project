@@ -73,10 +73,10 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
               const cursors = ${JSON.stringify(remoteCursors)};
               const decorations = cursors.map(c => ({
                   range: new monaco.Range(
-                      Math.max(1, c.position.lineNumber || 1), 
-                      Math.max(1, c.position.column || 1), 
-                      Math.max(1, c.position.lineNumber || 1), 
-                      Math.max(1, c.position.column || 1)
+                      c.position?.lineNumber || 1, 
+                      c.position?.column || 1, 
+                      c.position?.lineNumber || 1, 
+                      c.position?.column || 1
                   ),
                   options: {
                   className: 'remote-cursor',
