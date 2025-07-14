@@ -40,10 +40,15 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                     window.ReactNativeWebView.postMessage(JSON.stringify({ type, payload }));
                 } catch (error) {
                     console.error('Failed to serialize message:', error);
-                    }
-                } else {
-                    console.warn('ReactNativeWebView not available, message not sent:', { type, payload });
+                    // Send fallback message with error info
+                    window.ReactNativeWebView.postMessage(JSON.stringify({ 
+                        type: 'error', 
+                        payload: { message: 'Serialization failed', originalType: type } 
+                    }));
                 }
+            } else {
+                console.warn('ReactNativeWebView not available, message not sent:', { type, payload });
+            }
         };
 
         require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.33.0/min/vs' } });
