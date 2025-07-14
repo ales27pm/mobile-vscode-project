@@ -28,7 +28,7 @@ describe('auth utilities', () => {
   });
 
   test('pairingMiddleware rejects invalid token', () => {
-    const ctx = { jwtSecret: 'test-secret-key-32-chars-long', pairingToken: 'TOKEN', isPaired: false };
+    const ctx = { jwtSecret: 'test-secret-key-32-chars-long!!!', pairingToken: 'TOKEN', isPaired: false };
     const req: any = { body: { operationName: 'pairWithServer', variables: { pairingToken: 'WRONG' } } };
     const res: any = { status: jest.fn(() => res), json: jest.fn() };
     const next = jest.fn();
