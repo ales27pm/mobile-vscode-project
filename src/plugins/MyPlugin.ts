@@ -36,7 +36,7 @@ export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
   ): CRDTResult {
     const id = crypto.randomUUID()
     this.nodes.set(id, { name: payload.name })
-    return { success: true, snapshot: new TextEncoder().encode(id) }
+    return { success: true, snapshot: new TextEncoder().encode(JSON.stringify({ id, name: payload.name })) }
   }
 
   private handleDeleteNode(
