@@ -71,12 +71,13 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                 console.warn('ReactNativeWebView not available, message not sent:', { type, payload });
             }
         };
-
-        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.33.0/min/vs' } });
-        window.MonacoEnvironment = { getWorkerUrl: function() {
-            return 'data:text/javascript;charset=utf-8,' + encodeURIComponent(`
-                self.MonacoEnvironment = { baseUrl: 'https://unpkg.com/monaco-editor@0.33.0/min/' };
-                importScripts('https://unpkg.com/monaco-editor@0.33.0/min/vs/base/worker/workerMain.js');
+window.MonacoEnvironment = { getWorkerUrl: function() {
+    const workerCode = `
+        self.MonacoEnvironment = { baseUrl: 'https://unpkg.com/monaco-editor@0.33.0/min/' };
+        importScripts('https://unpkg.com/monaco-editor@0.33.0/min/vs/base/worker/workerMain.js');
+    `;
+    return URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
+} };
             `);
         } };
 
