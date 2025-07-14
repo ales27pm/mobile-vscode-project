@@ -13,10 +13,10 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const encode = useCallback((value: string) =>
+  const encode = (value: string) =>
     typeof globalThis.btoa === 'function'
       ? globalThis.btoa(value)
-      : Buffer.from(value, 'utf-8').toString('base64'), []);
+      : Buffer.from(value, 'utf-8').toString('base64');
   const roomName = useMemo(() => {
     const encoded = encode(`${workspaceUri}|${docId}`);
     const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
