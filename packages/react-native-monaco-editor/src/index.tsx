@@ -45,7 +45,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     const handleMessage = (event: WebViewMessageEvent) => {
       try {
         const message = JSON.parse(event.nativeEvent.data);
-        if (!message || typeof message.type !== 'string') {
+        if (!message || typeof message.type !== 'string' || !message.payload) {
             console.warn('Invalid message format from WebView');
           return;
         }
