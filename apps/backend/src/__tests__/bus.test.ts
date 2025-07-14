@@ -1,5 +1,5 @@
-import { InMemoryBus, BasicPluginContext } from '../../../../src/core/bus';
-import { IntentMap } from '../../../../src/core/types';
+import { InMemoryBus, BasicPluginContext } from '@/core/bus';
+import { IntentMap } from '@/core/types';
 
 interface TestIntents extends IntentMap {
   hello: { name: string };
