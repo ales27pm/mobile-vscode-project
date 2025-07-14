@@ -105,7 +105,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             };
             window.updateRemoteCursors(${JSON.stringify(remoteCursors)});
         `;
-                webviewRef.current?.injectJavaScript(script);
+                webviewRef.current?.injectJavaScript(setupScript);
       } else {
         // Remove remote cursor decorations if no remote cursors
         const clearScript = `
