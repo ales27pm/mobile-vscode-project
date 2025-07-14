@@ -126,7 +126,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
         onMessage={handleMessage}
         javaScriptEnabled
         allowFileAccess
-        onShouldStartLoadWithRequest={event => event.url === 'about:blank' || event.url.startsWith('https://unpkg.com/monaco-editor')}
+        onShouldStartLoadWithRequest={event => event.url === 'about:blank' || event.url.startsWith('https://unpkg.com/monaco-editor') || event.url.startsWith('blob:')}
       />
     );
   }
