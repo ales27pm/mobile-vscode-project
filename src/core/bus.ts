@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events'
 import {
   PluginBus,
   PluginContext,
@@ -9,14 +8,36 @@ import {
 export class InMemoryBus<IM extends IntentMap>
   implements PluginBus<IM, PluginContext<IM>>
 {
-  private readonly emitter = new EventEmitter()
+  private readonly listeners: Record<string, ((payload: unknown) => Promise<CRDTResult>)[]> = {}
 
-  emit<K extends keyof IM>(intent: K, payload: IM[K]): void {
-    this.emitter.emit(intent as string, payload)
+  emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
+    const fns = this.listeners[intent as string] || []
+    return Promise.allSettled(fns.map(fn => fn(payload))).then(results =>
+      results.flatMap(r => {
+        if (r.status === 'fulfilled') {
+          return [r.value]
+        }
+        console.error('Listener failed', r.reason)
+        return []
+      }),
+    )
   }
 
-  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => void): void {
-    this.emitter.on(intent as string, cb as (payload: unknown) => void)
+  on<K extends keyof IM>(
+    intent: K,
+    cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>,
+  ): () => void {
+    if (!this.listeners[intent as string]) {
+      this.listeners[intent as string] = []
+    }
+    const wrapped = (payload: unknown) => Promise.resolve(cb(payload as IM[K]))
+    this.listeners[intent as string].push(wrapped)
+    return () => {
+      const arr = this.listeners[intent as string]
+      if (arr) {
+        this.listeners[intent as string] = arr.filter(fn => fn !== wrapped)
+      }
+    }
   }
 }
 
@@ -28,12 +49,13 @@ export class BasicPluginContext<IM extends IntentMap>
   on<K extends keyof IM>(
     intent: K,
     cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>,
-  ): void {
-    this.bus.on(intent, cb as (payload: IM[K]) => void)
+  ): () => void {
+    return this.bus.on(intent, cb)
   }
 
-  intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult> {
-    this.bus.emit(intent, payload)
-    return Promise.resolve({ success: true })
+  async intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
+    // return all listener results so callers can act on multiple handlers
+    const results = await this.bus.emit(intent, payload)
+    return results
   }
 }
