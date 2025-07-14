@@ -21,8 +21,7 @@ export function useYDoc(workspaceUri: string, docId: string) {
     const encoded = encode(`${workspaceUri}|${docId}`);
     const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
     return encoded.replace(/[+/=]/g, (m) => replacements[m]);
-  }, [workspaceUri, docId, encode]);
-    }), [workspaceUri, docId, encode]);
+    }, [workspaceUri, docId, encode]);
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
