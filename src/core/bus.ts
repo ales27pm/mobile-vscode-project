@@ -33,7 +33,13 @@ export class InMemoryBus<IM extends IntentMap>
     if (!this.listeners[intent as string]) {
       this.listeners[intent as string] = []
     }
-    this.listeners[intent as string].push(payload => Promise.resolve(cb(payload as IM[K])))
+    this.listeners[intent as string].push(async payload => {
+      try {
+        return await Promise.resolve(cb(payload as IM[K]))
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      }
+    })
   }
 }
 
