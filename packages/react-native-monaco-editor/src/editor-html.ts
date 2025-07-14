@@ -58,6 +58,8 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                         setTimeout(() => {
                             if (window.ReactNativeWebView) {
                                 console.log('WebView communication restored, retrying...');
+                                // Retry the original message
+                                postMessage(type, payload);
                             } else {
                                 console.error('WebView communication permanently failed');
                             }
