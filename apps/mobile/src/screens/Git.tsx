@@ -17,7 +17,7 @@ export default function Git({ route }) {
   const [unstage, { loading: unstageLoading }] = useMutation(GitUnstageDocument, { onCompleted: () => refetch() });
   const [commit, { loading: cLoading }] = useMutation(CommitDocument, { 
     onCompleted: () => { 
-      refetch(); 
+      const [getDiff] = useLazyQuery(GitDiffDocument);
       setCommitModalVisible(false); 
       setCommitMessage(''); // Clear commit message after successful commit
     } 
