@@ -40,7 +40,10 @@ export class InMemoryBus<IM extends IntentMap>
     if (!this.listeners[intent as string]) {
       this.listeners[intent as string] = []
     }
-    const wrapped = (payload: unknown) => Promise.resolve(cb(payload as IM[K]))
+    const wrapped = (payload: unknown) => {
+      // Add runtime validation here if needed
+      return Promise.resolve(cb(payload as IM[K]))
+    }
     const arr = this.listeners[intent as string]
     arr.push(wrapped)
     return () => {
