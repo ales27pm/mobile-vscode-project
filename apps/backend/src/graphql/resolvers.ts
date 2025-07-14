@@ -64,6 +64,7 @@ export function getResolvers() {
                     ): Thenable<void>;
                 }
 
+                // Move this interface outside the resolver function
                 await (vscode.workspace as VSCodeWorkspaceWithSearch).findTextInFiles(
                     { pattern: query },
                     { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
