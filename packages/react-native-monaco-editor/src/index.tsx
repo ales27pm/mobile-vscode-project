@@ -68,22 +68,26 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       if (remoteCursors && remoteCursors.length > 0) {
         const script = `
           (function() {
-            if (typeof editor === 'undefined' || typeof monaco === 'undefined') return;
-            const cursors = ${JSON.stringify(remoteCursors)};
-            const decorations = cursors.map(c => ({
-                range: new monaco.Range(
-                    Math.max(1, c.position?.lineNumber || 1), 
-                    Math.max(1, c.position?.column || 1), 
-                    Math.max(1, c.position?.lineNumber || 1), 
-                    Math.max(1, c.position?.column || 1)
-                ),
-                options: {
-                className: 'remote-cursor',
-                stickiness: 1,
-                afterContentClassName: 'remote-cursor-label',
-                after: { content: c.name }
-            }));
-                    window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
+            try {
+              if (typeof editor === 'undefined' || typeof monaco === 'undefined') return;
+              const cursors = ${JSON.stringify(remoteCursors)};
+              const decorations = cursors.map(c => ({
+                  range: new monaco.Range(
+                      Math.max(1, c.position.lineNumber || 1), 
+                      Math.max(1, c.position.column || 1), 
+                      Math.max(1, c.position.lineNumber || 1), 
+                      Math.max(1, c.position.column || 1)
+                  ),
+                  options: {
+                  className: 'remote-cursor',
+                  stickiness: 1,
+                  afterContentClassName: 'remote-cursor-label',
+                  after: { content: c.name }
+              }));
+                      window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
+            } catch (error) {
+              console.error('Failed to update remote cursors:', error);
+            }
                   })();
                 `;
                 webviewRef.current?.injectJavaScript(script);
