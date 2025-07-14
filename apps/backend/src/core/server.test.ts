@@ -36,7 +36,19 @@ jest.mock('graphql-ws/lib/use/ws', () => ({ useServer: jest.fn(() => ({ dispose:
 jest.mock('y-websocket/bin/utils.js', () => ({ setupWSConnection: jest.fn(), setPersistence: jest.fn() }), { virtual: true });
 
 jest.mock('yjs', () => ({}), { virtual: true });
-jest.mock('lodash.debounce', () => () => undefined, { virtual: true });
+jest.mock('lodash.debounce', () => (fn: any, wait = 300) => {
+    let timeout: NodeJS.Timeout | undefined;
+    const debounced = (...args: any[]) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), wait);
+    };
+    // expose flush for tests
+    (debounced as any).flush = () => {
+        clearTimeout(timeout);
+        fn();
+    };
+    return debounced;
+}, { virtual: true });
 
 jest.mock('fs', () => ({
     existsSync: jest.fn(() => true),
@@ -51,9 +63,15 @@ jest.mock('path', () => ({ join: (...parts: string[]) => parts.join('/') }), { v
 
 describe('server start/stop', () => {
     beforeEach(() => {
+        jest.useFakeTimers();
         jest.clearAllMocks();
         (ensureAuthContext as jest.Mock).mockResolvedValue({ jwtSecret: 'a', pairingToken: 'b', isPaired: false });
         (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({ get: jest.fn(() => 4000) });
+    });
+
+    afterEach(() => {
+        jest.runOnlyPendingTimers();
+        jest.useRealTimers();
     });
 
     it('starts and stops server', async () => {
