@@ -73,10 +73,8 @@ export function bindState(docName: string, ydoc: Y.Doc) {
         debouncedSavers.set(docName, createDebouncedSave(docName));
     }
 
-    const saver = debouncedSavers.get(docName);
-    if (saver) {
-        ydoc.on('update', () => saver(ydoc));
-    }
+    const saver = debouncedSavers.get(docName)!;
+    ydoc.on('update', () => saver(ydoc));
 }
 
 export function unbindState(docName: string) {
