@@ -54,8 +54,12 @@ export const getDebugProvider = () => ({
     },
     stopDebugging: async () => {
       if (!activeSession) return false;
-      await vscode.debug.stopDebugging(activeSession);
-      return true;
+      try {
+        await vscode.debug.stopDebugging(activeSession);
+        return true;
+      } catch (error) {
+        return false;
+      }
     },
   },
 });
