@@ -3,9 +3,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import debounce from 'lodash.debounce';
+import { LRUCache } from 'lru-cache';
 
 const SNAPSHOT_DIR = '.mobile-vscode-crdt-snapshots';
 let snapshotDirAbs: string;
+
+const cache = new LRUCache<string, Y.Doc>({
+    max: 50,
+    ttl: 1000 * 60 * 5,
+    dispose: (doc: Y.Doc, key: string) => {
+        const saver = debouncedSavers.get(key);
+        if (saver) {
+            saver.flush();
+            saver.cancel();
+            debouncedSavers.delete(key);
+            console.log(`[CRDT] Evicted and flushed doc: ${key}`);
+        }
+    }
+});
 
 function ensureSnapshotDirectory() {
     if (snapshotDirAbs) return;
@@ -57,17 +72,23 @@ export function bindState(docName: string, ydoc: Y.Doc) {
     ensureSnapshotDirectory();
     if (!snapshotDirAbs) return;
 
-    const docPath = path.join(snapshotDirAbs, `${encodeURIComponent(docName)}.yjs`);
-
-    if (fs.existsSync(docPath)) {
-        try {
-            const state = fs.readFileSync(docPath);
-            Y.applyUpdate(ydoc, state);
-            console.log(`[CRDT] Loaded state for doc: ${docName}`);
-        } catch (e) {
-            console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
+    if (cache.has(docName)) {
+        const cached = cache.get(docName)!;
+        Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(cached));
+    } else {
+        const docPath = path.join(snapshotDirAbs, `${encodeURIComponent(docName)}.yjs`);
+        if (fs.existsSync(docPath)) {
+            try {
+                const state = fs.readFileSync(docPath);
+                Y.applyUpdate(ydoc, state);
+                console.log(`[CRDT] Loaded state for doc: ${docName}`);
+            } catch (e) {
+                console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
+            }
         }
     }
+
+    cache.set(docName, ydoc);
 
     if (!debouncedSavers.has(docName)) {
         debouncedSavers.set(docName, createDebouncedSave(docName));
@@ -77,11 +98,4 @@ export function bindState(docName: string, ydoc: Y.Doc) {
     ydoc.on('update', () => saver(ydoc));
 }
 
-export function unbindState(docName: string) {
-    const saver = debouncedSavers.get(docName);
-    if (saver) {
-        saver.flush();
-        saver.cancel();
-        debouncedSavers.delete(docName);
-    }
-}
+// cleanup handled by LRU cache dispose
