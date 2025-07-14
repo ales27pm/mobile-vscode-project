@@ -10,6 +10,17 @@ export default function Debug({ route }) {
   const [selectedConfig, setSelectedConfig] = React.useState<string | null>(null);
 
   const { data, loading } = useQuery(GetLaunchConfigurationsDocument, { variables: { workspaceUri } });
+
+  React.useEffect(() => {
+    if (
+      data &&
+      data.launchConfigurations &&
+      data.launchConfigurations.length > 0 &&
+      !selectedConfig
+    ) {
+      setSelectedConfig(data.launchConfigurations[0].id);
+    }
+  }, [data, selectedConfig]);
   const [start, { loading: startLoading }] = useMutation(StartDebuggingDocument);
   const [stop, { loading: stopLoading }] = useMutation(StopDebuggingDocument);
 
