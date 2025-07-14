@@ -17,7 +17,6 @@ export class InMemoryBus<IM extends IntentMap>
     // Log rejected promises for debugging
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        this.onError?.(`Plugin listener ${index} failed:`, result.reason) ?? 
         console.warn(`Plugin listener ${index} failed:`, result.reason)
       }
     })
