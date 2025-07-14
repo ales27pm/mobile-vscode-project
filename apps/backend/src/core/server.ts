@@ -77,9 +77,11 @@ export async function startServer(context: vscode.ExtensionContext) {
         yjsWsServer.on('connection', setupWSConnection);
 
         httpServer.on('upgrade', (req, socket, head) => {
-            const reqUrl = req.url || '/';
+            if (!req.url) {
+                throw new Error('Request URL is required');
+            }
             const host = req.headers.host || 'localhost';
-            const url = new URL(reqUrl, `https://${host}`);
+            const url = new URL(req.url, `https://${host}`);
             if (url.pathname === '/graphql') {
                 gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
             } else if (url.pathname.startsWith('/yjs')) {
