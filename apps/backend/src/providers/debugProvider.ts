@@ -39,8 +39,8 @@ export const getDebugProvider = () => ({
       await vscode.debug.stopDebugging(activeSession);
       return true;
     },
-    stepOver: () => { throw new Error('Step Over not implemented.'); },
-    stepInto: () => { throw new Error('Step Into not implemented.'); },
+    stepOver: () => { console.warn('Step Over not implemented.'); return false; },
+    stepInto: () => { console.warn('Step Into not implemented.'); return false; },
   },
 });
 
