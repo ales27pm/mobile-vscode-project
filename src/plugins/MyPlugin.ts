@@ -34,7 +34,7 @@ export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
   private handleCreateNode(
     payload: MyIntents['createNode'],
   ): CRDTResult {
-    const id = crypto.randomUUID()
+    const id = self.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     this.nodes.set(id, { name: payload.name })
     return { success: true, snapshot: new TextEncoder().encode(JSON.stringify({ id, name: payload.name })) }
   }
