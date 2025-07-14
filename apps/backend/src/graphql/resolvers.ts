@@ -32,11 +32,10 @@ const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string
     return vscode.Uri.file(finalPath);
 };
 
-export function getResolvers() {
-    const gitProvider = getGitProvider();
-    const debugProvider = getDebugProvider();
+const gitProvider = getGitProvider();
+const debugProvider = getDebugProvider();
 
-    const resolvers = {
+const resolvers = {
         Query: {
             listWorkspaces: () => {
                 return vscode.workspace.workspaceFolders?.map(f => ({ name: f.name, uri: f.uri.toString() })) ?? [];
@@ -133,5 +132,7 @@ export function getResolvers() {
             },
         },
     };
+
+export function getResolvers() {
     return resolvers;
 }

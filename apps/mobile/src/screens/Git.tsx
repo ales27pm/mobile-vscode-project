@@ -1,8 +1,69 @@
 import React, { useState } from 'react';
-import { View, Button, Text, SectionList, ActivityIndicator, StyleSheet, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, Button, Text, SectionList, ActivityIndicator, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useQuery, useMutation } from '@apollo/client';
 import { GitStatusDocument, GitDiffDocument, GitStageDocument, GitUnstageDocument, CommitDocument, PushDocument } from 'shared/src/types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+function ChangeItem({ file, staged, onStage, onUnstage, onViewDiff, loading }: {
+  file: string;
+  staged: boolean;
+  onStage(): void;
+  onUnstage(): void;
+  onViewDiff(): void;
+  loading: boolean;
+}) {
+  return (
+    <TouchableOpacity style={styles.changeItem} onLongPress={onViewDiff}>
+      <Icon name="file-document-outline" size={20} color="#555" />
+      <Text style={styles.path} numberOfLines={1} ellipsizeMode="middle">
+        {file}
+      </Text>
+      <Button
+        title={staged ? 'Unstage' : 'Stage'}
+        onPress={staged ? onUnstage : onStage}
+        disabled={loading}
+      />
+    </TouchableOpacity>
+  );
+}
+
+function DiffModal({ visible, diff, onClose }: { visible: boolean; diff: string; onClose(): void }) {
+  return (
+    <Modal visible={visible} animationType="slide">
+      <View style={{ flex: 1, padding: 16 }}>
+        <Text style={{ fontFamily: 'monospace' }}>{diff}</Text>
+        <Button title="Close" onPress={onClose} />
+      </View>
+    </Modal>
+  );
+}
+
+function CommitModal({ visible, message, onMessage, onCommit, onCancel, loading }: {
+  visible: boolean;
+  message: string;
+  onMessage(text: string): void;
+  onCommit(): void;
+  onCancel(): void;
+  loading: boolean;
+}) {
+  return (
+    <Modal visible={visible} transparent>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalView}>
+          <TextInput
+            placeholder="Commit message"
+            onChangeText={onMessage}
+            value={message}
+            multiline
+            style={styles.commitInput}
+          />
+          <Button title="Commit" onPress={onCommit} disabled={loading} />
+          <Button title="Cancel" onPress={onCancel} color="gray" />
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 export default function Git({ route }) {
   const { workspaceUri } = route.params;
@@ -13,42 +74,50 @@ export default function Git({ route }) {
   const [diff, setDiff] = useState('');
   const [isDiffModalVisible, setDiffModalVisible] = useState(false);
 
-  const [stage, { loading: stageLoading }] = useMutation(GitStageDocument, { onCompleted: () => refetch() });
-  const [unstage, { loading: unstageLoading }] = useMutation(GitUnstageDocument, { onCompleted: () => refetch() });
-  const [commit, { loading: cLoading }] = useMutation(CommitDocument, { 
-    onCompleted: () => { 
-      setCommitModalVisible(false); 
-      setCommitMessage(''); 
-      refetch();
-    } 
+  const [stage, { loading: stageLoading }] = useMutation(GitStageDocument, {
+    onCompleted: () => refetch(),
+    onError: () => Alert.alert('Failed to stage file')
   });
-  const [push, { loading: pLoading }] = useMutation(PushDocument);
-  const [getDiff] = useLazyQuery(GitDiffDocument);
+  const [unstage, { loading: unstageLoading }] = useMutation(GitUnstageDocument, {
+    onCompleted: () => refetch(),
+    onError: () => Alert.alert('Failed to unstage file')
+  });
+  const [commit, { loading: cLoading }] = useMutation(CommitDocument, {
+    onCompleted: () => {
+      setCommitModalVisible(false);
+      setCommitMessage('');
+      refetch();
+    },
+    onError: () => Alert.alert('Commit failed')
+  });
+  const [push, { loading: pLoading }] = useMutation(PushDocument, {
+    onError: () => Alert.alert('Push failed')
+  });
+  const [getDiff] = useLazyQuery(GitDiffDocument, {
+    onError: () => Alert.alert('Failed to load diff')
+  });
 
   const handleViewDiff = async (file: string) => {
     const res = await getDiff({ variables: { workspaceUri, file } });
-    setDiff(res.data?.gitDiff ?? 'Could not load diff.');
+    if (res.data?.gitDiff) {
+      setDiff(res.data.gitDiff);
+    } else {
+      setDiff('Could not load diff.');
+    }
     setDiffModalVisible(true);
   };
 
-  const renderChange = ({ item, section }) => {
+  const renderChange = ({ item, section }: { item: string; section: { title: string } }) => {
     const isStaged = section.title === 'Staged';
     return (
-      <TouchableOpacity style={styles.changeItem} onLongPress={() => handleViewDiff(item)}>
-        <Icon name="file-document-outline" size={20} color="#555" />
-        <Text
-          style={styles.path}
-          numberOfLines={1}
-          ellipsizeMode="middle"
-        >
-          {item}
-        </Text>
-        <Button
-          title={isStaged ? 'Unstage' : 'Stage'}
-          onPress={() => isStaged ? unstage({ variables: { workspaceUri, file: item } }) : stage({ variables: { workspaceUri, file: item } }) }
-          disabled={stageLoading || unstageLoading}
-        />
-      </TouchableOpacity>
+      <ChangeItem
+        file={item}
+        staged={isStaged}
+        onStage={() => stage({ variables: { workspaceUri, file: item } })}
+        onUnstage={() => unstage({ variables: { workspaceUri, file: item } })}
+        onViewDiff={() => handleViewDiff(item)}
+        loading={stageLoading || unstageLoading}
+      />
     );
   };
 
@@ -61,22 +130,20 @@ export default function Git({ route }) {
 
   return (
     <View style={styles.container}>
-      <Modal visible={isDiffModalVisible} animationType="slide">
-        <View style={{ flex: 1, padding: 16 }}>
-          <Text style={{ fontFamily: 'monospace' }}>{diff}</Text>
-          <Button title="Close" onPress={() => setDiffModalVisible(false)} />
-        </View>
-      </Modal>
+      <DiffModal
+        visible={isDiffModalVisible}
+        diff={diff}
+        onClose={() => setDiffModalVisible(false)}
+      />
 
-      <Modal visible={isCommitModalVisible} transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <TextInput placeholder="Commit message" onChangeText={setCommitMessage} multiline style={styles.commitInput} />
-            <Button title="Commit" onPress={() => commit({ variables: { workspaceUri, message: commitMessage } })} disabled={cLoading} />
-            <Button title="Cancel" onPress={() => setCommitModalVisible(false)} color="gray" />
-          </View>
-        </View>
-      </Modal>
+      <CommitModal
+        visible={isCommitModalVisible}
+        message={commitMessage}
+        onMessage={setCommitMessage}
+        onCommit={() => commit({ variables: { workspaceUri, message: commitMessage } })}
+        onCancel={() => setCommitModalVisible(false)}
+        loading={cLoading}
+      />
 
       <View style={styles.header}>
         <Text>Branch: {data?.gitStatus.branch}</Text>

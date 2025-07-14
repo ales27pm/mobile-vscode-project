@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useQuery, useMutation, useSubscription } from '@apollo/client';
 import { GetLaunchConfigurationsDocument, StartDebuggingDocument, StopDebuggingDocument, DebuggerEventDocument } from 'shared/src/types';
@@ -20,8 +20,12 @@ export default function Debug({ route }) {
       setSelectedConfig(data.getLaunchConfigurations[0].name);
     }
   }, [data, selectedConfig]);
-  const [start, { loading: startLoading }] = useMutation(StartDebuggingDocument);
-  const [stop, { loading: stopLoading }] = useMutation(StopDebuggingDocument);
+  const [start, { loading: startLoading }] = useMutation(StartDebuggingDocument, {
+    onError: () => Alert.alert('Failed to start debugging')
+  });
+  const [stop, { loading: stopLoading }] = useMutation(StopDebuggingDocument, {
+    onError: () => Alert.alert('Failed to stop debugging')
+  });
 
   const { logs, appendLog, clearLogs, setActive, isActive } = useDebugStore();
 
