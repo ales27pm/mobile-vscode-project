@@ -32,7 +32,9 @@ const createDebouncedSave = (docId: string) => {
             try {
                 await fs.promises.rename(tempFilePath, filePath);
             } catch (renameError) {
-                await fs.promises.unlink(tempFilePath).catch(() => undefined);
+                await fs.promises.unlink(tempFilePath).catch(() => {
+                    /* ignore cleanup errors */
+                });
                 throw renameError;
             }
             console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
@@ -43,7 +45,7 @@ const createDebouncedSave = (docId: string) => {
             try {
                 await fs.promises.unlink(tempFilePath);
             } catch {
-                // ignore cleanup errors
+                /* ignore cleanup errors */
             }
         }
     }, 2000);
