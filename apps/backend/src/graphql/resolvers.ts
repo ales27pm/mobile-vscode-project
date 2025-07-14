@@ -53,10 +53,8 @@ export function getResolvers() {
                   }
                   return num;
                 });
-                // Check API availability directly instead of version parsing
-                if (typeof searchFn !== 'function') {
-                    throw new Error('findTextInFiles method not available in current VSCode API version');
-                }
+                // Use feature detection instead of version comparison
+                const useCallbackApi = searchFn.length >= 3; // Callback API has 3+ parameters
 
                 // Use feature detection instead of version comparison
                 const useCallbackApi = searchFn.length >= 3; // Callback API has 3+ parameters
