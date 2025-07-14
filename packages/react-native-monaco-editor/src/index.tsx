@@ -41,10 +41,13 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
 
     const handleMessage = (event: WebViewMessageEvent) => {
       try {
-        const message = JSON.parse(event.nativeEvent.data) as {
-          type: string;
-          payload: unknown;
-        };
+        let message: { type: string; payload: unknown };
+        try {
+          message = JSON.parse(event.nativeEvent.data);
+        } catch (error) {
+          console.warn('Failed to parse WebView message:', error);
+          return;
+        }
         switch (message.type) {
           case 'editorDidMount':
             editorRef.current = message.payload;
