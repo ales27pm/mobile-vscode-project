@@ -23,17 +23,9 @@ describe('authStore', () => {
     useAuthStore.setState({ token: null });
     await useAuthStore.getState().loadToken();
     expect(useAuthStore.getState().token).toBe('stored');
-    test('loadToken reads from storage', async () => {
-      // Clear any existing state
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.setItem('token', 'stored');
-      useAuthStore.setState({ token: null });
-      await useAuthStore.getState().loadToken();
-      expect(useAuthStore.getState().token).toBe('stored');
-    });
+  });
 
-    afterEach(() => {
-      useAuthStore.setState({ token: null });
-    });
+  afterEach(() => {
+    useAuthStore.setState({ token: null });
   });
 });
