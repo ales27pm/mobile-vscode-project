@@ -53,6 +53,9 @@ export function getResolvers() {
                   }
                   return num;
                 });
+                if (versionParts.length < 2) {
+                  throw new Error(`VSCode version must have at least 2 parts: ${vscode.version}`);
+                }
                 const [major = 0, minor = 0] = versionParts;
                 const useCallbackApi = major > 1 || (major === 1 && minor >= 92);
 
