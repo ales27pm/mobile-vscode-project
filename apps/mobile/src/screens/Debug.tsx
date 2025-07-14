@@ -14,8 +14,7 @@ export default function Debug({ route }) {
   React.useEffect(() => {
     if (
       data &&
-      data.getLaunchConfigurations &&
-      data.getLaunchConfigurations.length > 0 &&
+      data?.getLaunchConfigurations?.length &&
       !selectedConfig
     ) {
       setSelectedConfig(data.getLaunchConfigurations[0].name);
