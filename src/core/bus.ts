@@ -22,9 +22,7 @@ export class InMemoryBus<IM extends IntentMap>
     if (!this.listeners[intent as string]) {
       this.listeners[intent as string] = []
     }
-    if (typeof cb !== 'function') {
-      throw new Error('Callback must be a function')
-    }
+    // Remove the type check - TypeScript handles this at compile time
     this.listeners[intent as string].push(async payload => {
       try {
         return await Promise.resolve(cb(payload as IM[K]))
