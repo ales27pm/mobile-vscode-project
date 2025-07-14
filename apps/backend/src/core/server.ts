@@ -78,7 +78,8 @@ export async function startServer(context: vscode.ExtensionContext) {
 
         httpServer.on('upgrade', (req, socket, head) => {
             if (!req.url) {
-                throw new Error('Request URL is required');
+                socket.destroy();
+                return;
             }
             const host = req.headers.host || 'localhost';
             const url = new URL(req.url, `https://${host}`);
