@@ -41,7 +41,8 @@ export function getResolvers() {
             search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
-                const searchFn: any = (vscode.workspace as any).findTextInFiles;
+                type SearchFunction = ((query: any, options: any, callback: any) => Promise<void>) | ((query: any, options: any) => Promise<any>);
+                const searchFn = (vscode.workspace as any).findTextInFiles as SearchFunction;
 
                 if (searchFn.length >= 3) {
                     // VS Code 1.92+ callback-based API
