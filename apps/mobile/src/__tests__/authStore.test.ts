@@ -23,7 +23,8 @@ describe('authStore', () => {
     useAuthStore.setState({ token: null });
     await useAuthStore.getState().loadToken();
     expect(useAuthStore.getState().token).toBe('stored');
-    // Reset state after test
-    useAuthStore.setState({ token: null });
+    afterEach(() => {
+      useAuthStore.setState({ token: null });
+    });
   });
 });
