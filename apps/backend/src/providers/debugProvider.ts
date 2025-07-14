@@ -33,10 +33,15 @@ vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
 export const getDebugProvider = () => ({
   Query: {
     getLaunchConfigurations: (_: unknown, { workspaceUri }: { workspaceUri: string }) => {
-      const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(workspaceUri));
-      if (!workspaceFolder) return [];
-      const launchConfig = vscode.workspace.getConfiguration('launch', workspaceFolder.uri);
-      return launchConfig.get<vscode.DebugConfiguration[]>('configurations') ?? [];
+      try {
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(workspaceUri));
+        if (!workspaceFolder) return [];
+        const launchConfig = vscode.workspace.getConfiguration('launch', workspaceFolder.uri);
+        return launchConfig.get<vscode.DebugConfiguration[]>('configurations') ?? [];
+      } catch (error) {
+        console.error('Error getting launch configurations:', error);
+        return [];
+      }
     },
   },
   Mutation: {
