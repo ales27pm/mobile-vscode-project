@@ -24,5 +24,12 @@ const vscode = {
     showErrorMessage: jest.fn(),
     showInformationMessage: jest.fn(),
   },
+  debug: {
+    onDidStartDebugSession: jest.fn(),
+    onDidTerminateDebugSession: jest.fn(),
+    onDidReceiveDebugSessionCustomEvent: jest.fn(),
+    startDebugging: jest.fn(),
+    stopDebugging: jest.fn(),
+  },
 };
 module.exports = vscode;

@@ -49,7 +49,6 @@ jest.mock('../ui/statusBar', () => ({ updateStatusBar: jest.fn() }), { virtual: 
 
 jest.mock('path', () => ({ join: (...parts: string[]) => parts.join('/') }), { virtual: true });
 
-
 describe('server start/stop', () => {
     beforeEach(() => {
         jest.clearAllMocks();

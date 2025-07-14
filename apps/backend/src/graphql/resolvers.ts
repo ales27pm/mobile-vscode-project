@@ -3,6 +3,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import simpleGit from 'simple-git';
 import { pubsub } from './pubsub';
+import { getGitProvider } from '../providers/gitProvider';
+import { getDebugProvider } from '../providers/debugProvider';
 
 const getWorkspace = (uri: string): vscode.WorkspaceFolder => {
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(uri));
@@ -32,7 +34,10 @@ const getValidatedUri = (workspace: vscode.WorkspaceFolder, relativePath: string
 };
 
 export function getResolvers() {
-    return {
+    const gitProvider = getGitProvider();
+    const debugProvider = getDebugProvider();
+
+    const resolvers: any = {
         Query: {
             listWorkspaces: () => {
                 return vscode.workspace.workspaceFolders?.map(f => ({ name: f.name, uri: f.uri.toString() })) ?? [];
@@ -71,16 +76,6 @@ export function getResolvers() {
                 );
                 return results;
             },
-            gitStatus: async (_: any, { workspaceUri }: { workspaceUri: string }) => {
-                const workspace = getWorkspace(workspaceUri);
-                const git = simpleGit(workspace.uri.fsPath);
-                if (!(await git.checkIsRepo())) return { branch: 'Not a Git repository', changes: [] };
-                const s = await git.status();
-                return {
-                    branch: s.current || 'detached',
-                    changes: s.files.map(f => `${f.path} (${f.working_dir})`),
-                };
-            },
             extensions: () => {
                  return vscode.extensions.all
                     .filter(ext => !ext.id.startsWith('vscode.') && !ext.id.startsWith('ms-vscode.'))
@@ -90,7 +85,9 @@ export function getResolvers() {
                         description: ext.packageJSON.description,
                         installed: true,
                     }));
-            }
+            },
+            ...gitProvider.Query,
+            ...debugProvider.Query,
         },
         Mutation: {
             writeFile: async (_: any, { workspaceUri, path, content }: { workspaceUri: string, path: string; content: string }) => {
@@ -99,16 +96,6 @@ export function getResolvers() {
                 const newContent = Buffer.from(content, 'utf-8');
                 await vscode.workspace.fs.writeFile(fileUri, newContent);
                 return true;
-            },
-            commit: async (_: any, { workspaceUri, message }: { workspaceUri: string, message: string }) => {
-              const workspace = getWorkspace(workspaceUri);
-              await simpleGit(workspace.uri.fsPath).add('.').commit(message);
-              return true;
-            },
-            push: async (_: any, { workspaceUri }: { workspaceUri: string }) => {
-              const workspace = getWorkspace(workspaceUri);
-              await simpleGit(workspace.uri.fsPath).push();
-              return true;
             },
             installExtension: async (_: any, { id }: { id: string }) => {
                 try {
@@ -127,12 +114,18 @@ export function getResolvers() {
                     console.error(err);
                     return false;
                 }
-            }
+            },
+            ...gitProvider.Mutation,
+            ...debugProvider.Mutation,
         },
         Subscription: {
             fsEvent: {
                 subscribe: () => pubsub.asyncIterator(['FS_EVENT']),
             },
+            debuggerEvent: {
+                subscribe: () => pubsub.asyncIterator(['DEBUG_EVENT']),
+            },
         },
     };
+    return resolvers;
 }
