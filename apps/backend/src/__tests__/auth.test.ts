@@ -27,6 +27,16 @@ describe('auth utilities', () => {
     expect(ctx.isPaired).toBe(true);
   });
 
+  test('pairingMiddleware rejects invalid token', () => {
+    const ctx = { jwtSecret: 'test-secret-key-32-chars-long', pairingToken: 'TOKEN', isPaired: false };
+    const req: any = { body: { operationName: 'pairWithServer', variables: { pairingToken: 'WRONG' } } };
+    const res: any = { status: jest.fn(() => res), json: jest.fn() };
+    const next = jest.fn();
+    pairingMiddleware(ctx)(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(ctx.isPaired).toBe(false);
+  });
+
   test('jwtAuthMiddleware validates token', () => {
     const ctx = { jwtSecret: 'abcdefghijklmnopqrstuvwxyz123456', pairingToken: '', isPaired: true };
     const token = jwt.sign({ ok: true }, ctx.jwtSecret);
