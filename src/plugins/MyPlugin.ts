@@ -23,7 +23,9 @@ export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
       return crypto.randomUUID()
     }
     const perfTime = typeof performance !== 'undefined' ? performance.now().toString(36).slice(-4) : Math.random().toString(36).slice(-4)
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 15) + perfTime
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 15) + perfTime
+    // Ensure uniqueness within this plugin instance
+    return this.nodes.has(id) ? this.generateId() : id
   }
 
   constructor(
