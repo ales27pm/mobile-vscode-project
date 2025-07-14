@@ -23,7 +23,7 @@ export default function Git({ route }) {
     } 
   });
   const [push, { loading: pLoading }] = useMutation(PushDocument);
-  const [getDiff] = useMutation(GitDiffDocument);
+  const [getDiff] = useLazyQuery(GitDiffDocument);
 
   const handleViewDiff = async (file: string) => {
     const res = await getDiff({ variables: { workspaceUri, file } });
