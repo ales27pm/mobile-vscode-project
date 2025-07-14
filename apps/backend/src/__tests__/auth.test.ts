@@ -49,7 +49,7 @@ describe('auth utilities', () => {
   });
 
   test('jwtAuthMiddleware rejects invalid token', () => {
-    const ctx = { jwtSecret: 'test-secret-key-32-chars-long!!!', pairingToken: '', isPaired: true };
+    const ctx = { jwtSecret: 'abcdefghijklmnopqrstuvwxyz123456', pairingToken: '', isPaired: true };
     const req: any = { headers: { authorization: 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.invalid.signature' } };
     const res: any = { status: jest.fn(() => res), json: jest.fn() };
     const next = jest.fn();
