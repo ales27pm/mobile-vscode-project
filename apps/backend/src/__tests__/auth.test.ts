@@ -14,7 +14,7 @@ describe('auth utilities', () => {
   });
 
   test('pairingMiddleware pairs once and returns token', () => {
-    const ctx = { jwtSecret: require('crypto').randomBytes(32).toString('hex'), pairingToken: 'TOKEN', isPaired: false };
+    const ctx = { jwtSecret: crypto.randomBytes(32).toString('hex'), pairingToken: 'TOKEN', isPaired: false };
     const req: any = { body: { operationName: 'pairWithServer', variables: { pairingToken: 'TOKEN' } } };
     const res: any = { status: jest.fn(() => res), json: jest.fn() };
     const next = jest.fn();
