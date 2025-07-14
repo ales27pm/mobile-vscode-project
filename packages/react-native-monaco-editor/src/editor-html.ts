@@ -54,6 +54,7 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                     } catch (fallbackError) {
                         console.error('Failed to send fallback error message:', fallbackError);
                         console.error('WebView communication completely failed');
+                        return;
                     }
                 }
             } else {
