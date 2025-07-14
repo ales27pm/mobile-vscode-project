@@ -82,7 +82,7 @@ yarn install
 cp .env.example .env
 ```
 
-Edit `.env` and replace the placeholder IP address with your computer's local network IP (e.g., `192.168.1.100`).
+Edit `.env` and replace the placeholder IP address with your computer's local network IP. You can find this by running `ipconfig` (Windows) or `ifconfig` (macOS/Linux) and looking for your network adapter's IP (e.g., `192.168.1.100`).
 
 ### 2. Run the Backend (VS Code Extension)
 
