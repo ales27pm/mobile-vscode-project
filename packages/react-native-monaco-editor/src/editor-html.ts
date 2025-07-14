@@ -8,8 +8,13 @@ export const editorHtml = (
   language: string,
   trustedScript = ''
 ) => {
-  if (trustedScript && (/<\s*\/?script\b[^>]*>/i.test(trustedScript) || /javascript:/i.test(trustedScript))) {
-    throw new Error('trustedScript must not contain script tags or javascript: URLs')
+  if (trustedScript && (
+    /<\s*\/?script\b[^>]*>/i.test(trustedScript) || 
+    /javascript:/i.test(trustedScript) ||
+    /data:.*javascript/i.test(trustedScript) ||
+    /on\w+\s*=/i.test(trustedScript)
+  )) {
+    throw new Error('trustedScript contains potentially unsafe content')
   }
   return `
 <!DOCTYPE html>
