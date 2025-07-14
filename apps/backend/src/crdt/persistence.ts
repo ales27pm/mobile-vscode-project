@@ -9,7 +9,7 @@ let snapshotDirAbs: string;
 
 function ensureSnapshotDirectory() {
     if (snapshotDirAbs) return;
-    const storagePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const storagePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || vscode.workspace.rootPath;
     if (!storagePath) {
         console.warn('Cannot determine storage path for CRDT snapshots. Persistence will be disabled.');
         return;
