@@ -1,5 +1,5 @@
-import createPlugin, { MyPlugin, MyIntents } from '../../../../src/plugins/MyPlugin';
-import { InMemoryBus, BasicPluginContext } from '../../../../src/core/bus';
+import createPlugin, { MyPlugin, MyIntents } from '@/plugins/MyPlugin';
+import { InMemoryBus, BasicPluginContext } from '@/core/bus';
 
 function setup() {
   const bus = new InMemoryBus<MyIntents>();
