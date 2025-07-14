@@ -24,13 +24,13 @@ export interface PluginContext<IM extends IntentMap> {
   ): void
 
   /**
-   * Fire an intent on the bus and get a CRDTResult back.
+   * Fire an intent on the bus and get all listener results back.
    * Return type can be specialized if you need.
    */
   intent<K extends keyof IM>(
     intent: K,
     payload: IM[K],
-  ): Promise<CRDTResult>
+  ): Promise<CRDTResult[]>
 }
 
 /** The bus your plugin uses to emit & listen */
@@ -38,8 +38,11 @@ export interface PluginBus<
   IM extends IntentMap,
   CTX extends PluginContext<IM>
 > {
-  emit<K extends keyof IM>(intent: K, payload: IM[K]): void
-  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => void): void
+  emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]>
+  on<K extends keyof IM>(
+    intent: K,
+    cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>,
+  ): void
 }
 
 /** The core Plugin interface */

@@ -1,4 +1,13 @@
-export const editorHtml = (initialValue: string, language: string, yjsScript: string) => `
+/**
+ * Generate the HTML string used by the embedded editor.
+ * The optional `trustedScript` is inserted verbatim and must not contain
+ * untrusted user content.
+ */
+export const editorHtml = (
+  initialValue: string,
+  language: string,
+  trustedScript = ''
+) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -70,7 +79,7 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
             window.editor = editor;
             window.monaco = monaco;
         });
-        ${yjsScript}
+        ${trustedScript}
     </script>
 </body>
 </html>
