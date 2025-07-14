@@ -13,18 +13,18 @@ vscode.debug.onDidTerminateDebugSession(() => {
   pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'stop', body: 'Session terminated.' } });
 });
 
+const getOutputFromBody = (body: any): string => {
+  return body && typeof body === 'object' && 'output' in body && typeof body.output === 'string' 
+    ? body.output 
+    : '';
+};
+
 vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
   try {
     if (e.event === 'output') {
       const output = getOutputFromBody(e.body);
       pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'output', body: output } });
     }
-
-    const getOutputFromBody = (body: any): string => {
-      return body && typeof body === 'object' && 'output' in body && typeof body.output === 'string' 
-        ? body.output 
-        : '';
-    };
   } catch (error) {
     console.error('Error handling debug session custom event:', error);
   }
