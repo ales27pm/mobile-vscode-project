@@ -21,24 +21,13 @@ function ensureSnapshotDirectory() {
 }
 
 const createDebouncedSave = (docId: string) => {
-    return debounce((doc: Y.Doc) => {
+    return debounce(async (doc: Y.Doc) => {
         try {
             ensureSnapshotDirectory();
             if (!snapshotDirAbs) return;
             const filePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs`);
             const state = Y.encodeStateAsUpdate(doc);
-            return debounce(async (doc: Y.Doc) => {
-                try {
-                    ensureSnapshotDirectory();
-                    if (!snapshotDirAbs) return;
-                    const filePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs`);
-                    const state = Y.encodeStateAsUpdate(doc);
-                    await fs.promises.writeFile(filePath, state);
-                    console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
-                } catch (e) {
-                    console.error(`[CRDT] Failed to save snapshot for doc: ${docId}`, e);
-                }
-            }, 2000);
+            await fs.promises.writeFile(filePath, state);
             console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
         } catch (e) {
             console.error(`[CRDT] Failed to save snapshot for doc: ${docId}`, e);
