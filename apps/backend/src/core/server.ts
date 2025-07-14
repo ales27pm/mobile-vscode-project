@@ -81,8 +81,9 @@ export async function startServer(context: vscode.ExtensionContext) {
                 socket.destroy();
                 return;
             }
-            const host = req.headers.host || 'localhost';
-            const url = new URL(req.url, `https://${host}`);
+            const host = req.headers.host || 'localhost:3000';
+            const protocol = req.headers['x-forwarded-proto'] || 'http';
+            const url = new URL(req.url, `${protocol}://${host}`);
             if (url.pathname === '/graphql') {
                 gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
             } else if (url.pathname.startsWith('/yjs')) {
