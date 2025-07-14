@@ -17,10 +17,11 @@ export function useYDoc(workspaceUri: string, docId: string) {
     typeof globalThis.btoa === 'function'
       ? globalThis.btoa(value)
       : Buffer.from(value, 'utf-8').toString('base64'), []);
-  const roomName = useMemo(() => 
+  const roomName = useMemo(() => {
+    const encoded = encode(`${workspaceUri}|${docId}`);
     const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
-    return replacements[m];
-  });
+    return encoded.replace(/[+/=]/g, (m) => replacements[m]);
+  }, [workspaceUri, docId, encode]);
     }), [workspaceUri, docId, encode]);
 
   const { loading } = useQuery(ReadFileDocument, {
