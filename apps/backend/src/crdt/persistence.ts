@@ -14,7 +14,7 @@ function ensureSnapshotDirectory() {
         console.warn('Cannot determine storage path for CRDT snapshots. Persistence will be disabled.');
         return;
     }
-    snapshotDirAbs = path.join(storagePath, '..', SNAPSHOT_DIR);
+    snapshotDirAbs = path.join(storagePath, SNAPSHOT_DIR);
     if (!fs.existsSync(snapshotDirAbs)) {
         fs.mkdirSync(snapshotDirAbs, { recursive: true });
     }
