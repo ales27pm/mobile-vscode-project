@@ -58,7 +58,6 @@ export function getResolvers() {
 
                 // Use feature detection instead of version comparison
                 const useCallbackApi = searchFn.length >= 3; // Callback API has 3+ parameters
-                const [major = 0, minor = 0] = versionParts;
 
                 if (useCallbackApi) {
                     await new Promise<void>((resolve) => {
