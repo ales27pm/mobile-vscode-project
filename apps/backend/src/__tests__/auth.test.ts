@@ -37,4 +37,14 @@ describe('auth utilities', () => {
     expect(next).toHaveBeenCalled();
     expect(req.user).toBeDefined();
   });
+
+  test('jwtAuthMiddleware rejects invalid token', () => {
+    const ctx = { jwtSecret: 'test-secret-key-32-chars-long', pairingToken: '', isPaired: true };
+    const req: any = { headers: { authorization: 'Bearer invalid-token' } };
+    const res: any = { status: jest.fn(() => res), json: jest.fn() };
+    const next = jest.fn();
+    jwtAuthMiddleware(ctx)(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
 });
