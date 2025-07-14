@@ -50,7 +50,7 @@ describe('auth utilities', () => {
 
   test('jwtAuthMiddleware rejects invalid token', () => {
     const ctx = { jwtSecret: 'abcdefghijklmnopqrstuvwxyz123456', pairingToken: '', isPaired: true };
-    const req: any = { headers: { authorization: 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.invalid.signature' } };
+    const req: any = { headers: { authorization: 'Bearer invalid-token' } };
     const res: any = { status: jest.fn(() => res), json: jest.fn() };
     const next = jest.fn();
     jwtAuthMiddleware(ctx)(req, res, next);
