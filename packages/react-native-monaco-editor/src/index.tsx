@@ -45,16 +45,24 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     const handleMessage = (event: WebViewMessageEvent) => {
       try {
         const message = JSON.parse(event.nativeEvent.data);
+        if (!message || typeof message.type !== 'string') {
+          console.warn('Invalid message format from WebView');
+          return;
+        }
         switch (message.type) {
           case 'editorDidMount':
             editorRef.current = message.payload;
             onLoad?.();
             break;
           case 'contentDidChange':
-            onContentChange?.(message.payload.value);
+            if (message.payload && typeof message.payload.value === 'string') {
+              onContentChange?.(message.payload.value);
+            }
             break;
           case 'cursorDidChange':
-            onCursorChange?.(message.payload.position);
+            if (message.payload && message.payload.position) {
+              onCursorChange?.(message.payload.position);
+            }
             break;
           default:
             console.warn(`Unknown message type from WebView: ${message.type}`);
