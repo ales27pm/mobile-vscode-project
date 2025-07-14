@@ -19,6 +19,7 @@ const cache = new LRUCache<string, Y.Doc>({
             debouncedSavers.delete(key);
             console.log(`[CRDT] Evicted and flushed doc: ${key}`);
         }
+        doc.destroy();
     }
 });
 
