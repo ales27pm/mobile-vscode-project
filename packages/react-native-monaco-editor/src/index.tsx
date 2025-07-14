@@ -23,7 +23,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     const webviewRef = useRef<WebView>(null);
     const editorRef = useRef<any>(null);
 
-    const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc.toString()]);
+    const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc]);
     const htmlContent = useMemo(
       () =>
         editorHtml(
