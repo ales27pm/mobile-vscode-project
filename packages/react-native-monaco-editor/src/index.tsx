@@ -24,15 +24,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     const editorRef = useRef<any>(null);
 
     const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc]);
-    const htmlContent = useMemo(
-      () =>
-        editorHtml(
-          initialText,
-          language,
-          `\n          // Y.js and MonacoBinding setup will be injected here\n          // This creates a placeholder for the collaborative bindings\n        `
-        ),
-      [initialText, language]
-    );
+    const htmlContent = useMemo(() => editorHtml(initialText, language), [initialText, language]);
 
     useImperativeHandle(ref, () => ({
       revealLineInCenter: (lineNumber, scroll = 1) => {
