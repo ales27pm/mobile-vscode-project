@@ -47,7 +47,6 @@ export class BasicPluginContext<IM extends IntentMap>
 
   async intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
     // return all listener results so callers can act on multiple handlers
-    const results = await this.bus.emit(intent, payload)
-    return results
+    return await this.bus.emit(intent, payload)
   }
 }
