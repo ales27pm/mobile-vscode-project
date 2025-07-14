@@ -77,7 +77,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 stickiness: 1,
                 afterContentClassName: 'remote-cursor-label',
                 after: { content: \`${'${'}c.name\`}\` }
-              }
+              after: { content: c.name }
             }));
             window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds, decorations);
           })();
