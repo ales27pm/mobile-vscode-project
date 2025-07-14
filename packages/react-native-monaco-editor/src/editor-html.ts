@@ -47,7 +47,7 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                             payload: { message: 'Serialization failed', originalType: String(type) } 
                         }));
                     } catch (fallbackError) {
-                        console.warn('ReactNativeWebView not available, message not sent:', { type, payload: String(payload) });
+                        console.error('Failed to send fallback error message:', fallbackError);
                     }
                 }
             } else {
