@@ -34,7 +34,7 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
     <div id="container"></div>
     <script src="https://unpkg.com/monaco-editor@0.33.0/min/vs/loader.js"></script>
     <script>
-        const postMessage = (type, payload) => {
+        const postMessage = (type, payload, retryCount = 0) => {
             if (window.ReactNativeWebView) {
                 try {
                     const safePayload = JSON.parse(JSON.stringify(payload, (key, value) => {
@@ -59,10 +59,8 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                             if (window.ReactNativeWebView) {
                                 console.log('WebView communication restored, retrying...');
                                 // Retry the original message with retry limit
-                                if (!window.retryCount) window.retryCount = 0;
-                                if (window.retryCount < 3) {
-                                    window.retryCount++;
-                                    postMessage(type, payload);
+                                if (retryCount < 3) {
+                                    postMessage(type, payload, retryCount + 1);
                                 } else {
                                     console.error('Max retries reached, giving up');
                                 }
