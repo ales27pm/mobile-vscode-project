@@ -16,7 +16,7 @@ describe('MyPlugin', () => {
 
   test('create and delete node cycle', async () => {
     const { plugin, ctx } = setup();
-    const nodes = (plugin as any).nodes as Map<string, { name: string }>;
+    const nodes = plugin.getNodes() as Map<string, { name: string }>;
     expect(nodes.size).toBe(0);
     await ctx.intent('createNode', { name: 'A' });
     expect(nodes.size).toBe(1);
