@@ -19,6 +19,13 @@ jest.mock('vscode', () => {
             parse: (s: string) => ({ fsPath: s.replace('file://',''), toString: () => s }),
             file: (p: string) => ({ fsPath: p, toString: () => `file://${p}` })
         },
+        debug: {
+            onDidStartDebugSession: jest.fn(),
+            onDidTerminateDebugSession: jest.fn(),
+            onDidReceiveDebugSessionCustomEvent: jest.fn(),
+            startDebugging: jest.fn(),
+            stopDebugging: jest.fn(),
+        },
         FileType: { Directory: 2 },
         __mocks: { readDirectory, readFile, writeFile, getWorkspaceFolder, workspaceFolder }
     };

@@ -30,7 +30,6 @@ const start = jest.fn(() => Promise.resolve());
 const applyMiddleware = jest.fn();
 const stop = jest.fn();
 class FakeApolloServer {
-    constructor() {}
     start = start;
     applyMiddleware = applyMiddleware;
     stop = stop;

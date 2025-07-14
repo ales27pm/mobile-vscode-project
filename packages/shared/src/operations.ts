@@ -41,7 +41,8 @@ gql`
   query GitStatus($workspaceUri: String!) {
     gitStatus(workspaceUri: $workspaceUri) {
       branch
-      changes
+      staged
+      unstaged
     }
   }
 `;
@@ -53,6 +54,55 @@ gql`
       name
       description
       installed
+    }
+  }
+`;
+
+gql`
+  query GitDiff($workspaceUri: String!, $file: String!) {
+    gitDiff(workspaceUri: $workspaceUri, file: $file)
+  }
+`;
+
+gql`
+  mutation GitStage($workspaceUri: String!, $file: String!) {
+    gitStage(workspaceUri: $workspaceUri, file: $file)
+  }
+`;
+
+gql`
+  mutation GitUnstage($workspaceUri: String!, $file: String!) {
+    gitUnstage(workspaceUri: $workspaceUri, file: $file)
+  }
+`;
+
+gql`
+  query GetLaunchConfigurations($workspaceUri: String!) {
+    getLaunchConfigurations(workspaceUri: $workspaceUri) {
+      name
+      type
+      request
+    }
+  }
+`;
+
+gql`
+  mutation StartDebugging($workspaceUri: String!, $configName: String!) {
+    startDebugging(workspaceUri: $workspaceUri, configName: $configName)
+  }
+`;
+
+gql`
+  mutation StopDebugging {
+    stopDebugging
+  }
+`;
+
+gql`
+  subscription DebuggerEvent {
+    debuggerEvent {
+      event
+      body
     }
   }
 `;
