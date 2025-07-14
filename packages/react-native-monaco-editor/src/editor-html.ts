@@ -8,7 +8,7 @@ export const editorHtml = (
   language: string,
   trustedScript = ''
 ) => {
-  if (trustedScript && /<\/?script/i.test(trustedScript)) {
+  if (trustedScript && /<\s*\/?script\b[^>]*>/i.test(trustedScript)) {
     throw new Error('trustedScript must not contain script tags')
   }
   return `
