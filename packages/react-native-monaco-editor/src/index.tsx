@@ -68,7 +68,8 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       if (remoteCursors && remoteCursors.length > 0) {
         const script = `
           (function() {
-            window.__remoteCursorDecorationIds = window.__remoteCursorDecorationIds || [];
+            if (typeof editor === 'undefined' || typeof monaco === 'undefined') return;
+            const cursors = ${JSON.stringify(remoteCursors)};
             const cursors = ${JSON.stringify(remoteCursors)};
             const decorations = cursors.map(c => ({
               range: new monaco.Range(c.position.lineNumber, c.position.column, c.position.lineNumber, c.position.column),
