@@ -17,7 +17,8 @@ export class InMemoryBus<IM extends IntentMap>
     const failures = results.filter(result => result.status === 'rejected')
     if (failures.length > 0) {
       const errors = failures.map(f => (f as PromiseRejectedResult).reason)
-      throw new Error(`Plugin execution failed for intent '${String(intent)}': ${errors.join(', ')}`)
+      const errorMessages = errors.map(err => err instanceof Error ? err.message : String(err))
+      throw new Error(`Plugin execution failed for intent '${String(intent)}': ${errorMessages.join(', ')}`)
     }
     return results
       .filter(result => result.status === 'fulfilled')
