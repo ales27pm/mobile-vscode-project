@@ -4,7 +4,9 @@
   "main": "src/index.tsx",
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-webview": "*",
+    "yjs": "*"
   },
   "scripts": {
     "test": "echo 'no tests'"
