@@ -34,7 +34,7 @@ export class InMemoryBus<IM extends IntentMap>
       this.listeners[intent as string] = []
     }
     this.listeners[intent as string].push(async payload => {
-      return await Promise.resolve(cb(payload as IM[K]))
+      return cb(payload as IM[K])
     })
   }
 }
