@@ -41,10 +41,14 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                 } catch (error) {
                     console.error('Failed to serialize message:', error);
                     // Send fallback message with error info
-                    window.ReactNativeWebView.postMessage(JSON.stringify({ 
-                        type: 'error', 
-                        payload: { message: 'Serialization failed', originalType: type } 
-                    }));
+                    try {
+                        window.ReactNativeWebView.postMessage(JSON.stringify({ 
+                            type: 'error', 
+                            payload: { message: 'Serialization failed', originalType: String(type) } 
+                        }));
+                    } catch (fallbackError) {
+                        console.error('Failed to send fallback error message:', fallbackError);
+                    }
                 }
             } else {
                 console.warn('ReactNativeWebView not available, message not sent:', { type, payload });
