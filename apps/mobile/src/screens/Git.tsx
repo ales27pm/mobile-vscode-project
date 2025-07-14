@@ -36,7 +36,13 @@ export default function Git({ route }) {
     return (
       <TouchableOpacity style={styles.changeItem} onLongPress={() => handleViewDiff(item)}>
         <Icon name="file-document-outline" size={20} color="#555" />
-        <Text style={styles.path}>{item}</Text>
+        <Text
+          style={styles.path}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
+          {item}
+        </Text>
         <Button
           title={isStaged ? 'Unstage' : 'Stage'}
           onPress={() => isStaged ? unstage({ variables: { workspaceUri, file: item } }) : stage({ variables: { workspaceUri, file: item } }) }
