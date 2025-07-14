@@ -61,7 +61,7 @@ jest.mock(
 
 jest.mock('fs', () => ({
     existsSync: jest.fn(() => true),
-    readFileSync: jest.fn(() => Buffer.from('data'))
+    readFileSync: jest.fn(() => Buffer.from('data')),
 }), { virtual: true });
 
 jest.mock('../graphql/resolvers', () => ({ getResolvers: jest.fn(() => ({})) }), { virtual: true });

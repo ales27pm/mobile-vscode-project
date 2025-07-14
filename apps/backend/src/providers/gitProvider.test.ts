@@ -1,12 +1,6 @@
 import { getGitProvider } from './gitProvider';
 import simpleGit from 'simple-git';
-
-jest.mock('vscode', () => ({
-  workspace: {
-    getWorkspaceFolder: jest.fn(() => ({ uri: { fsPath: '/test' } })),
-  },
-  Uri: { parse: (s: string) => ({ fsPath: s.replace('file://', ''), toString: () => s }) },
-}), { virtual: true });
+import * as vscode from 'vscode';
 
 jest.mock('simple-git');
 
@@ -24,6 +18,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   (simpleGit as jest.Mock).mockReturnValue(mockGit);
   mockGit.checkIsRepo.mockResolvedValue(true);
+  (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue({ uri: { fsPath: '/test' } });
 });
 
 describe('gitProvider', () => {
@@ -34,6 +29,11 @@ describe('gitProvider', () => {
     mockGit.status.mockResolvedValue({
       current: 'main',
       staged: ['a.txt'],
+      not_added: [],
+      created: [],
+      deleted: [],
+      modified: ['b.txt'],
+      renamed: [],
       files: [{ path: 'a.txt' }, { path: 'b.txt' }],
     });
 

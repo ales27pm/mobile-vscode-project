@@ -14187,10 +14187,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "shared@workspace:packages/shared"
   dependencies:
-    "@types/jest": "npm:^29.5.2"
-    graphql: "npm:^16.6.0"
-    jest: "npm:^29.5.0"
-    ts-jest: "npm:^29.1.0"
     typescript: "npm:^5.1.3"
   languageName: unknown
   linkType: soft

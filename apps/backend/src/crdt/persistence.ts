@@ -30,7 +30,7 @@ const cache = new LRUCache<string, Y.Doc>({
                 console.error(`[CRDT] Error destroying doc ${key}:`, error);
             }
         }
-    }
+    },
 });
 
 function ensureSnapshotDirectory() {

@@ -27,7 +27,7 @@ beforeEach(() => {
 test('lists workspaces', () => {
     const resolvers = getResolvers();
     expect(resolvers.Query.listWorkspaces()).toEqual([
-        { name: 'test', uri: 'file:///workspace/test' }
+        { name: 'test', uri: 'file:///workspace/test' },
     ]);
 });
 
@@ -37,7 +37,7 @@ test('lists directory contents', async () => {
     expect(readDirectory).toHaveBeenCalled();
     expect(result).toEqual([
         { name: 'file.txt', path: 'file.txt', isDirectory: false },
-        { name: 'folder', path: 'folder', isDirectory: true }
+        { name: 'folder', path: 'folder', isDirectory: true },
     ]);
 });
 

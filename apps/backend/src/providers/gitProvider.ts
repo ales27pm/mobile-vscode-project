@@ -13,10 +13,17 @@ export const getGitProvider = () => ({
       const git = getGit(workspaceUri);
       if (!(await git.checkIsRepo())) return { branch: 'Not a repo', staged: [], unstaged: [] };
       const s = await git.status();
+      const unstaged = [
+        ...s.not_added,
+        ...s.created,
+        ...s.deleted,
+        ...s.modified,
+        ...s.renamed.map(r => r.to),
+      ].filter(f => !s.staged.includes(f));
       return {
         branch: s.current || 'detached',
         staged: s.staged,
-        unstaged: s.files.filter(f => !s.staged.includes(f.path)).map(f => f.path),
+        unstaged,
       };
     },
     gitDiff: async (_: unknown, { workspaceUri, file }: { workspaceUri: string; file: string }) => {
