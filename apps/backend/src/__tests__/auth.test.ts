@@ -9,6 +9,7 @@ describe('auth utilities', () => {
     expect(typeof ctx.jwtSecret).toBe('string');
     expect(ctx.jwtSecret.length).toBeGreaterThan(0);
     expect(typeof ctx.pairingToken).toBe('string');
+    expect(ctx.pairingToken.length).toBeGreaterThan(0);
     expect(ctx.isPaired).toBe(false);
   });
 
