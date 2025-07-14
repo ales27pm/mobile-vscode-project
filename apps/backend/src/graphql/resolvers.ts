@@ -45,7 +45,7 @@ export function getResolvers() {
                 if (typeof searchFn !== 'function') {
                     throw new Error('findTextInFiles method not available in current VSCode API version');
                 }
-                const versionParts = vscode.version.split('.').map(part => {
+                const versionParts = vscode.version.split('.').slice(0, 2).map(part => {
                   const num = parseInt(part.replace(/[^\d]/g, ''), 10);
                   return isNaN(num) ? 0 : num;
                 });
