@@ -53,10 +53,7 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
                         }));
                     } catch (fallbackError) {
                         console.error('Failed to send fallback error message:', fallbackError);
-                        // Consider implementing a retry mechanism or alternative error reporting
-                        if (typeof window !== 'undefined' && window.console) {
-                            window.console.error('WebView communication completely failed');
-                        }
+                        console.error('WebView communication completely failed');
                     }
                 }
             } else {
