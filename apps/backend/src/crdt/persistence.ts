@@ -87,7 +87,9 @@ export function bindState(docName: string, ydoc: Y.Doc) {
                 console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
             }
         }
-        cache.set(docName, ydoc);
+        const docCopy = new Y.Doc();
+        Y.applyUpdate(docCopy, Y.encodeStateAsUpdate(ydoc));
+        cache.set(docName, docCopy);
     }
 
     if (!debouncedSavers.has(docName)) {
