@@ -17,6 +17,7 @@ export interface MyIntents extends IntentMap {
 
 export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
   public readonly id: string
+  private nodes = new Map<string, { name: string }>()
 
   constructor(
     private readonly bus: PluginBus<MyIntents, PluginContext<MyIntents>>,
@@ -33,15 +34,16 @@ export class MyPlugin implements Plugin<MyIntents, PluginContext<MyIntents>> {
   private handleCreateNode(
     payload: MyIntents['createNode'],
   ): CRDTResult {
-    // …your logic here
-    return { success: true }
+    const id = Math.random().toString(36).substring(2, 8)
+    this.nodes.set(id, { name: payload.name })
+    return { success: true, snapshot: new TextEncoder().encode(id) }
   }
 
   private handleDeleteNode(
     payload: MyIntents['deleteNode'],
   ): CRDTResult {
-    // …your logic here
-    return { success: true }
+    const removed = this.nodes.delete(payload.id)
+    return { success: removed }
   }
 }
 

@@ -1,4 +1,8 @@
-export const editorHtml = (initialValue: string, language: string, yjsScript: string) => `
+export const editorHtml = (
+  initialValue: string,
+  language: string,
+  extraScript = ''
+) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -70,7 +74,7 @@ export const editorHtml = (initialValue: string, language: string, yjsScript: st
             window.editor = editor;
             window.monaco = monaco;
         });
-        ${yjsScript}
+        ${extraScript}
     </script>
 </body>
 </html>

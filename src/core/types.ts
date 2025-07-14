@@ -38,8 +38,11 @@ export interface PluginBus<
   IM extends IntentMap,
   CTX extends PluginContext<IM>
 > {
-  emit<K extends keyof IM>(intent: K, payload: IM[K]): void
-  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => void): void
+  emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]>
+  on<K extends keyof IM>(
+    intent: K,
+    cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>,
+  ): void
 }
 
 /** The core Plugin interface */
