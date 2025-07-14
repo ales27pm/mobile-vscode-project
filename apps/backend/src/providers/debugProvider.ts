@@ -21,7 +21,7 @@ const getOutputFromBody = (body: any): string => {
 
 vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
   try {
-    if (e.event === 'output') {
+    if (activeSession && e.event === 'output') {
       const output = getOutputFromBody(e.body);
       pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'output', body: output } });
     }
