@@ -2,32 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import EditorComponent, { MonacoEditorRef } from 'packages/editor';
 import { useYDoc } from '../hooks/useYDoc';
-import { useMutation } from '@apollo/client';
-import { WriteFileDocument } from 'shared/src/types';
-import debounce from 'lodash.debounce';
 import { useDocumentStore } from '../state/documentStore';
 
 export default function Editor({ route, navigation }) {
   const { workspaceUri, path } = route.params;
   const { ydoc, isLoading, awareness } = useYDoc(workspaceUri, path);
-  const [writeFile] = useMutation(WriteFileDocument);
   const [remoteCursors, setRemoteCursors] = useState([]);
   const editorRef = React.useRef<MonacoEditorRef>(null);
   const consumeEditorAction = useDocumentStore(state => state.consumeEditorAction);
 
-  const saveContent = React.useMemo(
-    () =>
-      debounce((content: string) => {
-        writeFile({ variables: { workspaceUri, path, content } });
-      }, 1000),
-    [writeFile, path]
-  );
-
-  useEffect(() => {
-    return () => {
-      saveContent.cancel();
-    };
-  }, [saveContent]);
 
   useEffect(() => {
     navigation.setOptions({ title: path.split('/').pop() });
@@ -67,7 +50,6 @@ export default function Editor({ route, navigation }) {
           const match = /\.([^./]+)$/.exec(path);
           return match ? match[1] : 'plaintext';
         })()}
-        onContentChange={saveContent}
         onCursorChange={(position) => awareness?.setLocalStateField('cursor', position)}
         remoteCursors={remoteCursors}
       />
