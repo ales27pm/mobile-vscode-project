@@ -17,11 +17,10 @@ export function useYDoc(workspaceUri: string, docId: string) {
     typeof globalThis.btoa === 'function'
       ? globalThis.btoa(value)
       : Buffer.from(value, 'utf-8').toString('base64');
-  const roomName = encode(`${workspaceUri}|${docId}`).replace(/[+/=]/g, (m) => ({
-    '+': '-',
-    '/': '_',
-    '=': '',
-  }[m]!));
+  const roomName = encode(`${workspaceUri}|${docId}`).replace(/[+/=]/g, (m) => {
+    const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
+    return replacements[m] || m;
+  });
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
