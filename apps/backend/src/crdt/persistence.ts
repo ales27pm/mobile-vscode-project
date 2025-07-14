@@ -29,7 +29,12 @@ const createDebouncedSave = (docId: string) => {
             const state = Y.encodeStateAsUpdate(doc);
             const tempFilePath = `${filePath}.tmp`;
             await fs.promises.writeFile(tempFilePath, state);
-            await fs.promises.rename(tempFilePath, filePath);
+            try {
+                await fs.promises.rename(tempFilePath, filePath);
+            } catch (renameError) {
+                await fs.promises.unlink(tempFilePath).catch(() => {});
+                throw renameError;
+            }
             console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
         } catch (e) {
             console.error(`[CRDT] Failed to save snapshot for doc: ${docId}`, e);
