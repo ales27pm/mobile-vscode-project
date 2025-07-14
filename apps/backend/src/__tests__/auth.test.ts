@@ -21,7 +21,7 @@ describe('auth utilities', () => {
     pairingMiddleware(ctx)(req, res, next);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
-        pairWithServer: expect.anything()
+        pairWithServer: expect.stringMatching(/^[\w-]+\.[\w-]+\.[\w-]+$/)
       })
     }));
     expect(ctx.isPaired).toBe(true);
