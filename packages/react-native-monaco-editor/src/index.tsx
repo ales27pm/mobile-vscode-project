@@ -1,43 +1,90 @@
-import React from 'react';
-import { TextInput } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useRef, useMemo, useEffect } from 'react';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import * as Y from 'yjs';
+import { editorHtml } from './editor-html';
 
-export type MonacoEditorRef = {
-  focus: () => void;
-  revealLineInCenter: (lineNumber: number) => void;
-};
-
-export interface MonacoEditorProps {
-  value?: string;
-  language?: string;
-  onChangeText?: (value: string) => void;
-  style?: object;
+export interface MonacoEditorRef {
+  revealLineInCenter: (lineNumber: number, scroll?: number) => void;
+  getEditor: () => any;
 }
 
-const MonacoEditor = React.forwardRef<MonacoEditorRef, MonacoEditorProps>(
-  function MonacoEditor({ value, onChangeText, style }, ref) {
-    const inputRef = React.useRef<TextInput>(null);
+export interface MonacoEditorProps {
+  doc: Y.Text;
+  language?: string;
+  onContentChange?: (content: string) => void;
+  onCursorChange?: (position: any) => void;
+  remoteCursors?: { position: any; color: string; name: string }[];
+  style?: object;
+  onLoad?: () => void;
+}
 
-    const focus = () => {
-      inputRef.current?.focus();
+const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
+  ({ doc, language = 'plaintext', onContentChange, onCursorChange, remoteCursors, style, onLoad }, ref) => {
+    const webviewRef = useRef<WebView>(null);
+    const editorRef = useRef<any>(null);
+
+    const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc]);
+    const htmlContent = useMemo(
+      () =>
+        editorHtml(
+          initialText,
+          language,
+          `\n          // Y.js and MonacoBinding setup will be injected here\n          // This creates a placeholder for the collaborative bindings\n        `
+        ),
+      [initialText, language]
+    );
+
+    useImperativeHandle(ref, () => ({
+      revealLineInCenter: (lineNumber, scroll = 1) => {
+        const command = `editor.revealLineInCenter(${lineNumber}, ${scroll});`;
+        webviewRef.current?.injectJavaScript(command);
+      },
+      getEditor: () => editorRef.current,
+    }), []);
+
+    const handleMessage = (event: WebViewMessageEvent) => {
+      try {
+        const message = JSON.parse(event.nativeEvent.data);
+        switch (message.type) {
+          case 'editorDidMount':
+            editorRef.current = message.payload;
+            onLoad?.();
+            break;
+          case 'contentDidChange':
+            onContentChange?.(message.payload.value);
+            break;
+          case 'cursorDidChange':
+            onCursorChange?.(message.payload.position);
+            break;
+          default:
+            console.warn(`Unknown message type from WebView: ${message.type}`);
+        }
+      } catch (e) {
+        console.error('Failed to parse message from WebView', e);
+      }
     };
 
-    const revealLineInCenter = (_lineNumber: number) => {
-      // Not implemented, but keeps API surface compatible
-    };
-
-    React.useImperativeHandle(ref, () => ({ focus, revealLineInCenter }));
+    useEffect(() => {
+      if (remoteCursors && remoteCursors.length > 0) {
+        const script = `\n                const decorations = ${JSON.stringify(remoteCursors)}.map(cursor => ({\n                    range: new monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),\n                    options: {\n                        className: 'remote-cursor',\n                        stickiness: 1,\n                        afterContentClassName: 'remote-cursor-label',\n                        after: { content: \`${cursor.name}\` }\n                    }\n                }));\n                editor.deltaDecorations([], decorations);\n            `;
+        webviewRef.current?.injectJavaScript(script);
+      }
+    }, [remoteCursors]);
 
     return (
-      <TextInput
-        ref={inputRef}
-        multiline
-        value={value}
-        onChangeText={onChangeText}
+      <WebView
+        ref={webviewRef}
+        originWhitelist={['*']}
+        source={{ html: htmlContent, baseUrl: '' }}
         style={style}
+        onMessage={handleMessage}
+        javaScriptEnabled
+        allowFileAccess
+        onShouldStartLoadWithRequest={event => event.url === 'about:blank'}
       />
     );
   }
 );
 
 export default MonacoEditor;
-export { MonacoEditorRef, MonacoEditorProps };
+
