@@ -16,7 +16,7 @@ export class InMemoryBus<IM extends IntentMap>
     return results.map(result => 
       result.status === 'fulfilled' 
         ? result.value 
-        : { success: false, error: result.reason?.message || 'Unknown error' }
+        : { success: false, error: result.reason instanceof Error ? result.reason.message : String(result.reason) || 'Unknown error' }
     )
   }
 
