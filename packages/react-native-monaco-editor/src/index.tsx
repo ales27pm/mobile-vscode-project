@@ -73,40 +73,38 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     };
 
     useEffect(() => {
-      if (remoteCursors && remoteCursors.length > 0) {
-        const script = `
-          (function() {
-            try {
-                    if (typeof editor === 'undefined' || typeof monaco === 'undefined') return;
-                    window.updateRemoteCursors && window.updateRemoteCursors();
-                } catch (error) {
-                    console.error('Failed to update remote cursors:', error);
-                }
-            })();
-        `;
-        const setupScript = `
-            window.updateRemoteCursors = function() {
-                const cursors = arguments[0] || [];
-                const decorations = cursors.map(c => ({
-                    range: new monaco.Range(
-                        c.position?.lineNumber || 1, 
-                        c.position?.column || 1, 
-                        c.position?.lineNumber || 1, 
-                        c.position?.column || 1
-                    ),
-                    options: {
-                        className: 'remote-cursor',
-                        stickiness: 1,
-                        afterContentClassName: 'remote-cursor-label',
-                        after: { content: c.name }
+        if (remoteCursors && remoteCursors.length > 0) {
+            const setupScript = `
+                (function() {
+                    try {
+                        if (typeof editor === 'undefined' || typeof monaco === 'undefined') return;
+                    
+                        window.updateRemoteCursors = function() {
+                            const cursors = arguments[0] || [];
+                            const decorations = cursors.map(c => ({
+                                range: new monaco.Range(
+                                    c.position?.lineNumber || 1, 
+                                    c.position?.column || 1, 
+                                    c.position?.lineNumber || 1, 
+                                    c.position?.column || 1
+                                ),
+                                options: {
+                                    className: 'remote-cursor',
+                                    stickiness: 1,
+                                    afterContentClassName: 'remote-cursor-label',
+                                    after: { content: c.name }
+                                }
+                            }));
+                            window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
+                        };
+                        window.updateRemoteCursors(${JSON.stringify(remoteCursors)});
+                    } catch (error) {
+                        console.error('Failed to update remote cursors:', error);
                     }
-                }));
-                window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
-            };
-            window.updateRemoteCursors(${JSON.stringify(remoteCursors)});
-        `;
-                webviewRef.current?.injectJavaScript(setupScript);
-      } else {
+                })();
+            `;
+            webviewRef.current?.injectJavaScript(setupScript);
+        } else {
         // Remove remote cursor decorations if no remote cursors
         const clearScript = `
           (function() {
