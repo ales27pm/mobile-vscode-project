@@ -13,14 +13,15 @@ const myName = `User ${Math.floor(Math.random() * 100)}`;
 export function useYDoc(workspaceUri: string, docId: string) {
   const ydoc = useRef(new Y.Doc()).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const encode = (value: string) =>
+  const encode = useCallback((value: string) =>
     typeof globalThis.btoa === 'function'
       ? globalThis.btoa(value)
-      : Buffer.from(value, 'utf-8').toString('base64');
-  const roomName = encode(`${workspaceUri}|${docId}`).replace(/[+/=]/g, (m) => {
-    const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
-    return replacements[m] || m;
-  });
+      : Buffer.from(value, 'utf-8').toString('base64'), []);
+  const roomName = useMemo(() => 
+    encode(`${workspaceUri}|${docId}`).replace(/[+/=]/g, (m) => {
+      const replacements: Record<string, string> = { '+': '-', '/': '_', '=': '' };
+      return replacements[m] || m;
+    }), [workspaceUri, docId, encode]);
 
   const { loading } = useQuery(ReadFileDocument, {
     variables: { workspaceUri, path: docId },
