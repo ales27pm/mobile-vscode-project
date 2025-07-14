@@ -25,7 +25,8 @@ describe('authStore', () => {
     expect(useAuthStore.getState().token).toBe('stored');
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     useAuthStore.setState({ token: null });
+    await AsyncStorage.removeItem('token');
   });
 });
