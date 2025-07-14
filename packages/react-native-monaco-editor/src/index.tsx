@@ -5,15 +5,20 @@ import { editorHtml } from './editor-html';
 
 export interface MonacoEditorRef {
   revealLineInCenter: (lineNumber: number, scroll?: number) => void;
-  getEditor: () => any;
+  getEditor: () => unknown;
+}
+
+export interface CursorPosition {
+  lineNumber: number;
+  column: number;
 }
 
 export interface MonacoEditorProps {
   doc: Y.Text;
   language?: string;
   onContentChange?: (content: string) => void;
-  onCursorChange?: (position: any) => void;
-  remoteCursors?: { position: any; color: string; name: string }[];
+  onCursorChange?: (position: CursorPosition) => void;
+  remoteCursors?: { position: CursorPosition; color: string; name: string }[];
   style?: object;
   onLoad?: () => void;
 }
@@ -21,7 +26,7 @@ export interface MonacoEditorProps {
 const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
   ({ doc, language = 'plaintext', onContentChange, onCursorChange, remoteCursors, style, onLoad }, ref) => {
     const webviewRef = useRef<WebView>(null);
-    const editorRef = useRef<any>(null);
+    const editorRef = useRef<unknown>(null);
 
     const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc]);
     const htmlContent = useMemo(() => editorHtml(initialText, language), [initialText, language]);
@@ -36,17 +41,25 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
 
     const handleMessage = (event: WebViewMessageEvent) => {
       try {
-        const message = JSON.parse(event.nativeEvent.data);
+        let message: { type: string; payload: unknown };
+        try {
+          message = JSON.parse(event.nativeEvent.data);
+        } catch (error) {
+          console.warn('Failed to parse WebView message:', error);
+          return;
+        }
         switch (message.type) {
           case 'editorDidMount':
             editorRef.current = message.payload;
             onLoad?.();
             break;
           case 'contentDidChange':
-            onContentChange?.(message.payload.value);
+            onContentChange?.((message.payload as { value: string }).value);
             break;
           case 'cursorDidChange':
-            onCursorChange?.(message.payload.position);
+            onCursorChange?.(
+              (message.payload as { position: CursorPosition }).position
+            );
             break;
           default:
             console.warn(`Unknown message type from WebView: ${message.type}`);

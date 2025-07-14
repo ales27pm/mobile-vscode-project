@@ -32,7 +32,9 @@ const createDebouncedSave = (docId: string) => {
             try {
                 await fs.promises.rename(tempFilePath, filePath);
             } catch (renameError) {
-                await fs.promises.unlink(tempFilePath).catch(() => {});
+                await fs.promises
+                    .unlink(tempFilePath)
+                    .catch(() => undefined);
                 throw renameError;
             }
             console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
@@ -42,7 +44,9 @@ const createDebouncedSave = (docId: string) => {
             const tempFilePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs.tmp`);
             try {
                 await fs.promises.unlink(tempFilePath);
-            } catch {}
+            } catch {
+                // ignore
+            }
         }
     }, 2000);
 };

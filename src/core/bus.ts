@@ -7,7 +7,7 @@ import {
 } from './types'
 
 export class InMemoryBus<IM extends IntentMap>
-  implements PluginBus<IM, PluginContext<IM>>
+  implements PluginBus<IM>
 {
   private readonly emitter = new EventEmitter()
 
@@ -23,7 +23,7 @@ export class InMemoryBus<IM extends IntentMap>
 export class BasicPluginContext<IM extends IntentMap>
   implements PluginContext<IM>
 {
-  constructor(readonly id: string, private readonly bus: PluginBus<IM, PluginContext<IM>>) {}
+  constructor(readonly id: string, private readonly bus: PluginBus<IM>) {}
 
   on<K extends keyof IM>(
     intent: K,
