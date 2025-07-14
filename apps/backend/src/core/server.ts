@@ -68,7 +68,7 @@ export async function startServer(context: vscode.ExtensionContext) {
             bindState: (docName: string, ydoc: Doc) => {
                 bindState(docName, ydoc);
             },
-            writeState: async (_docName: string, _ydoc: Doc) => {
+            writeState: (_docName: string, _ydoc: Doc) => {
                 // Persistence is handled by debounced savers in bindState
             },
             provider: null,
