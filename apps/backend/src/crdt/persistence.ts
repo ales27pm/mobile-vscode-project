@@ -14,10 +14,14 @@ const cache = new LRUCache<string, Y.Doc>({
     dispose: (doc: Y.Doc, key: string) => {
         const saver = debouncedSavers.get(key);
         if (saver) {
-            saver.flush();
-            saver.cancel();
-            debouncedSavers.delete(key);
-            console.log(`[CRDT] Evicted and flushed doc: ${key}`);
+            try {
+                saver.flush();
+                saver.cancel();
+                debouncedSavers.delete(key);
+                console.log(`[CRDT] Evicted and flushed doc: ${key}`);
+            } catch (error) {
+                console.error(`[CRDT] Error during saver cleanup for ${key}:`, error);
+            }
         }
         doc.destroy();
     }
