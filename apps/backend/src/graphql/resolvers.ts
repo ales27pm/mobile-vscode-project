@@ -56,15 +56,6 @@ export function getResolvers() {
             search: async (_: unknown, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
                 const workspace = getWorkspace(workspaceUri);
                 const results: { file: string; line: number; text: string }[] = [];
-                interface VSCodeWorkspaceWithSearch {
-                    findTextInFiles(
-                        query: vscode.TextSearchQuery,
-                        options: vscode.FindTextInFilesOptions,
-                        callback: (result: vscode.TextSearchResult) => void
-                    ): Thenable<void>;
-                }
-
-                // Move this interface outside the resolver function
                 await (vscode.workspace as VSCodeWorkspaceWithSearch).findTextInFiles(
                     { pattern: query },
                     { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
