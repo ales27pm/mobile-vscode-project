@@ -12,15 +12,25 @@ export class InMemoryBus<IM extends IntentMap>
 
   emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
     const fns = this.listeners[intent as string] || []
-    return Promise.allSettled(fns.map(fn => fn(payload))).then(results =>
-      results.flatMap(r => {
+    return Promise.allSettled(fns.map(fn => fn(payload))).then(results => {
+      const fulfilled: CRDTResult[] = []
+      const errors: any[] = []
+    
+      results.forEach(r => {
         if (r.status === 'fulfilled') {
-          return [r.value]
+          fulfilled.push(r.value)
+        } else {
+          console.error('Listener failed', r.reason)
+          errors.push(r.reason)
         }
-        console.error('Listener failed', r.reason)
-        return []
-      }),
-    )
+      })
+    
+      if (errors.length > 0 && fulfilled.length === 0) {
+        throw new Error(`All listeners failed: ${errors.map(e => e.message || e).join(', ')}`)
+      }
+    
+      return fulfilled
+    })
   }
 
   on<K extends keyof IM>(
