@@ -78,6 +78,7 @@ export async function startServer(context: vscode.ExtensionContext) {
 
         httpServer.on('upgrade', (req, socket, head) => {
             if (!req.url) {
+                console.error('HTTP upgrade request missing URL. Destroying socket.');
                 socket.destroy();
                 return;
             }

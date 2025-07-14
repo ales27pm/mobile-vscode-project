@@ -5,12 +5,24 @@ let activeSession: vscode.DebugSession | undefined;
 
 vscode.debug.onDidStartDebugSession(session => {
   activeSession = session;
-  pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'start', body: `Session '${session.name}' started.` } });
+  try {
+    pubsub.publish('DEBUG_EVENT', {
+      debuggerEvent: { event: 'start', body: `Session '${session.name}' started.` },
+    });
+  } catch (error) {
+    console.error('Failed to publish start debug event:', error);
+  }
 });
 
 vscode.debug.onDidTerminateDebugSession(() => {
   activeSession = undefined;
-  pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'stop', body: 'Session terminated.' } });
+  try {
+    pubsub.publish('DEBUG_EVENT', {
+      debuggerEvent: { event: 'stop', body: 'Session terminated.' },
+    });
+  } catch (error) {
+    console.error('Failed to publish stop debug event:', error);
+  }
 });
 
 const getOutputFromBody = (body: unknown): string =>
