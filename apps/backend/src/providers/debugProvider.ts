@@ -44,17 +44,6 @@ export const getDebugProvider = () => ({
       await vscode.debug.stopDebugging(activeSession);
       return true;
     },
-    // Remove these methods entirely or implement them properly:
-    // stepOver: async () => {
-    //   if (!activeSession) return false;
-    //   await vscode.debug.stepOver(activeSession);
-    //   return true;
-    // },
-    // stepInto: async () => {
-    //   if (!activeSession) return false;
-    //   await vscode.debug.stepInto(activeSession);
-    //   return true;
-    // },
   },
 });
 
