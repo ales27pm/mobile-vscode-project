@@ -78,9 +78,10 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 afterContentClassName: 'remote-cursor-label',
                 after: { content: c.name }
             }));
-            window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds, decorations);
-          window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
-        webviewRef.current?.injectJavaScript(script);
+                    window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
+                  })();
+                `;
+                webviewRef.current?.injectJavaScript(script);
       } else {
         // Remove remote cursor decorations if no remote cursors
         const clearScript = `
