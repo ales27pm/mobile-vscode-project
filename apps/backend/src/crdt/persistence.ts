@@ -24,7 +24,11 @@ const cache = new LRUCache<string, Y.Doc>({
             }
         }
         if (doc && typeof doc.destroy === 'function') {
-            doc.destroy();
+            try {
+                doc.destroy();
+            } catch (error) {
+                console.error(`[CRDT] Error destroying doc ${key}:`, error);
+            }
         }
     }
 });
