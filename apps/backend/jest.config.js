@@ -4,5 +4,6 @@ module.exports = {
   roots: ['<rootDir>/src'],
   moduleNameMapper: {
     '^vscode$': '<rootDir>/__mocks__/vscode.ts',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
 };
