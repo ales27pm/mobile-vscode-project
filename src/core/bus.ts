@@ -31,11 +31,12 @@ export class InMemoryBus<IM extends IntentMap>
       this.listeners[intent as string] = []
     }
     const wrapped = (payload: unknown) => Promise.resolve(cb(payload as IM[K]))
-    this.listeners[intent as string].push(wrapped)
+    const arr = this.listeners[intent as string]
+    arr.push(wrapped)
     return () => {
-      const arr = this.listeners[intent as string]
-      if (arr) {
-        this.listeners[intent as string] = arr.filter(fn => fn !== wrapped)
+      const index = arr.indexOf(wrapped)
+      if (index !== -1) {
+        arr.splice(index, 1)
       }
     }
   }
