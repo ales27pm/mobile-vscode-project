@@ -45,7 +45,8 @@ export function getResolvers() {
                 const useCallbackApi = typeof searchFn === 'function' && searchFn.length >= 3;
 
                 if (useCallbackApi) {
-                    await new Promise<void>((resolve) => {
+                    await new Promise<void>((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Search timeout')), 30000);
                         searchFn(
                             { pattern: query },
                             { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
@@ -58,7 +59,11 @@ export function getResolvers() {
                                     });
                                 }
                             },
-                            () => resolve()
+                            (error?: Error) => {
+                                clearTimeout(timeout);
+                                if (error) reject(error);
+                                else resolve();
+                            }
                         );
                     });
                 } else {
