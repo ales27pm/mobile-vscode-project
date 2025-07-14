@@ -10,9 +10,12 @@ export class InMemoryBus<IM extends IntentMap>
 {
   private readonly listeners: Record<string, ((payload: unknown) => Promise<CRDTResult>)[]> = {}
 
-  emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
+  async emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
     const fns = this.listeners[intent as string] || []
-    return Promise.all(fns.map(fn => fn(payload)))
+    const results = await Promise.allSettled(fns.map(fn => fn(payload)))
+    return results
+      .filter(result => result.status === 'fulfilled')
+      .map(result => (result as PromiseFulfilledResult<CRDTResult>).value)
   }
 
   on<K extends keyof IM>(
