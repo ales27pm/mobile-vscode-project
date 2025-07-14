@@ -80,7 +80,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
               after: { content: c.name }
             }));
             window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds, decorations);
-          })();
+          window.__remoteCursorDecorationIds = editor.deltaDecorations(window.__remoteCursorDecorationIds || [], decorations);
         `;
         webviewRef.current?.injectJavaScript(script);
       } else {
