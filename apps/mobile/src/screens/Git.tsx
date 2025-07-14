@@ -15,7 +15,13 @@ export default function Git({ route }) {
 
   const [stage, { loading: stageLoading }] = useMutation(GitStageDocument, { onCompleted: () => refetch() });
   const [unstage, { loading: unstageLoading }] = useMutation(GitUnstageDocument, { onCompleted: () => refetch() });
-  const [commit, { loading: cLoading }] = useMutation(CommitDocument, { onCompleted: () => { refetch(); setCommitModalVisible(false); } });
+  const [commit, { loading: cLoading }] = useMutation(CommitDocument, { 
+    onCompleted: () => { 
+      refetch(); 
+      setCommitModalVisible(false); 
+      setCommitMessage(''); // Clear commit message after successful commit
+    } 
+  });
   const [push, { loading: pLoading }] = useMutation(PushDocument);
   const [getDiff] = useMutation(GitDiffDocument);
 
