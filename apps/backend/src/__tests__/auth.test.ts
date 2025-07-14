@@ -28,7 +28,7 @@ describe('auth utilities', () => {
   });
 
   test('jwtAuthMiddleware validates token', () => {
-    const ctx = { jwtSecret: 'secret', pairingToken: '', isPaired: true };
+    const ctx = { jwtSecret: 'test-jwt-secret-with-sufficient-length-for-proper-validation', pairingToken: '', isPaired: true };
     const token = jwt.sign({ ok: true }, ctx.jwtSecret);
     const req: any = { headers: { authorization: `Bearer ${token}` } };
     const res: any = { status: jest.fn(() => res), json: jest.fn() };
