@@ -8,7 +8,13 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-webview": "*"
+  },
+  "devDependencies": {
+    "react": "18.2.0",
+    "react-native": "0.71.8",
+    "react-native-webview": "11.26.0"
   },
   "scripts": {
     "test": "echo 'no tests'"
