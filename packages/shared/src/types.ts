@@ -12,6 +12,19 @@ export type Scalars = {
   Float: number;
 };
 
+export type DebugConfiguration = {
+  __typename?: 'DebugConfiguration';
+  name: Scalars['String'];
+  request: Scalars['String'];
+  type: Scalars['String'];
+};
+
+export type DebuggerEvent = {
+  __typename?: 'DebuggerEvent';
+  body: Scalars['String'];
+  event: Scalars['String'];
+};
+
 export type Extension = {
   __typename?: 'Extension';
   description: Scalars['String'];
@@ -36,15 +49,20 @@ export type File = {
 export type GitStatus = {
   __typename?: 'GitStatus';
   branch: Scalars['String'];
-  changes: Array<Scalars['String']>;
+  staged: Array<Scalars['String']>;
+  unstaged: Array<Scalars['String']>;
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
   commit: Scalars['Boolean'];
+  gitStage: Scalars['Boolean'];
+  gitUnstage: Scalars['Boolean'];
   installExtension: Scalars['Boolean'];
   pairWithServer?: Maybe<Scalars['String']>;
   push: Scalars['Boolean'];
+  startDebugging: Scalars['Boolean'];
+  stopDebugging: Scalars['Boolean'];
   uninstallExtension: Scalars['Boolean'];
   writeFile: Scalars['Boolean'];
 };
@@ -52,6 +70,18 @@ export type Mutation = {
 
 export type MutationCommitArgs = {
   message: Scalars['String'];
+  workspaceUri: Scalars['String'];
+};
+
+
+export type MutationGitStageArgs = {
+  file: Scalars['String'];
+  workspaceUri: Scalars['String'];
+};
+
+
+export type MutationGitUnstageArgs = {
+  file: Scalars['String'];
   workspaceUri: Scalars['String'];
 };
 
@@ -71,6 +101,12 @@ export type MutationPushArgs = {
 };
 
 
+export type MutationStartDebuggingArgs = {
+  configName: Scalars['String'];
+  workspaceUri: Scalars['String'];
+};
+
+
 export type MutationUninstallExtensionArgs = {
   id: Scalars['String'];
 };
@@ -85,11 +121,24 @@ export type MutationWriteFileArgs = {
 export type Query = {
   __typename?: 'Query';
   extensions: Array<Extension>;
+  getLaunchConfigurations: Array<DebugConfiguration>;
+  gitDiff: Scalars['String'];
   gitStatus: GitStatus;
   listDirectory: Array<File>;
   listWorkspaces: Array<Workspace>;
   readFile?: Maybe<Scalars['String']>;
   search: Array<SearchResult>;
+};
+
+
+export type QueryGetLaunchConfigurationsArgs = {
+  workspaceUri: Scalars['String'];
+};
+
+
+export type QueryGitDiffArgs = {
+  file: Scalars['String'];
+  workspaceUri: Scalars['String'];
 };
 
 
@@ -124,6 +173,7 @@ export type SearchResult = {
 
 export type Subscription = {
   __typename?: 'Subscription';
+  debuggerEvent: DebuggerEvent;
   fsEvent: FsEvent;
 };
 
@@ -167,12 +217,61 @@ export type GitStatusQueryVariables = Exact<{
 }>;
 
 
-export type GitStatusQuery = { __typename?: 'Query', gitStatus: { __typename?: 'GitStatus', branch: string, changes: Array<string> } };
+export type GitStatusQuery = { __typename?: 'Query', gitStatus: { __typename?: 'GitStatus', branch: string, staged: Array<string>, unstaged: Array<string> } };
 
 export type ExtensionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type ExtensionsQuery = { __typename?: 'Query', extensions: Array<{ __typename?: 'Extension', id: string, name: string, description: string, installed: boolean }> };
+
+export type GitDiffQueryVariables = Exact<{
+  workspaceUri: Scalars['String'];
+  file: Scalars['String'];
+}>;
+
+
+export type GitDiffQuery = { __typename?: 'Query', gitDiff: string };
+
+export type GitStageMutationVariables = Exact<{
+  workspaceUri: Scalars['String'];
+  file: Scalars['String'];
+}>;
+
+
+export type GitStageMutation = { __typename?: 'Mutation', gitStage: boolean };
+
+export type GitUnstageMutationVariables = Exact<{
+  workspaceUri: Scalars['String'];
+  file: Scalars['String'];
+}>;
+
+
+export type GitUnstageMutation = { __typename?: 'Mutation', gitUnstage: boolean };
+
+export type GetLaunchConfigurationsQueryVariables = Exact<{
+  workspaceUri: Scalars['String'];
+}>;
+
+
+export type GetLaunchConfigurationsQuery = { __typename?: 'Query', getLaunchConfigurations: Array<{ __typename?: 'DebugConfiguration', name: string, type: string, request: string }> };
+
+export type StartDebuggingMutationVariables = Exact<{
+  workspaceUri: Scalars['String'];
+  configName: Scalars['String'];
+}>;
+
+
+export type StartDebuggingMutation = { __typename?: 'Mutation', startDebugging: boolean };
+
+export type StopDebuggingMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type StopDebuggingMutation = { __typename?: 'Mutation', stopDebugging: boolean };
+
+export type DebuggerEventSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type DebuggerEventSubscription = { __typename?: 'Subscription', debuggerEvent: { __typename?: 'DebuggerEvent', event: string, body: string } };
 
 export type PairWithServerMutationVariables = Exact<{
   pairingToken: Scalars['String'];

@@ -8,7 +8,7 @@ declare module 'y-websocket/bin/utils.js' {
     export interface Persistence {
         bindState: (docName: string, ydoc: Doc) => void | Promise<void>;
         writeState: (docName: string, ydoc: Doc) => void | Promise<void>;
-        provider?: any;
+        provider?: unknown;
     }
 
     export function setPersistence(p: Persistence): void;
