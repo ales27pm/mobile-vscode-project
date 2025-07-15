@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as fs from 'fs';
+import { AddressInfo } from 'net';
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -9,7 +10,7 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import { join } from 'path';
 import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
 
-import { ensureAuthContext, setupAuthMiddleware } from './auth';
+import { ensureAuthContext, setupAuthMiddleware, RequestWithUser } from './auth';
 import { bindState } from '../crdt/persistence';
 import { getResolvers } from '../graphql/resolvers';
 import schemaTypeDefs from '../schema';
@@ -33,7 +34,7 @@ export async function startServer(context: vscode.ExtensionContext) {
 
     const app = express();
     app.use(express.json());
-    
+
     const keyPath = join(context.extensionPath, 'certs/server.key');
     const certPath = join(context.extensionPath, 'certs/server.crt');
     if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
@@ -51,7 +52,7 @@ export async function startServer(context: vscode.ExtensionContext) {
 
     apolloServer = new ApolloServer({
         schema,
-        context: ({ req }) => ({ user: (req as any).user }),
+        context: ({ req }) => ({ user: (req as RequestWithUser).user }),
     });
 
     apolloServer.start().then(() => {
@@ -68,7 +69,7 @@ export async function startServer(context: vscode.ExtensionContext) {
             bindState: (docName: string, ydoc: Doc) => {
                 bindState(docName, ydoc);
             },
-            writeState: (_docName: string, _ydoc: Doc) => {
+            writeState: () => {
                 // Persistence is handled by debounced savers in bindState
             },
             provider: null,
@@ -77,7 +78,29 @@ export async function startServer(context: vscode.ExtensionContext) {
         yjsWsServer.on('connection', setupWSConnection);
 
         httpServer.on('upgrade', (req, socket, head) => {
-            const url = new URL(req.url!, `https://${req.headers.host}`);
+
+            if (!req.url) {
+                console.error('HTTP upgrade request missing URL. Destroying socket.');
+                socket.destroy();
+                return;
+            }
+            const host = req.headers.host || 'localhost:3000';
+            // Try to detect protocol dynamically, fallback to 'http' if not possible
+            let protocol = 'http';
+            if (
+                req.headers["x-forwarded-proto"] &&
+                typeof req.headers["x-forwarded-proto"] === 'string'
+            ) {
+                protocol = req.headers["x-forwarded-proto"].split(',')[0].trim();
+            } else if (httpServer && typeof httpServer.address === 'function') {
+                const addr = httpServer.address() as AddressInfo | string | null;
+                if (addr && typeof addr === 'object' && addr.port === 443) {
+                    protocol = 'https';
+                }
+            } else if (process.env.NODE_ENV === 'production') {
+                protocol = 'https';
+            }
+            const url = new URL(req.url, `${protocol}://${host}`);
             if (url.pathname === '/graphql') {
                 gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
             } else if (url.pathname.startsWith('/yjs')) {
@@ -86,7 +109,6 @@ export async function startServer(context: vscode.ExtensionContext) {
                 socket.destroy();
             }
         });
-        
         wsServerCleanup = () => {
              gqlWsServerHandler.dispose();
              yjsWsServer.close();
