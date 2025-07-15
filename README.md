@@ -6,6 +6,8 @@
 
 MobileVSCode bridges the gap between powerful mobile hardware and professional development workflows. It provides a fluid, intuitive client that connects directly to your existing, fully-configured Visual Studio Code environment, allowing you to browse files, edit code, run searches and use Git from anywhere.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a high-level overview of how the server and mobile client work together.
+
 ## Key Features
 
 - **True VS Code Backend**: Runs as a standard VS Code extension with full access to your workspace, terminals and settings.
