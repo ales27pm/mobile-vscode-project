@@ -1,43 +1,22 @@
-import React, { forwardRef, useImperativeHandle, useRef, useMemo, useEffect } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import * as Y from 'yjs';
 import { editorHtml } from './editor-html';
+import type { CursorPosition } from './types';
 
-export interface MonacoEditorRef {
-  revealLineInCenter: (lineNumber: number, scroll?: number) => void;
-  getEditor: () => unknown;
-}
-
-export interface CursorPosition {
-  lineNumber: number;
-  column: number;
-}
-
-export interface MonacoEditorProps {
-  doc: Y.Text;
-  language?: string;
-  onContentChange?: (content: string) => void;
-  onCursorChange?: (position: CursorPosition) => void;
-  remoteCursors?: { position: CursorPosition; color: string; name: string }[];
+interface Props {
+  initialValue: string;
+  language: string;
   style?: object;
   onLoad?: () => void;
+  onContentChange?: (value: string) => void;
+  onCursorChange?: (pos: CursorPosition) => void;
+  remoteCursors?: { position: CursorPosition; name: string }[];
 }
 
-const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
-  ({ doc, language = 'plaintext', onContentChange, onCursorChange, remoteCursors, style, onLoad }, ref) => {
+const MonacoEditor = memo(({ initialValue, language, style, onLoad, onContentChange, onCursorChange, remoteCursors }: Props) => {
     const webviewRef = useRef<WebView>(null);
     const editorRef = useRef<unknown>(null);
-
-    const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc]);
-    const htmlContent = useMemo(() => editorHtml(initialText, language), [initialText, language]);
-
-    useImperativeHandle(ref, () => ({
-      revealLineInCenter: (lineNumber, scroll = 1) => {
-        const command = `editor.revealLineInCenter(${lineNumber}, ${scroll});`;
-        webviewRef.current?.injectJavaScript(command);
-      },
-      getEditor: () => editorRef.current,
-    }), []);
+    const htmlContent = editorHtml(initialValue, language);
 
     const handleMessage = (event: WebViewMessageEvent) => {
       try {
@@ -82,7 +61,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
 
     useEffect(() => {
       if (remoteCursors && remoteCursors.length > 0) {
-        const script = `\n                const decorations = ${JSON.stringify(remoteCursors)}.map(cursor => ({\n                    range: new monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),\n                    options: {\n                        className: 'remote-cursor',\n                        stickiness: 1,\n            afterContentClassName: 'remote-cursor-label',\n   after: { content: \`${cursor.name}\` }\n                    }\n  }));\n                editor.deltaDecorations([], decorations);\n            `;
+        const script = `\n                const decorations = ${JSON.stringify(remoteCursors)}.map(cursor => ({\n                    range: new monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),\n                    options: {\n                        className: 'remote-cursor',\n                        stickiness: 1,\n   afterContentClassName: 'remote-cursor-label',\n   after: { content: \`${cursor.name}\` }\n                    }\n  }));\n                editor.deltaDecorations([], decorations);\n            `;
         webviewRef.current?.injectJavaScript(script);
       }
     }, [remoteCursors]);
