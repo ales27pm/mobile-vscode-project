@@ -2,8 +2,8 @@
 declare module 'yjs' {
     namespace Y {
         interface Doc {
-            on: (...args: unknown[]) => void;
-            destroy?: () => void;
+            on(event: string, listener: (...args: any[]) => void): void;
+            destroy(): void;
         }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
