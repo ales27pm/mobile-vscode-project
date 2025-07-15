@@ -2,6 +2,7 @@ declare module 'yjs' {
     namespace Y {
         interface Doc {
             on: any;
+            destroy(): void;
         }
     }
     const Y: any;
