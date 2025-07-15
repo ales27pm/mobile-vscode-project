@@ -3,9 +3,35 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import debounce from 'lodash.debounce';
+import { LRUCache } from 'lru-cache';
 
 const SNAPSHOT_DIR = '.mobile-vscode-crdt-snapshots';
 let snapshotDirAbs: string;
+
+const cache = new LRUCache<string, Y.Doc>({
+    max: 50,
+    ttl: 1000 * 60 * 5,
+    dispose: (doc: Y.Doc, key: string) => {
+        const saver = debouncedSavers.get(key);
+        if (saver) {
+            try {
+                saver.flush();
+                saver.cancel();
+                debouncedSavers.delete(key);
+                console.log(`[CRDT] Evicted and flushed doc: ${key}`);
+            } catch (error) {
+                console.error(`[CRDT] Error during saver cleanup for ${key}:`, error);
+            }
+        }
+        if (doc && doc.destroy && typeof doc.destroy === 'function') {
+            try {
+                doc.destroy();
+            } catch (error) {
+                console.error(`[CRDT] Error destroying doc ${key}:`, error);
+            }
+        }
+    },
+});
 
 function ensureSnapshotDirectory() {
     if (snapshotDirAbs) return;
@@ -21,7 +47,7 @@ function ensureSnapshotDirectory() {
 }
 
 const createDebouncedSave = (docId: string) => {
-    return debounce(async (doc: Y.Doc) => {
+    return debounce<(doc: Y.Doc) => Promise<void>>(async (doc: Y.Doc) => {
         try {
             ensureSnapshotDirectory();
             if (!snapshotDirAbs) return;
@@ -32,7 +58,12 @@ const createDebouncedSave = (docId: string) => {
             try {
                 await fs.promises.rename(tempFilePath, filePath);
             } catch (renameError) {
-                await fs.promises.unlink(tempFilePath).catch(() => {});
+                await fs.promises.unlink(tempFilePath).catch((err) => {
+                    console.warn(
+                        `[CRDT] Failed to clean up temp file ${tempFilePath}:`,
+                        err
+                    );
+                });
                 throw renameError;
             }
             console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
@@ -42,7 +73,12 @@ const createDebouncedSave = (docId: string) => {
             const tempFilePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs.tmp`);
             try {
                 await fs.promises.unlink(tempFilePath);
-            } catch {}
+            } catch (err) {
+                console.warn(
+                    `[CRDT] Failed to remove temp file ${tempFilePath}:`,
+                    err
+                );
+            }
         }
     }, 2000);
 };
@@ -53,31 +89,59 @@ export function bindState(docName: string, ydoc: Y.Doc) {
     ensureSnapshotDirectory();
     if (!snapshotDirAbs) return;
 
-    const docPath = path.join(snapshotDirAbs, `${encodeURIComponent(docName)}.yjs`);
-
-    if (fs.existsSync(docPath)) {
-        try {
-            const state = fs.readFileSync(docPath);
-            Y.applyUpdate(ydoc, state);
-            console.log(`[CRDT] Loaded state for doc: ${docName}`);
-        } catch (e) {
-            console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
+    if (cache.has(docName)) {
+        const cached = cache.get(docName);
+        if (cached) {
+            Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(cached));
         }
+    } else {
+        const docPath = path.join(snapshotDirAbs, `${encodeURIComponent(docName)}.yjs`);
+        if (fs.existsSync(docPath)) {
+            try {
+                const state = fs.readFileSync(docPath);
+                Y.applyUpdate(ydoc, state);
+                console.log(`[CRDT] Loaded state for doc: ${docName}`);
+            } catch (e) {
+                console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
+            }
+        }
+        const docCopy = new Y.Doc();
+        Y.applyUpdate(docCopy, Y.encodeStateAsUpdate(ydoc));
+        cache.set(docName, docCopy);
     }
 
-    if (!debouncedSavers.has(docName)) {
-        debouncedSavers.set(docName, createDebouncedSave(docName));
+    let saver = debouncedSavers.get(docName);
+    if (!saver) {
+        saver = createDebouncedSave(docName);
+        debouncedSavers.set(docName, saver);
     }
 
-    const saver = debouncedSavers.get(docName)!;
-    ydoc.on('update', () => saver(ydoc));
+    const runSaver = saver;
+    ydoc.on('update', () => {
+        runSaver(ydoc);
+        const copy = new Y.Doc();
+        Y.applyUpdate(copy, Y.encodeStateAsUpdate(ydoc));
+        cache.set(docName, copy);
+    });
 }
 
-export function unbindState(docName: string) {
+export function unbindState(docName: string, ydoc?: Y.Doc) {
     const saver = debouncedSavers.get(docName);
     if (saver) {
-        saver.flush();
-        saver.cancel();
+        try {
+            saver.flush();
+            saver.cancel();
+        } catch (err) {
+            console.warn(`[CRDT] Failed to flush saver for ${docName}:`, err);
+        }
         debouncedSavers.delete(docName);
     }
+    if (ydoc && typeof ydoc.destroy === 'function') {
+        try {
+            ydoc.destroy();
+        } catch (err) {
+            console.warn(`[CRDT] Failed to destroy doc ${docName}:`, err);
+        }
+    }
+    cache.delete(docName);
 }
