@@ -181,7 +181,11 @@ const renderChange = useCallback(({ item, section }: { item: { key: string; file
         onRefresh={refetch}
         refreshing={loading}
       />
-      <Button title="Commit Staged" onPress={() => setCommitModalVisible(true)} disabled={!data?.gitStatus.staged.length} />
+      <Button
+        title="Commit Staged"
+        onPress={() => setCommitModalVisible(true)}
+        disabled={!data?.gitStatus.staged.length || cLoading}
+      />
     </View>
   );
 }
