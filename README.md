@@ -6,6 +6,8 @@
 
 MobileVSCode bridges the gap between powerful mobile hardware and professional development workflows. It provides a fluid, intuitive client that connects directly to your existing, fully-configured Visual Studio Code environment, allowing you to browse files, edit code, run searches and use Git from anywhere.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a high-level overview of how the server and mobile client work together.
+
 ## Key Features
 
 - **True VS Code Backend**: Runs as a standard VS Code extension with full access to your workspace, terminals and settings.
@@ -73,6 +75,10 @@ The server exposes two real-time endpoints for maximum efficiency:
 git clone https://github.com/your-username/mobile-vscode-project.git
 cd mobile-vscode-project
 
+# Configure the upstream remote so you can pull the latest changes
+git remote add upstream https://github.com/ales27pm/mobile-vscode-project.git
+git fetch upstream
+
 # Install all dependencies for all packages
 yarn install
 
@@ -104,6 +110,11 @@ Scan the QR code with Expo Go and enter the pairing token when prompted to secur
 | Backend     | VS Code Extension API, Node.js, Express, Apollo Server             |
 | API & Sync  | GraphQL, WebSockets, Y.js (CRDTs), simple-git                      |
 | Tooling     | Yarn Workspaces, ESLint, Jest, Maestro, GraphQL Code Generator     |
+
+## Testing
+
+Run `yarn lint` and `yarn test` to verify the codebase. Backend tests run under Jest with mocks for VS Code and Express, covering GraphQL resolvers, the server lifecycle, the file system watcher utilities, and Git provider operations.
+
 
 ## Contributing
 
