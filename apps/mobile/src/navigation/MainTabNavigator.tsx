@@ -6,6 +6,7 @@ import Explorer from '../screens/Explorer';
 import Git from '../screens/Git';
 import Extensions from '../screens/Extensions';
 import Search from '../screens/Search';
+import Debug from '../screens/Debug';
 
 const Tab = createBottomTabNavigator();
 
@@ -14,6 +15,7 @@ const iconMap: Record<string, string> = {
   Search: 'magnify',
   Git: 'source-branch',
   Extensions: 'puzzle',
+  Debug: 'bug',
 };
 
 export default function MainTabNavigator({ route }) {
@@ -31,6 +33,7 @@ export default function MainTabNavigator({ route }) {
       <Tab.Screen name="Search" component={Search} initialParams={{ workspaceUri }} />
       <Tab.Screen name="Git" component={Git} initialParams={{ workspaceUri }} />
       <Tab.Screen name="Extensions" component={Extensions} initialParams={{ workspaceUri }} />
+      <Tab.Screen name="Debug" component={Debug} initialParams={{ workspaceUri }} />
     </Tab.Navigator>
   );
 }
