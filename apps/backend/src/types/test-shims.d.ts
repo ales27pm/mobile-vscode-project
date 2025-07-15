@@ -1,7 +1,7 @@
 declare module 'yjs' {
     namespace Y {
         interface Doc {
-            on: any;
+            on(event: string, listener: (...args: any[]) => void): void;
             destroy(): void;
         }
     }
