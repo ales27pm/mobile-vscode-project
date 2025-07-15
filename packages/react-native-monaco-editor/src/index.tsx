@@ -54,7 +54,7 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             onLoad?.();
             break;
           case 'contentDidChange': {
-            const payload = message.payload;
+            const {payload} = message;
             if (
               payload &&
               typeof payload === 'object' &&
