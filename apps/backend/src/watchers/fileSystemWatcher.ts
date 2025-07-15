@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { pubsub } from '../graphql/pubsub';
+import { FS_EVENT } from '../constants';
 
 let fileWatcher: vscode.FileSystemWatcher | null = null;
 
@@ -14,7 +15,7 @@ export function initializeFileSystemWatcher() {
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
         if (workspaceFolder) {
             const relPath = vscode.workspace.asRelativePath(uri, false);
-            pubsub.publish('FS_EVENT', {
+            pubsub.publish(FS_EVENT, {
                 fsEvent: { event, path: relPath }
             });
         }
