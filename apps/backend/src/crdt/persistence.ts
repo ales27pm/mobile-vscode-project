@@ -18,7 +18,7 @@ const cache = new LRUCache<string, Y.Doc>({
                 saver.flush();
                 saver.cancel();
                 debouncedSavers.delete(key);
-                console.log(`[CRDT] Evicted and flushed doc: ${key}`);
+                console.debug(`[CRDT] Evicted and flushed doc: ${key}`);
             } catch (error) {
                 console.error(`[CRDT] Error during saver cleanup for ${key}:`, error);
             }
@@ -30,7 +30,7 @@ const cache = new LRUCache<string, Y.Doc>({
                 console.error(`[CRDT] Error destroying doc ${key}:`, error);
             }
         }
-    }
+    },
 });
 
 function ensureSnapshotDirectory() {
@@ -58,15 +58,13 @@ const createDebouncedSave = (docId: string) => {
             try {
                 await fs.promises.rename(tempFilePath, filePath);
             } catch (renameError) {
-                await fs.promises
-                    .unlink(tempFilePath)
-                    .catch(() => undefined);
+                await fs.promises.unlink(tempFilePath).catch((err) => {
+                    console.warn(`[CRDT] Failed to clean up temp file ${tempFilePath}:`, err);
+                });
                 throw renameError;
             }
-            console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
         } catch (e) {
             console.error(`[CRDT] Failed to save snapshot for doc: ${docId}`, e);
-            // Clean up temp file if it exists
             const tempFilePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs.tmp`);
             try {
                 await fs.promises.unlink(tempFilePath);
@@ -84,15 +82,16 @@ export function bindState(docName: string, ydoc: Y.Doc) {
     if (!snapshotDirAbs) return;
 
     if (cache.has(docName)) {
-        const cached = cache.get(docName)!;
-        Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(cached));
+        const cached = cache.get(docName);
+        if (cached) {
+            Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(cached));
+        }
     } else {
         const docPath = path.join(snapshotDirAbs, `${encodeURIComponent(docName)}.yjs`);
         if (fs.existsSync(docPath)) {
             try {
                 const state = fs.readFileSync(docPath);
                 Y.applyUpdate(ydoc, state);
-                console.log(`[CRDT] Loaded state for doc: ${docName}`);
             } catch (e) {
                 console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
             }
@@ -107,7 +106,31 @@ export function bindState(docName: string, ydoc: Y.Doc) {
     }
 
     const saver = debouncedSavers.get(docName)!;
-    ydoc.on('update', () => saver(ydoc));
+    ydoc.on('update', () => {
+        saver(ydoc);
+        const copy = new Y.Doc();
+        Y.applyUpdate(copy, Y.encodeStateAsUpdate(ydoc));
+        cache.set(docName, copy);
+    });
 }
 
-// cleanup handled by LRU cache dispose
+export function unbindState(docName: string, ydoc?: Y.Doc) {
+    const saver = debouncedSavers.get(docName);
+    if (saver) {
+        try {
+            saver.flush();
+            saver.cancel();
+        } catch (err) {
+            console.warn(`[CRDT] Failed to flush saver for ${docName}:`, err);
+        }
+        debouncedSavers.delete(docName);
+    }
+    if (ydoc && typeof ydoc.destroy === 'function') {
+        try {
+            ydoc.destroy();
+        } catch (err) {
+            console.warn(`[CRDT] Failed to destroy doc ${docName}:`, err);
+        }
+    }
+    cache.delete(docName);
+}
