@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Express, Request } from 'express';
+import { Express, Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { updateStatusBar } from '../ui/statusBar';
@@ -50,10 +50,10 @@ export async function ensureAuthContext(): Promise<AuthContext | null> {
     };
 }
 
-type RequestWithUser = Request & { user?: string | jwt.JwtPayload };
+export type RequestWithUser = Request & { user?: string | jwt.JwtPayload };
 
 export function pairingMiddleware(authContext: AuthContext) {
-    return (req: RequestWithUser, res: any, next: any) => {
+    return (req: RequestWithUser, res: Response, next: NextFunction) => {
         if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
             return res.status(400).json({ error: 'Invalid request body' });
         }
@@ -82,7 +82,7 @@ export function pairingMiddleware(authContext: AuthContext) {
 }
 
 export function jwtAuthMiddleware(authContext: AuthContext) {
-    return (req: RequestWithUser, res: any, next: any) => {
+    return (req: RequestWithUser, res: Response, next: NextFunction) => {
         const authHeader = req.headers.authorization;
         if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Malformed or missing Authorization header' });

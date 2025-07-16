@@ -30,16 +30,16 @@ export interface PluginContext<IM extends IntentMap> {
   intent<K extends keyof IM>(
     intent: K,
     payload: IM[K],
-  ): Promise<CRDTResult>
+  ): Promise<CRDTResult[]>
 }
 
 /** The bus your plugin uses to emit & listen */
 export interface PluginBus<
-  IM extends IntentMap,
-  CTX extends PluginContext<IM>
+  IM extends IntentMap
 > {
-  emit<K extends keyof IM>(intent: K, payload: IM[K]): void
-  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => void): void
+  emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]>
+  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>): void
+  listeners?<K extends keyof IM>(intent: K): ((payload: IM[K]) => CRDTResult | Promise<CRDTResult>)[]
 }
 
 /** The core Plugin interface */
