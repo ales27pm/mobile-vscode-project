@@ -14,14 +14,11 @@ jest.mock('https', () => ({
     createServer: jest.fn(() => ({ listen, close, on })),
 }));
 
-jest.mock('express', () => {
-    const use = jest.fn();
-    const json = jest.fn(() => 'json');
-    const expressMock = jest.fn(() => ({ use }));
-    (expressMock as any).json = json;
-    return expressMock;
-});
-const expressMock = jest.requireMock('express') as jest.Mock;
+const use = jest.fn();
+const json = jest.fn(() => 'json');
+const expressMock = jest.fn(() => ({ use }));
+(expressMock as any).json = json;
+jest.mock('express', () => expressMock);
 
 const start = jest.fn(() => Promise.resolve());
 const applyMiddleware = jest.fn();
@@ -33,16 +30,11 @@ class FakeApolloServer {
 }
 jest.mock('apollo-server-express', () => ({ ApolloServer: jest.fn(() => new FakeApolloServer()) }));
 jest.mock('@graphql-tools/schema', () => ({ makeExecutableSchema: jest.fn(() => 'schema') }));
-jest.mock('../schema', () => 'type Query { _: Boolean }', { virtual: true });
 jest.mock('ws', () => ({ WebSocketServer: jest.fn(() => ({ on: jest.fn(), handleUpgrade: jest.fn(), close: jest.fn() })) }));
 jest.mock('graphql-ws/lib/use/ws', () => ({ useServer: jest.fn(() => ({ dispose: jest.fn() })) }));
-jest.mock('y-websocket/bin/utils.js', () => ({ setupWSConnection: jest.fn(), setPersistence: jest.fn() }), { virtual: true });
-jest.mock('yjs', () => ({}), { virtual: true });
-jest.mock('lodash.debounce', () => () => undefined, { virtual: true });
-jest.mock('fs', () => ({
-    existsSync: jest.fn(() => true),
-    readFileSync: jest.fn(() => Buffer.from('data')),
-}));
+jest.mock('y-websocket/bin/utils.js', () => ({ setupWSConnection: jest.fn(), setPersistence: jest.fn() }));
+jest.mock('yjs', () => ({}));
+jest.mock('fs', () => ({ existsSync: jest.fn(() => true), readFileSync: jest.fn(() => Buffer.from('data')) }));
 jest.mock('../graphql/resolvers', () => ({ getResolvers: jest.fn(() => ({})) }));
 jest.mock('../ui/statusBar', () => ({ updateStatusBar: jest.fn() }));
 jest.mock('path', () => ({ join: (...parts: string[]) => parts.join('/') }));
