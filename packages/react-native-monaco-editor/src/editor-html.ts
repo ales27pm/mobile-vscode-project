@@ -1,8 +1,8 @@
-export const editorHtml = (
+export function editorHtml(
   initialValue: string,
-  language: string,
-  extraScript = ''
-) => `
+  language: string
+): string {
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -74,9 +74,9 @@ export const editorHtml = (
             window.editor = editor;
             window.monaco = monaco;
         });
-        ${extraScript}
     </script>
 </body>
 </html>
 `;
+}
 
