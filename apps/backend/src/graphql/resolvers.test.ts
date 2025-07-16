@@ -2,56 +2,32 @@ import { getResolvers } from './resolvers';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-jest.mock('vscode', () => {
-    const readDirectory = jest.fn();
-    const readFile = jest.fn();
-    const writeFile = jest.fn();
-    const workspaceFolder = { name: 'test', uri: { fsPath: '/workspace/test', toString: () => 'file:///workspace/test' } };
-    const getWorkspaceFolder = jest.fn(() => workspaceFolder);
-    return {
-        workspace: {
-            workspaceFolders: [workspaceFolder],
-            getWorkspaceFolder,
-            fs: { readDirectory, readFile, writeFile },
-            asRelativePath: (uri: vscode.Uri) => uri.fsPath.replace('/workspace/test/', '')
-        },
-        Uri: {
-            parse: (s: string) => ({ fsPath: s.replace('file://',''), toString: () => s }),
-            file: (p: string) => ({ fsPath: p, toString: () => `file://${p}` })
-        },
-        debug: {
-            onDidStartDebugSession: jest.fn(),
-            onDidTerminateDebugSession: jest.fn(),
-            onDidReceiveDebugSessionCustomEvent: jest.fn(),
-            startDebugging: jest.fn(),
-            stopDebugging: jest.fn(),
-        },
-        FileType: { Directory: 2 },
-        __mocks: { readDirectory, readFile, writeFile, getWorkspaceFolder, workspaceFolder }
-    };
-}, { virtual: true });
-
 jest.mock('fs');
 
-const { __mocks } = jest.requireMock('vscode');
-const readDirectory: jest.Mock = __mocks.readDirectory;
-const readFile: jest.Mock = __mocks.readFile;
-const writeFile: jest.Mock = __mocks.writeFile;
-const getWorkspaceFolder: jest.Mock = __mocks.getWorkspaceFolder;
-const {workspaceFolder} = __mocks;
+const readDirectory: jest.Mock = vscode.workspace.fs.readDirectory as jest.Mock;
+const readFile: jest.Mock = vscode.workspace.fs.readFile as jest.Mock;
+const writeFile: jest.Mock = vscode.workspace.fs.writeFile as jest.Mock;
+const getWorkspaceFolder: jest.Mock = vscode.workspace.getWorkspaceFolder as jest.Mock;
+let workspaceFolder: vscode.WorkspaceFolder;
 
 beforeEach(() => {
+    workspaceFolder = {
+        name: 'test',
+        uri: { fsPath: '/workspace/test', toString: () => 'file:///workspace/test' },
+    } as unknown as vscode.WorkspaceFolder;
+    (vscode.workspace as any).workspaceFolders = [workspaceFolder];
     (fs.realpathSync.native as jest.Mock).mockImplementation((p: string) => p);
     readDirectory.mockResolvedValue([['file.txt', 0], ['folder', 2]]);
     readFile.mockResolvedValue(Buffer.from('content'));
     writeFile.mockResolvedValue(undefined);
     getWorkspaceFolder.mockReturnValue(workspaceFolder);
+    (vscode.workspace.asRelativePath as jest.Mock).mockImplementation((uri: vscode.Uri) => uri.fsPath.replace('/workspace/test/', ''));
 });
 
 test('lists workspaces', () => {
     const resolvers = getResolvers();
     expect(resolvers.Query.listWorkspaces()).toEqual([
-        { name: 'test', uri: 'file:///workspace/test' }
+        { name: 'test', uri: 'file:///workspace/test' },
     ]);
 });
 
@@ -61,7 +37,7 @@ test('lists directory contents', async () => {
     expect(readDirectory).toHaveBeenCalled();
     expect(result).toEqual([
         { name: 'file.txt', path: 'file.txt', isDirectory: false },
-        { name: 'folder', path: 'folder', isDirectory: true }
+        { name: 'folder', path: 'folder', isDirectory: true },
     ]);
 });
 
