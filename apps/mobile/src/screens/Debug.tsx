@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useQuery, useMutation, useSubscription } from '@apollo/client';
+import { useErrorAlert } from '../hooks/useErrorAlert';
 import { GetLaunchConfigurationsDocument, StartDebuggingDocument, StopDebuggingDocument, DebuggerEventDocument } from 'shared/src/types';
 import { useDebugStore } from '../state/debugStore';
 
-export default function Debug({ route }) {
+export default function Debug({ route }: any) {
   const { workspaceUri } = route.params;
   const [selectedConfig, setSelectedConfig] = React.useState<string | null>(null);
 
@@ -13,15 +14,22 @@ export default function Debug({ route }) {
 
   React.useEffect(() => {
     if (
-      data &&
       data?.getLaunchConfigurations?.length &&
       !selectedConfig
     ) {
       setSelectedConfig(data.getLaunchConfigurations[0].name);
     }
   }, [data, selectedConfig]);
-  const [start, { loading: startLoading }] = useMutation(StartDebuggingDocument);
-  const [stop, { loading: stopLoading }] = useMutation(StopDebuggingDocument);
+  
+  const startError = useErrorAlert('Failed to start debugging');
+  const stopError = useErrorAlert('Failed to stop debugging');
+  
+  const [start, { loading: startLoading }] = useMutation(StartDebuggingDocument, {
+    onError: startError,
+  });
+  const [stop, { loading: stopLoading }] = useMutation(StopDebuggingDocument, {
+    onError: stopError,
+  });
 
   const { logs, appendLog, clearLogs, setActive, isActive } = useDebugStore();
 

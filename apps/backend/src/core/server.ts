@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as fs from 'fs';
+import { AddressInfo } from 'net';
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -33,7 +34,7 @@ export async function startServer(context: vscode.ExtensionContext) {
 
     const app = express();
     app.use(express.json());
-    
+
     const keyPath = join(context.extensionPath, 'certs/server.key');
     const certPath = join(context.extensionPath, 'certs/server.crt');
     if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
@@ -54,60 +55,63 @@ export async function startServer(context: vscode.ExtensionContext) {
         context: ({ req }) => ({ user: (req as RequestWithUser).user }),
     });
 
-    apolloServer.start().then(() => {
-        if (!apolloServer || !httpServer) return;
+    await apolloServer.start();
+    
+    if (!apolloServer || !httpServer) return;
 
-        apolloServer.applyMiddleware({ app, path: '/graphql' });
+    apolloServer.applyMiddleware({ app, path: '/graphql' });
 
-        const gqlWsServer = new WebSocketServer({ noServer: true });
-        const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
+    const gqlWsServer = new WebSocketServer({ noServer: true });
+    const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
 
-        const yjsWsServer = new WebSocketServer({ noServer: true });
+    const yjsWsServer = new WebSocketServer({ noServer: true });
 
-        setPersistence({
-            bindState: (docName: string, ydoc: Doc) => {
-                bindState(docName, ydoc);
-            },
-            writeState: () => {
-                // Persistence is handled by debounced savers in bindState
-            },
-            provider: null,
-        });
-
-        yjsWsServer.on('connection', setupWSConnection);
-
-        httpServer.on('upgrade', (req, socket, head) => {
-            if (!req.url) {
-                socket.destroy();
-                return;
-            }
-            const host = req.headers.host || 'localhost:3000';
-            const protocol = 'https'; // Server uses HTTPS certificates
-            const url = new URL(req.url, `${protocol}://${host}`);
-            if (url.pathname === '/graphql') {
-                gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
-            } else if (url.pathname.startsWith('/yjs')) {
-                yjsWsServer.handleUpgrade(req, socket, head, ws => yjsWsServer.emit('connection', ws, req));
-            } else {
-                socket.destroy();
-            }
-        });
-        
-        wsServerCleanup = () => {
-             gqlWsServerHandler.dispose();
-             yjsWsServer.close();
-             gqlWsServer.close();
-        };
-
-        const config = vscode.workspace.getConfiguration('mobile-vscode-server');
-        const port = config.get<number>('port', 4000);
-
-        httpServer.listen(port, () => {
-            console.log(`🚀 MobileVSCode Server ready at https://localhost:${port}`);
-        });
-
-        initializeFileSystemWatcher();
+    setPersistence({
+        bindState: (docName: string, ydoc: Doc) => {
+            bindState(docName, ydoc);
+        },
+        writeState: () => {
+            // This is a no-op because persistence is handled by debounced savers in bindState.
+        },
+        provider: null,
     });
+
+    yjsWsServer.on('connection', setupWSConnection);
+
+    httpServer.on('upgrade', (req, socket, head) => {
+        if (!req.url) {
+            console.error('HTTP upgrade request missing URL. Destroying socket.');
+            socket.destroy();
+            return;
+        }
+        const host = req.headers.host || 'localhost:4000';
+        // Hardcode protocol to https as per review feedback for simplicity and robustness
+        const protocol = 'https'; 
+        const url = new URL(req.url, `${protocol}://${host}`);
+        
+        if (url.pathname === '/graphql') {
+            gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
+        } else if (url.pathname.startsWith('/yjs')) {
+            yjsWsServer.handleUpgrade(req, socket, head, ws => yjsWsServer.emit('connection', ws, req));
+        } else {
+            socket.destroy();
+        }
+    });
+    
+    wsServerCleanup = () => {
+         gqlWsServerHandler.dispose();
+         yjsWsServer.close();
+         gqlWsServer.close();
+    };
+
+    const config = vscode.workspace.getConfiguration('mobile-vscode-server');
+    const port = config.get<number>('port', 4000);
+
+    httpServer.listen(port, () => {
+        console.log(`🚀 MobileVSCode Server ready at https://localhost:${port}`);
+    });
+
+    initializeFileSystemWatcher();
 }
 
 export function stopServer() {
