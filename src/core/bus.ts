@@ -13,8 +13,7 @@ export class InMemoryBus<IM extends IntentMap>
 
   async emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
     const listeners = this.emitter.listeners(intent as string) as ((payload: IM[K]) => CRDTResult | Promise<CRDTResult>)[]
-    const results = await Promise.all(listeners.map(fn => Promise.resolve(fn(payload))) )
-    return results
+    return await Promise.all(listeners.map(fn => Promise.resolve(fn(payload))) );
   }
 
   on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>): void {
