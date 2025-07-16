@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import simpleGit from 'simple-git';
 import { pubsub } from './pubsub';
+import { FS_EVENT, DEBUG_EVENT } from '../constants';
 import { getGitProvider } from '../providers/gitProvider';
 import { getDebugProvider } from '../providers/debugProvider';
 
@@ -37,95 +37,47 @@ export function getResolvers() {
     const gitProvider = getGitProvider();
     const debugProvider = getDebugProvider();
 
-    const resolvers: any = {
+    return {
         Query: {
             listWorkspaces: () => {
                 return vscode.workspace.workspaceFolders?.map(f => ({ name: f.name, uri: f.uri.toString() })) ?? [];
             },
-            listDirectory: async (_: any, { workspaceUri, path = '' }: { workspaceUri: string, path?: string }) => {
+            listDirectory: async (_: unknown, { workspaceUri, path: dirPath = '' }: { workspaceUri: string; path?: string }) => {
                 const workspace = getWorkspace(workspaceUri);
-                const directoryUri = getValidatedUri(workspace, path);
+                const directoryUri = getValidatedUri(workspace, dirPath);
                 const items = await vscode.workspace.fs.readDirectory(directoryUri);
                 return items.map(([name, type]) => ({
                     name,
-                    path: `${path ? path + '/' : ''}${name}`,
+                    path: `${dirPath ? dirPath + '/' : ''}${name}`,
                     isDirectory: type === vscode.FileType.Directory,
                 }));
             },
-            readFile: async (_: any, { workspaceUri, path }: { workspaceUri: string, path: string }) => {
+            readFile: async (_: unknown, { workspaceUri, path: filePath }: { workspaceUri: string; path: string }) => {
                 const workspace = getWorkspace(workspaceUri);
-                const fileUri = getValidatedUri(workspace, path);
+                const fileUri = getValidatedUri(workspace, filePath);
                 const content = await vscode.workspace.fs.readFile(fileUri);
                 return content.toString();
-            },
-            search: async (_: any, { workspaceUri, query }: { workspaceUri: string, query: string }) => {
-                const workspace = getWorkspace(workspaceUri);
-                const results: { file: string; line: number; text: string }[] = [];
-                await (vscode.workspace as any).findTextInFiles(
-                    { pattern: query },
-                    { include: new vscode.RelativePattern(workspace, '**/*'), exclude: '**/node_modules/**' },
-                    (result: any) => {
-                        if ('preview' in result && result.ranges && result.ranges.length > 0) {
-                            results.push({
-                                file: vscode.workspace.asRelativePath(result.uri, false),
-                                line: result.ranges[0].start.line + 1,
-                                text: result.preview.text.trim()
-                            });
-                        }
-                    }
-                );
-                return results;
-            },
-            extensions: () => {
-                 return vscode.extensions.all
-                    .filter(ext => !ext.id.startsWith('vscode.') && !ext.id.startsWith('ms-vscode.'))
-                    .map(ext => ({
-                        id: ext.id,
-                        name: ext.packageJSON.displayName || ext.packageJSON.name,
-                        description: ext.packageJSON.description,
-                        installed: true,
-                    }));
             },
             ...gitProvider.Query,
             ...debugProvider.Query,
         },
         Mutation: {
-            writeFile: async (_: any, { workspaceUri, path, content }: { workspaceUri: string, path: string; content: string }) => {
+            writeFile: async (_: unknown, { workspaceUri, path: filePath, content }: { workspaceUri: string; path: string; content: string }) => {
                 const workspace = getWorkspace(workspaceUri);
-                const fileUri = getValidatedUri(workspace, path);
-                const newContent = Buffer.from(content, 'utf-8');
-                await vscode.workspace.fs.writeFile(fileUri, newContent);
+                const fileUri = getValidatedUri(workspace, filePath);
+                await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf-8'));
                 return true;
-            },
-            installExtension: async (_: any, { id }: { id: string }) => {
-                try {
-                    await vscode.commands.executeCommand('workbench.extensions.installExtension', id);
-                    return true;
-                } catch (err) {
-                    console.error(err);
-                    return false;
-                }
-            },
-            uninstallExtension: async (_: any, { id }: { id: string }) => {
-                try {
-                    await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', id);
-                    return true;
-                } catch (err) {
-                    console.error(err);
-                    return false;
-                }
             },
             ...gitProvider.Mutation,
             ...debugProvider.Mutation,
         },
         Subscription: {
             fsEvent: {
-                subscribe: () => pubsub.asyncIterator(['FS_EVENT']),
+                subscribe: () => pubsub.asyncIterator([FS_EVENT]),
             },
             debuggerEvent: {
-                subscribe: () => pubsub.asyncIterator(['DEBUG_EVENT']),
+                subscribe: () => pubsub.asyncIterator([DEBUG_EVENT]),
             },
         },
     };
-    return resolvers;
 }
