@@ -15,8 +15,8 @@ export const getGitProvider = () => ({
       const s = await git.status();
       return {
         branch: s.current || 'detached',
-        staged: s.staged,
-        unstaged: s.files.filter(f => !s.staged.includes(f.path)).map(f => f.path),
+        staged: s.files.filter(f => f.index.trim() !== '').map(f => f.path),
+        unstaged: s.files.filter(f => f.working_dir.trim() !== '').map(f => f.path),
       };
     },
     gitDiff: async (_: unknown, { workspaceUri, file }: { workspaceUri: string; file: string }) => {
