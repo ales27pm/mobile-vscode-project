@@ -66,10 +66,8 @@ const createDebouncedSave = (docId: string) => {
                 });
                 throw renameError;
             }
-            console.log(`[CRDT] Persisted snapshot for doc: ${docId}`);
         } catch (e) {
             console.error(`[CRDT] Failed to save snapshot for doc: ${docId}`, e);
-            // Clean up temp file if it exists
             const tempFilePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs.tmp`);
             try {
                 await fs.promises.unlink(tempFilePath);
