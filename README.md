@@ -75,6 +75,10 @@ The server exposes two real-time endpoints for maximum efficiency:
 git clone https://github.com/your-username/mobile-vscode-project.git
 cd mobile-vscode-project
 
+# Configure the upstream remote so you can pull the latest changes
+git remote add upstream https://github.com/ales27pm/mobile-vscode-project.git
+git fetch upstream
+
 # Install all dependencies for all packages
 yarn install
 
@@ -106,6 +110,11 @@ Scan the QR code with Expo Go and enter the pairing token when prompted to secur
 | Backend     | VS Code Extension API, Node.js, Express, Apollo Server             |
 | API & Sync  | GraphQL, WebSockets, Y.js (CRDTs), simple-git                      |
 | Tooling     | Yarn Workspaces, ESLint, Jest, Maestro, GraphQL Code Generator     |
+
+## Testing
+
+Run `yarn lint` and `yarn test` to verify the codebase. Backend tests run under Jest with mocks for VS Code and Express, covering GraphQL resolvers, the server lifecycle, file system watching, and Git provider operations.
+
 
 ## Contributing
 

@@ -47,7 +47,7 @@ function ensureSnapshotDirectory() {
 }
 
 const createDebouncedSave = (docId: string) => {
-    return debounce(async (doc: Y.Doc) => {
+    return debounce<(doc: Y.Doc) => Promise<void>>(async (doc: Y.Doc) => {
         try {
             ensureSnapshotDirectory();
             if (!snapshotDirAbs) return;
@@ -59,7 +59,10 @@ const createDebouncedSave = (docId: string) => {
                 await fs.promises.rename(tempFilePath, filePath);
             } catch (renameError) {
                 await fs.promises.unlink(tempFilePath).catch((err) => {
-                    console.warn(`[CRDT] Failed to clean up temp file ${tempFilePath}:`, err);
+                    console.warn(
+                        `[CRDT] Failed to clean up temp file ${tempFilePath}:`,
+                        err
+                    );
                 });
                 throw renameError;
             }
@@ -68,8 +71,11 @@ const createDebouncedSave = (docId: string) => {
             const tempFilePath = path.join(snapshotDirAbs, `${encodeURIComponent(docId)}.yjs.tmp`);
             try {
                 await fs.promises.unlink(tempFilePath);
-            } catch {
-                // ignore
+            } catch (err) {
+                console.warn(
+                    `[CRDT] Failed to remove temp file ${tempFilePath}:`,
+                    err
+                );
             }
         }
     }, 2000);
@@ -92,6 +98,7 @@ export function bindState(docName: string, ydoc: Y.Doc) {
             try {
                 const state = fs.readFileSync(docPath);
                 Y.applyUpdate(ydoc, state);
+                console.log(`[CRDT] Loaded state for doc: ${docName}`);
             } catch (e) {
                 console.error(`[CRDT] Failed to load state for doc: ${docName}`, e);
             }
@@ -101,13 +108,15 @@ export function bindState(docName: string, ydoc: Y.Doc) {
         cache.set(docName, docCopy);
     }
 
-    if (!debouncedSavers.has(docName)) {
-        debouncedSavers.set(docName, createDebouncedSave(docName));
+    let saver = debouncedSavers.get(docName);
+    if (!saver) {
+        saver = createDebouncedSave(docName);
+        debouncedSavers.set(docName, saver);
     }
 
-    const saver = debouncedSavers.get(docName)!;
+    const runSaver = saver;
     ydoc.on('update', () => {
-        saver(ydoc);
+        runSaver(ydoc);
         const copy = new Y.Doc();
         Y.applyUpdate(copy, Y.encodeStateAsUpdate(ydoc));
         cache.set(docName, copy);

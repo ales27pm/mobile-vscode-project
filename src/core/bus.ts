@@ -11,12 +11,17 @@ export class InMemoryBus<IM extends IntentMap>
 {
   private readonly emitter = new EventEmitter()
 
-  emit<K extends keyof IM>(intent: K, payload: IM[K]): void {
-    this.emitter.emit(intent as string, payload)
+  async emit<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
+    const listeners = this.emitter.listeners(intent as string) as ((payload: IM[K]) => CRDTResult | Promise<CRDTResult>)[]
+    return await Promise.all(listeners.map(fn => Promise.resolve(fn(payload))) );
   }
 
-  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => void): void {
+  on<K extends keyof IM>(intent: K, cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>): void {
     this.emitter.on(intent as string, cb as (payload: unknown) => void)
+  }
+
+  listeners<K extends keyof IM>(intent: K) {
+    return this.emitter.listeners(intent as string) as ((payload: IM[K]) => CRDTResult | Promise<CRDTResult>)[]
   }
 }
 
@@ -29,11 +34,10 @@ export class BasicPluginContext<IM extends IntentMap>
     intent: K,
     cb: (payload: IM[K]) => CRDTResult | Promise<CRDTResult>,
   ): void {
-    this.bus.on(intent, cb as (payload: IM[K]) => void)
+    this.bus.on(intent, cb)
   }
 
-  intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult> {
-    this.bus.emit(intent, payload)
-    return Promise.resolve({ success: true })
+  intent<K extends keyof IM>(intent: K, payload: IM[K]): Promise<CRDTResult[]> {
+    return this.bus.emit(intent, payload)
   }
 }

@@ -282,7 +282,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:^7.11.6, @babel/core@npm:^7.12.3, @babel/core@npm:^7.13.16, @babel/core@npm:^7.14.0, @babel/core@npm:^7.20.0, @babel/core@npm:^7.23.9":
+"@babel/core@npm:*, @babel/core@npm:^7.11.6, @babel/core@npm:^7.12.3, @babel/core@npm:^7.13.16, @babel/core@npm:^7.14.0, @babel/core@npm:^7.20.0, @babel/core@npm:^7.23.9, @babel/core@npm:^7.28.0":
   version: 7.28.0
   resolution: "@babel/core@npm:7.28.0"
   dependencies:
@@ -1667,7 +1667,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/preset-env@npm:^7.20.0":
+"@babel/preset-env@npm:*, @babel/preset-env@npm:^7.20.0":
   version: 7.28.0
   resolution: "@babel/preset-env@npm:7.28.0"
   dependencies:
@@ -3831,6 +3831,16 @@ __metadata:
   bin:
     react-native: build/bin.js
   checksum: 10c0/e035f3692da50acc3b3546412707d7c0a18535571d49963a948f6a1c98dc8d84f75e32db6066beec2276f371f3f44dfbac62bcb035adeb53ca673b5f6ffee817
+  languageName: node
+  linkType: hard
+
+"@react-native-picker/picker@npm:^2.4.10":
+  version: 2.11.1
+  resolution: "@react-native-picker/picker@npm:2.11.1"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/d2e9aeb32ae80f2ab56fa025f1afd6d8ff8051e7078bfd17c6794ff0cc1538d4a2f548098826eb652e6cb64d998070b0111777c78de4dcb468cb71e7e4d93097
   languageName: node
   linkType: hard
 
@@ -7009,10 +7019,14 @@ __metadata:
   resolution: "editor@workspace:packages/editor"
   dependencies:
     lodash.debounce: "npm:^4.0.8"
+    react: "npm:18.2.0"
+    react-native: "npm:0.71.8"
     react-native-monaco-editor: "npm:^0.1.0"
+    react-native-webview: "npm:11.26.0"
   peerDependencies:
     react: "*"
     react-native: "*"
+    react-native-webview: "*"
   languageName: unknown
   linkType: soft
 
@@ -10123,7 +10137,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-util@npm:^29.7.0":
+"jest-util@npm:^29.0.0, jest-util@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest-util@npm:29.7.0"
   dependencies:
@@ -12011,6 +12025,7 @@ __metadata:
     typescript: "npm:^5.1.3"
     ws: "npm:^8.12.0"
     y-websocket: "npm:^1.5.0"
+    yjs: "npm:^13.5.43"
   languageName: unknown
   linkType: soft
 
@@ -12037,6 +12052,7 @@ __metadata:
     "@apollo/client": "npm:^3.8.0"
     "@babel/core": "npm:^7.20.0"
     "@react-native-async-storage/async-storage": "npm:^1.20.1"
+    "@react-native-picker/picker": "npm:^2.4.10"
     "@react-navigation/bottom-tabs": "npm:^6.5.7"
     "@react-navigation/native": "npm:^6.1.6"
     "@react-navigation/native-stack": "npm:^6.9.12"
@@ -12053,6 +12069,7 @@ __metadata:
     react-native: "npm:0.71.8"
     react-native-monaco-editor: "npm:^0.1.0"
     react-native-safe-area-context: "npm:4.5.0"
+    react-native-screens: "npm:^3.20.0"
     react-native-url-polyfill: "npm:^1.3.0"
     react-native-vector-icons: "npm:^9.2.0"
     react-native-webview: "npm:11.26.0"
@@ -13315,6 +13332,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-freeze@npm:^1.0.0":
+  version: 1.0.4
+  resolution: "react-freeze@npm:1.0.4"
+  peerDependencies:
+    react: ">=17.0.0"
+  checksum: 10c0/8f51257c261bfefff86f618e958683536248f708019632d309ee5ebdd52f25d3c130660d06fb6f0f4fdef79f00f8ec7177233a872c2321f7d46b7e77ccc522a1
+  languageName: node
+  linkType: hard
+
 "react-is@npm:^16.12.0 || ^17.0.0 || ^18.0.0, react-is@npm:^18.0.0, react-is@npm:^18.2.0":
   version: 18.3.1
   resolution: "react-is@npm:18.3.1"
@@ -13372,6 +13398,19 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 10c0/cd9dfe25803b7b120940c243d9c9f10b0b61d262ad5875245909cdbf0025684241189b2796d35028519fee0e7a94e6f47bcaf2e23fc7801875d5f633a7778296
+  languageName: node
+  linkType: hard
+
+"react-native-screens@npm:^3.20.0":
+  version: 3.37.0
+  resolution: "react-native-screens@npm:3.37.0"
+  dependencies:
+    react-freeze: "npm:^1.0.0"
+    warn-once: "npm:^0.1.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/a8de8dc21f522567de1600ae79a5ec472ffe3db8bc90d4ca8b58deae6e732e35d090a52f26cbc7591d635385f83b2784382d543dbb8d2b5fe40ed1f7bffe940b
   languageName: node
   linkType: hard
 
@@ -14229,10 +14268,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "shared@workspace:packages/shared"
   dependencies:
-    "@types/jest": "npm:^29.5.2"
-    graphql: "npm:^16.6.0"
-    jest: "npm:^29.5.0"
-    ts-jest: "npm:^29.1.0"
     typescript: "npm:^5.1.3"
   languageName: unknown
   linkType: soft
@@ -15509,23 +15544,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.1.3":
-  version: 5.8.3
-  resolution: "typescript@npm:5.8.3"
+"typescript@npm:5.1.3":
+  version: 5.1.3
+  resolution: "typescript@npm:5.1.3"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/5f8bb01196e542e64d44db3d16ee0e4063ce4f3e3966df6005f2588e86d91c03e1fb131c2581baf0fb65ee79669eea6e161cd448178986587e9f6844446dbb48
+  checksum: 10c0/1faba8d5ffd4717864ddce767613c5ab77c1c8510c1ce21dc9b112a4c662357b9338dc0a6121615266d3a44ebec699f115ef2dabf18d9d7341ea1675692b9b24
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.1.3#optional!builtin<compat/typescript>":
-  version: 5.8.3
-  resolution: "typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>::version=5.8.3&hash=5786d5"
+"typescript@patch:typescript@npm%3A5.1.3#optional!builtin<compat/typescript>":
+  version: 5.1.3
+  resolution: "typescript@patch:typescript@npm%3A5.1.3#optional!builtin<compat/typescript>::version=5.1.3&hash=5da071"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/39117e346ff8ebd87ae1510b3a77d5d92dae5a89bde588c747d25da5c146603a99c8ee588c7ef80faaf123d89ed46f6dbd918d534d641083177d5fac38b8a1cb
+  checksum: 10c0/769c5a11a9d5207ae5ce4c84b5c7a72ad92a28877a0061881ccfb326a43a1a1de79c4daff2f9d74720137744cfc9332fddbfbc4c3973c1e859b2f977f5d11b72
   languageName: node
   linkType: hard
 

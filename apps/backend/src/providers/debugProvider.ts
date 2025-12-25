@@ -1,29 +1,42 @@
 import * as vscode from 'vscode';
 import { pubsub } from '../graphql/pubsub';
+import { DEBUG_EVENT } from '../constants';
 
 let activeSession: vscode.DebugSession | undefined;
 
 vscode.debug.onDidStartDebugSession(session => {
   activeSession = session;
-  pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'start', body: `Session '${session.name}' started.` } });
+  try {
+    pubsub.publish(DEBUG_EVENT, {
+      debuggerEvent: { event: 'start', body: `Session '${session.name}' started.` },
+    });
+  } catch (error) {
+    console.error('Failed to publish start debug event:', error);
+  }
 });
 
 vscode.debug.onDidTerminateDebugSession(() => {
   activeSession = undefined;
-  pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'stop', body: 'Session terminated.' } });
+  try {
+    pubsub.publish(DEBUG_EVENT, { debuggerEvent: { event: 'stop', body: 'Session terminated.' } });
+  } catch (error) {
+    console.error('Failed to publish stop debug event:', error);
+  }
 });
 
-const getOutputFromBody = (body: any): string => {
-  return body && typeof body === 'object' && 'output' in body && typeof body.output === 'string' 
-    ? body.output 
+const getOutputFromBody = (body: unknown): string =>
+  typeof body === 'object' &&
+  body !== null &&
+  'output' in body &&
+  typeof (body as { output: unknown }).output === 'string'
+    ? (body as { output: string }).output
     : '';
-};
 
 vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
   try {
     if (activeSession && e.session === activeSession && e.event === 'output') {
       const output = getOutputFromBody(e.body);
-      pubsub.publish('DEBUG_EVENT', { debuggerEvent: { event: 'output', body: output } });
+      pubsub.publish(DEBUG_EVENT, { debuggerEvent: { event: 'output', body: output } });
     }
   } catch (error) {
     console.error('Error handling debug session custom event:', error);
@@ -52,8 +65,7 @@ export const getDebugProvider = () => ({
     },
     stopDebugging: async () => {
       if (!activeSession) return false;
-      await vscode.debug.stopDebugging(activeSession);
-      return true;
+      return await vscode.debug.stopDebugging(activeSession);
     },
   },
 });

@@ -28,7 +28,10 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     const webviewRef = useRef<WebView>(null);
     const editorRef = useRef<unknown>(null);
 
-    const initialText = useMemo(() => doc.toString().replace(/`/g, '\\`'), [doc]);
+    const initialText = useMemo(() => {
+      const str = doc.toString();
+      return JSON.stringify(str).slice(1, -1);
+    }, [doc]);
     const htmlContent = useMemo(() => editorHtml(initialText, language), [initialText, language]);
 
     useImperativeHandle(ref, () => ({
@@ -53,13 +56,22 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             editorRef.current = message.payload;
             onLoad?.();
             break;
-          case 'contentDidChange':
-            onContentChange?.((message.payload as { value: string }).value);
+          case 'contentDidChange': {
+            const {payload} = message;
+            if (
+              payload &&
+              typeof payload === 'object' &&
+              'value' in payload &&
+              typeof (payload as Record<string, unknown>).value === 'string'
+            ) {
+              onContentChange?.((payload as { value: string }).value);
+            } else {
+              console.warn('Invalid payload for contentDidChange:', payload);
+            }
             break;
+          }
           case 'cursorDidChange':
-            onCursorChange?.(
-              (message.payload as { position: CursorPosition }).position
-            );
+            onCursorChange?.((message.payload as { position: CursorPosition }).position);
             break;
           default:
             console.warn(`Unknown message type from WebView: ${message.type}`);
@@ -71,7 +83,23 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
 
     useEffect(() => {
       if (remoteCursors && remoteCursors.length > 0) {
-        const script = `\n                const decorations = ${JSON.stringify(remoteCursors)}.map(cursor => ({\n                    range: new monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),\n                    options: {\n                        className: 'remote-cursor',\n                        stickiness: 1,\n                        afterContentClassName: 'remote-cursor-label',\n                        after: { content: \`${cursor.name}\` }\n                    }\n                }));\n                editor.deltaDecorations([], decorations);\n            `;
+        const safeCursors = remoteCursors.map(c => ({
+          position: c.position,
+          color: c.color,
+          name: JSON.stringify(c.name).slice(1, -1),
+        }));
+        const script = `
+                const decorations = ${JSON.stringify(safeCursors)}.map(cursor => ({
+                    range: new monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),
+                    options: {
+                        className: 'remote-cursor',
+                        stickiness: 1,
+                        afterContentClassName: 'remote-cursor-label',
+                        after: { content: \`${'$'}{cursor.name}\` }
+                    }
+                }));
+                editor.deltaDecorations([], decorations);
+            `;
         webviewRef.current?.injectJavaScript(script);
       }
     }, [remoteCursors]);
@@ -92,4 +120,3 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
 );
 
 export default MonacoEditor;
-
