@@ -55,15 +55,16 @@ export async function startServer(context: vscode.ExtensionContext) {
         context: ({ req }) => ({ user: (req as RequestWithUser).user }),
     });
 
-    apolloServer.start().then(() => {
-        if (!apolloServer || !httpServer) return;
+    await apolloServer.start();
+    
+    if (!apolloServer || !httpServer) return;
 
-        apolloServer.applyMiddleware({ app, path: '/graphql' });
+    apolloServer.applyMiddleware({ app, path: '/graphql' });
 
-        const gqlWsServer = new WebSocketServer({ noServer: true });
-        const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
+    const gqlWsServer = new WebSocketServer({ noServer: true });
+    const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
 
-        const yjsWsServer = new WebSocketServer({ noServer: true });
+    const yjsWsServer = new WebSocketServer({ noServer: true });
 
         setPersistence({
             bindState: (docName: string, ydoc: Doc) => {
@@ -115,15 +116,14 @@ export async function startServer(context: vscode.ExtensionContext) {
              gqlWsServer.close();
         };
 
-        const config = vscode.workspace.getConfiguration('mobile-vscode-server');
-        const port = config.get<number>('port', 4000);
+    const config = vscode.workspace.getConfiguration('mobile-vscode-server');
+    const port = config.get<number>('port', 4000);
 
-        httpServer.listen(port, () => {
-            console.log(`🚀 MobileVSCode Server ready at https://localhost:${port}`);
-        });
-
-        initializeFileSystemWatcher();
+    httpServer.listen(port, () => {
+        console.log(`🚀 MobileVSCode Server ready at https://localhost:${port}`);
     });
+
+    initializeFileSystemWatcher();
 }
 
 export function stopServer() {
