@@ -8,7 +8,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { join } from 'path';
-import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
+import { setupWSConnection, setPersistence} from 'y-websocket/bin/utils';
 
 import { ensureAuthContext, setupAuthMiddleware, RequestWithUser } from './auth';
 import { bindState } from '../crdt/persistence';
@@ -67,14 +67,12 @@ export async function startServer(context: vscode.ExtensionContext) {
     const yjsWsServer = new WebSocketServer({ noServer: true });
 
         setPersistence({
-            bindState: (docName: string, ydoc: Doc) => {
+            bindState: (docName: string, ydoc: any) => {
                 bindState(docName, ydoc);
             },
             writeState: () => {
                 // Persistence is handled by debounced savers in bindState
-            },
-            provider: null,
-        });
+            },});
 
         yjsWsServer.on('connection', setupWSConnection);
 

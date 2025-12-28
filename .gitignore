@@ -49,3 +49,5 @@ junit.xml
 # Misc
 installed.json
 .yarn
+packages/
+apps/backend/node_modules/

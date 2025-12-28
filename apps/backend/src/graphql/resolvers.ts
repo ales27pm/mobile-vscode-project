@@ -137,3 +137,5 @@ const resolvers = {
 export function getResolvers() {
     return resolvers;
 }
+
+export default resolvers;
