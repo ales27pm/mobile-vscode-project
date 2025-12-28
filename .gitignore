@@ -51,3 +51,4 @@ installed.json
 .yarn
 packages/
 apps/backend/node_modules/
+mobileVSC_fixed
