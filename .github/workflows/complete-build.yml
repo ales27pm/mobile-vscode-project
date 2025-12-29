@@ -296,7 +296,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     name: Build Mobile (${{ matrix.platform }})
     needs: [preflight, validate-and-test]
-    if: ${{ !env.SKIP_MOBILE && matrix.if_condition && (github.event_name != 'workflow_dispatch' || inputs.build_type == 'all' || inputs.build_type == 'mobile-only') }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_mobile != 'true') && matrix.if_condition && (github.event_name != 'workflow_dispatch' || inputs.build_type == 'all' || inputs.build_type == 'mobile-only') }}
     strategy:
       matrix:
         include:
@@ -354,35 +354,35 @@ jobs:
           # Create minimal eas.json if not exists using a cleaner approach
           if [ ! -f "eas.json" ]; then
             echo 'Creating eas.json...'
-            cat > eas.json << 'EOF'
-            {
-              "cli": {
-                "version": ">= 5.0.0"
-              },
-              "build": {
-                "development": {
-                  "developmentClient": true,
-                  "distribution": "internal",
-                  "android": {
-                    "buildType": "apk"
-                  },
-                  "ios": {
-                    "simulator": true
-                  }
-                },
-                "preview": {
-                  "distribution": "internal",
-                  "android": {
-                    "buildType": "apk"
-                  }
-                },
-                "production": {}
-              },
-              "submit": {
-                "production": {}
-              }
-            }
-            EOF
+            cat > eas.json <<'EOF'
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {}
+  }
+}
+EOF
             echo "eas.json created"
           else
             echo "eas.json already exists"
