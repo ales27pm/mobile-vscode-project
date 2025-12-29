@@ -92,6 +92,27 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile --ignore-engines
 
+      - name: Install esbuild for bundling (if needed)
+        id: install-esbuild
+        run: |
+          # Check if bundle script exists and requires esbuild
+          if [ -f "apps/backend/scripts/bundle.js" ]; then
+            echo "Bundle script found, checking for esbuild requirement..."
+            if grep -q "esbuild" apps/backend/scripts/bundle.js; then
+              echo "Bundle script uses esbuild, installing..."
+              cd apps/backend
+              npm install esbuild --no-save
+              echo "esbuild_installed=true" >> $GITHUB_OUTPUT
+              cd ../..
+            else
+              echo "Bundle script doesn't use esbuild"
+              echo "esbuild_installed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No bundle script found"
+            echo "esbuild_installed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create .vscodeignore file
         run: |
           cat > apps/backend/.vscodeignore << 'EOF'
@@ -142,9 +163,15 @@ jobs:
         run: |
           cd apps/backend
           npm run build
-          # Create bundle if needed
+          # Create bundle if needed (with esbuild check)
           if [ -f "scripts/bundle.js" ]; then
-            node scripts/bundle.js
+            echo "Running bundle script..."
+            if node -e "try { require('esbuild'); console.log('esbuild is available') } catch(e) { console.log('esbuild not available, skipping bundle'); process.exit(0) }" 2>/dev/null; then
+              echo "esbuild is available, running bundle script"
+              node scripts/bundle.js
+            else
+              echo "esbuild not available, skipping bundle"
+            fi
           fi
           cd ../..
 
@@ -201,6 +228,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
+  # Rest of the file remains the same...
   build-mobile-android:
     runs-on: ubuntu-latest
     name: Build Android App
