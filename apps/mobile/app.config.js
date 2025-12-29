@@ -11,7 +11,9 @@ const resolveAssetPath = (fileName) => {
   const resolvedPath = candidatePaths.find((assetPath) => fs.existsSync(assetPath));
 
   if (!resolvedPath) {
-    throw new Error(`Missing expected asset: ${fileName}`);
+    throw new Error(
+      `Missing expected asset: ${fileName}. Checked paths: ${candidatePaths.join(', ')}`,
+    );
   }
 
   return resolvedPath;
