@@ -44,7 +44,7 @@ export async function startServer(context: vscode.ExtensionContext) {
   // Prepare Express app
   const app = express();
   app.use(express.json());
-  setupAuthMiddleware(app); // (Optional) attach auth middleware if needed
+  setupAuthMiddleware(app, authContext);
 
   // Load SSL certificate and key for HTTPS
   const keyPath = join(context.extensionPath, 'certs', 'server.key');
@@ -73,7 +73,10 @@ export async function startServer(context: vscode.ExtensionContext) {
   // Set up Apollo Server with the schema
   apolloServer = new ApolloServer({
     schema,
-    context: ({ req }) => ensureAuthContext(req as RequestWithUser)  // attach auth info to context if needed
+    context: ({ req }) => ({
+      user: (req as RequestWithUser).user,
+      authContext,
+    }),
   });
   await apolloServer.start();
   apolloServer.applyMiddleware({ app, path: '/graphql' });

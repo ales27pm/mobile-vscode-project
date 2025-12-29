@@ -14,9 +14,12 @@ export function getStatusBar(): vscode.StatusBarItem {
 }
 
 /** Update the status bar text to reflect current status */
-export function updateStatusBar(message: string) {
+export function updateStatusBar(message: string, tooltip?: string) {
   if (!statusBarItem) {
     return;
   }
   statusBarItem.text = `$(rocket) Mobile Server: ${message}`;
+  if (tooltip) {
+    statusBarItem.tooltip = tooltip;
+  }
 }
