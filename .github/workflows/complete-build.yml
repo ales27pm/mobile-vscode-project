@@ -57,7 +57,6 @@ on:
 
 env:
   NODE_VERSION: '20'
-  EXPO_VERSION: '5.16.5'
   ROOT_DIR: '${{ github.workspace }}'
 
 jobs:
@@ -332,9 +331,6 @@ jobs:
         run: |
           yarn workspaces foreach --all -p run build 2>/dev/null || true
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
-
       - name: Check EAS authentication
         id: check-eas-auth
         run: |
@@ -349,12 +345,12 @@ jobs:
             echo "eas_authenticated=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build with EAS
+      - name: Build with EAS (using npx as in deploy.sh)
         if: steps.check-eas-auth.outputs.eas_authenticated == 'true'
         run: |
           cd apps/mobile
           
-          # Create minimal eas.json if not exists
+          # Create minimal eas.json if not exists (matches deploy.sh approach)
           if [ ! -f "eas.json" ]; then
             cat > eas.json << 'EASJSON'
             {
@@ -387,17 +383,29 @@ jobs:
             EASJSON
           fi
           
-          # Determine build command
+          # Determine build command based on deploy.sh pattern
           PROFILE="${{ github.event.inputs.mobile_profile || 'development' }}"
           
           echo "Building for ${{ matrix.platform }} with profile: $PROFILE"
           
-          if [ "${{ matrix.platform }}" = "android" ]; then
-            # For Android, output to a specific file
-            eas build --platform android --profile $PROFILE --non-interactive --wait --output=./mobile-vscode-$PROFILE.apk
-          else
-            # For iOS, use default output location
-            eas build --platform ios --profile $PROFILE --non-interactive --wait
+          # Use npx --yes eas as in deploy.sh script
+          EAS_CMD=(npx --yes eas build --non-interactive --profile "$PROFILE" --platform "${{ matrix.platform }}")
+          
+          # Add output directory for local builds (if needed)
+          if [ "${{ matrix.platform }}" = "android" ] && [ "$PROFILE" = "development" ]; then
+            EAS_CMD+=(--output="./mobile-vscode-$PROFILE.apk")
+          fi
+          
+          echo "Running: ${EAS_CMD[*]}"
+          "${EAS_CMD[@]}"
+          
+          # For iOS simulator builds, handle the output location
+          if [ "${{ matrix.platform }}" = "ios" ] && [ "$PROFILE" = "development" ]; then
+            echo "iOS development build completed"
+            # iOS builds in EAS typically output to build directory
+            if [ -d "ios/build" ]; then
+              echo "iOS build artifacts in ios/build directory"
+            fi
           fi
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -411,7 +419,10 @@ jobs:
             apps/mobile/mobile-vscode-*.apk
             apps/mobile/mobile-vscode-*.ipa
             apps/mobile/ios/build/Build/Products/*.app
+            apps/mobile/ios/build/*.app
+            apps/mobile/android/app/build/outputs/**/*.apk
           retention-days: 30
+          if-no-files-found: warn
 
   deploy-preview:
     runs-on: ubuntu-latest
@@ -447,9 +458,6 @@ jobs:
             const fs = require('fs');
             const qrBase64 = fs.readFileSync('qr-preview.png', { encoding: 'base64' });
             
-            const buildBackend = context.payload.workflow_run ? context.payload.workflow_run.check_suite_id : null;
-            const buildMobile = context.payload.workflow_run ? context.payload.workflow_run.check_suite_id : null;
-            
             const comment = {
               body: `## 🚀 MobileVSCode Preview Build\n\n` +
                     `**Branch:** ${context.payload.pull_request.head.ref}\n` +
@@ -480,7 +488,7 @@ jobs:
   summary:
     runs-on: ubuntu-latest
     name: Build Summary
-    needs: [preflight, build-backend, build-mobile]
+    needs: [preflight, validate-and-test, build-backend, build-mobile]
     if: always()
     
     steps:
