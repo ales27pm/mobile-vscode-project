@@ -40,6 +40,7 @@
     "graphql-subscriptions": "^2.0.0",
     "graphql-ws": "^6.0.6",
     "lodash.debounce": "^4.0.8",
+    "lru-cache": "^10.2.2",
     "simple-git": "^3.30.0",
     "ws": "^8.13.0",
     "y-websocket": "1.5.3",

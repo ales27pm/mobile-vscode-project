@@ -2,12 +2,9 @@ import 'react-native-url-polyfill/auto';  // Polyfill for URL and other Node int
 import React from 'react';
 import { ApolloProvider } from '@apollo/client';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { client } from './apolloClient';
 import AppNavigator from './navigation/AppNavigator';
 import { StatusBar } from 'expo-status-bar';
-
-const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
