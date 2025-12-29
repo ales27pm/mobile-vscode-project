@@ -1,5 +1,4 @@
-import './src/polyfills';
-import "./src/polyfills/crypto";
+import './src/installPolyfills';
 // Entry point for Expo (monorepo-safe).
 //
 // We avoid Expo's default `expo/AppEntry` which tries to import `../../App`

@@ -1,4 +1,3 @@
-import 'react-native-url-polyfill/auto';  // Polyfill for URL and other Node internals
 import React from 'react';
 import { ApolloProvider } from '@apollo/client';
 import { NavigationContainer } from '@react-navigation/native';
