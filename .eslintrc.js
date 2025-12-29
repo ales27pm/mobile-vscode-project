@@ -11,9 +11,29 @@ module.exports = {
   env: {
     node: true,
     browser: true,
-    es6: true
+    es6: true,
+    jest: true
+  },
+  settings: {
+    react: {
+      version: "detect"
+    }
   },
   rules: {
-    // Custom ESLint rules (if any)
-  }
+    "no-undef": "off",
+    "no-unused-vars": "off",
+    "react/prop-types": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_"
+      }
+    ]
+  },
+  overrides: [
+    {
+      files: ["**/*.test.ts", "**/*.test.tsx", "**/__mocks__/**/*.{ts,tsx}"]
+    }
+  ]
 };
