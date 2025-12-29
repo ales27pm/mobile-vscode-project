@@ -64,7 +64,7 @@ The server exposes two real-time endpoints for maximum efficiency:
 ### Prerequisites
 
 - Node.js (v18 or newer) with **Corepack** available
-- Yarn 4 (the repo pins `yarn@4.10.3` via `packageManager`)
+- Yarn 4 (the repo pins `yarn@4.10.3` via `packageManager` and expects commands to run via `corepack yarn`)
 - Visual Studio Code
 - Expo Go app on your iOS or Android device
 
@@ -84,7 +84,7 @@ corepack enable
 corepack prepare yarn@4.10.3 --activate
 
 # Install all dependencies for all packages
-yarn install
+corepack yarn install
 
 # Create the environment file for the mobile app
 cp .env.example .env
@@ -101,7 +101,7 @@ Edit `.env` and replace the placeholder IP address with your computer's local ne
 ### 3. Run the Frontend (Mobile App)
 
 ```bash
-yarn start:mobile
+corepack yarn start:mobile
 ```
 
 Scan the QR code with Expo Go and enter the pairing token when prompted to securely connect to your desktop.
@@ -117,7 +117,7 @@ Scan the QR code with Expo Go and enter the pairing token when prompted to secur
 
 ## Testing
 
-Run `yarn lint` and `yarn test` to verify the codebase. Backend tests run under Jest with mocks for VS Code and Express, covering GraphQL resolvers, the server lifecycle, file system watching, and Git provider operations.
+Run `corepack yarn lint` and `corepack yarn test` to verify the codebase. Backend tests run under Jest with mocks for VS Code and Express, covering GraphQL resolvers, the server lifecycle, file system watching, and Git provider operations.
 
 
 ## Contributing
