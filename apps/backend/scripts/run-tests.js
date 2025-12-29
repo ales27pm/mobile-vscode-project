@@ -24,14 +24,15 @@ if (!hasExplicitWorkerSetting) {
 }
 
 const jestBin = path.join(repoRoot, 'node_modules', '.bin', 'jest');
-const nodeOptions = process.env.NODE_OPTIONS ?? '';
+const nodeOptions = (process.env.NODE_OPTIONS ?? '').split(/\s+/).filter(Boolean);
 const localStorageOption = `--localstorage-file=${path.join(workspaceRoot, '.jest-localstorage')}`;
-const hasLocalStorageOption = nodeOptions.split(/\s+/).some(option => option === localStorageOption);
+const sanitizedOptions = nodeOptions.filter(option => option !== '--localstorage-file=' && option !== '--localstorage-file');
+const hasLocalStorageOption = sanitizedOptions.some(option => option === localStorageOption);
 const env = {
   ...process.env,
   NODE_OPTIONS: hasLocalStorageOption
-    ? nodeOptions
-    : `${nodeOptions} ${localStorageOption}`.trim(),
+    ? sanitizedOptions.join(' ')
+    : [...sanitizedOptions, localStorageOption].join(' '),
 };
 
 const result = spawnSync(jestBin, forwardedArgs, {

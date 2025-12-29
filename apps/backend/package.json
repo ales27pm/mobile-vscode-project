@@ -15,7 +15,7 @@
     "build": "tsc -p .",
     "bundle": "webpack --config webpack.config.js",
     "watch": "tsc -p . -w",
-    "test": "node ./scripts/run-tests.js"
+    "test": "NODE_OPTIONS= node ./scripts/run-tests.js"
   },
   "engines": {
     "vscode": "^1.80.0"
