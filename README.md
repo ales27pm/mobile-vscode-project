@@ -127,14 +127,20 @@ Remote EAS builds require authentication (`npx eas login` or `EXPO_TOKEN`), whil
 
 ## Packaging the VS Code Backend
 
-The VS Code extension manifest lives in `apps/backend`, so running `vsce package` from the repository root will fail with missing manifest fields. Use the helper script (or `vsce` with the extension path) to build `mobile-vscode-server.vsix`:
+The VS Code extension manifest lives in `apps/backend`, and `vsce package` must be executed from inside that directory. Use the helper script to build `mobile-vscode-server.vsix`:
 
 ```bash
 # Preferred: builds, stages runtime dependencies, and produces the VSIX in the repo root
 corepack yarn package:vsix
+```
 
-# Equivalent manual command if you have vsce installed globally
-vsce package apps/backend --out mobile-vscode-server.vsix
+If you package manually, change into `apps/backend` and run `vsce` with the output path pointing back to the repo root:
+
+```bash
+cd apps/backend
+# Ensure the backend is built and production dependencies are installed in the working tree
+# (the helper script handles staging and pruning dev dependencies automatically)
+vsce package --out ../mobile-vscode-server.vsix
 ```
 
 The script compiles the backend, stages only runtime dependencies, and writes the packaged extension to `mobile-vscode-server.vsix`.
