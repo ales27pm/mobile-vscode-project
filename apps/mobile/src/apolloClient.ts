@@ -13,10 +13,11 @@ const httpLink = new HttpLink({
 // Authentication middleware (if auth tokens are needed)
 const authLink = setContext((_, { headers }) => {
   const token = useAuthStore.getState().token;
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
   return {
     headers: {
       ...(headers ?? {}),
-      Authorization: token ? `Bearer ${token}` : ''
+      ...authHeader
     }
   };
 });
