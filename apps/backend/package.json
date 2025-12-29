@@ -4,6 +4,11 @@
   "publisher": "codex",
   "version": "0.1.0",
   "description": "Provides GraphQL, Git and Y.js back-end for the Mobile VSCode app.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ales27pm/mobile-vscode-project.git",
+    "directory": "apps/backend"
+  },
   "main": "./dist/extension.js",
   "scripts": {
     "prepublish": "yarn build",
