@@ -5894,7 +5894,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"base64-js@npm:^1.1.2, base64-js@npm:^1.2.3, base64-js@npm:^1.3.1, base64-js@npm:^1.5.1":
+"base64-js@npm:^1.1.2, base64-js@npm:^1.2.3, base64-js@npm:^1.3.0, base64-js@npm:^1.3.1, base64-js@npm:^1.5.1":
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
   checksum: 10c0/f23823513b63173a001030fae4f2dabe283b99a9d324ade3ad3d148e218134676f1ee8568c877cd79ec1c53158dcf2d2ba527a97c606618928ba99dd930102bf
@@ -6192,7 +6192,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chalk@npm:^2.0.1, chalk@npm:^2.4.2":
+"chalk@npm:^2.4.2":
   version: 2.4.2
   resolution: "chalk@npm:2.4.2"
   dependencies:
@@ -6335,15 +6335,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cli-cursor@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "cli-cursor@npm:2.1.0"
-  dependencies:
-    restore-cursor: "npm:^2.0.0"
-  checksum: 10c0/09ee6d8b5b818d840bf80ec9561eaf696672197d3a02a7daee2def96d5f52ce6e0bbe7afca754ccf14f04830b5a1b4556273e983507d5029f95bba3016618eda
-  languageName: node
-  linkType: hard
-
 "cli-cursor@npm:^3.1.0":
   version: 3.1.0
   resolution: "cli-cursor@npm:3.1.0"
@@ -6353,7 +6344,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cli-spinners@npm:^2.0.0, cli-spinners@npm:^2.5.0":
+"cli-spinners@npm:^2.5.0":
   version: 2.9.2
   resolution: "cli-spinners@npm:2.9.2"
   checksum: 10c0/907a1c227ddf0d7a101e7ab8b300affc742ead4b4ebe920a5bf1bc6d45dce2958fcd195eb28fa25275062fe6fa9b109b93b63bc8033396ed3bcb50297008b3a3
@@ -6511,7 +6502,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"commander@npm:^2.20.0, commander@npm:^2.20.3":
+"commander@npm:^2.20.0, commander@npm:^2.20.3, commander@npm:^7.2.0":
   version: 2.20.3
   resolution: "commander@npm:2.20.3"
   checksum: 10c0/74c781a5248c2402a0a3e966a0a2bba3c054aad144f5c023364be83265e796b20565aa9feff624132ff629aa64e16999fa40a743c10c12f7c61e96a794b99288
@@ -6525,7 +6516,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"commander@npm:^7.0.0, commander@npm:^7.2.0":
+"commander@npm:^7.0.0":
   version: 7.2.0
   resolution: "commander@npm:7.2.0"
   checksum: 10c0/8d690ff13b0356df7e0ebbe6c59b4712f754f4b724d4f473d3cc5b3fdcf978e3a5dc3078717858a2ceb50b0f84d0660a7f22a96cdc50fb877d0c9bb31593d23a
@@ -6847,7 +6838,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:2.6.9, debug@npm:^2.2.0, debug@npm:^2.6.9":
+"debug@npm:2.6.9, debug@npm:^2.2.0, debug@npm:^2.6.9, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.5":
   version: 2.6.9
   resolution: "debug@npm:2.6.9"
   dependencies:
@@ -6856,7 +6847,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:4.4.3, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.5, debug@npm:^4.4.0, debug@npm:^4.4.1":
+"debug@npm:4, debug@npm:4.4.3, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.4.0, debug@npm:^4.4.1":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
   dependencies:
@@ -7099,14 +7090,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.0.0, dotenv@npm:^16.4.5":
-  version: 16.6.1
-  resolution: "dotenv@npm:16.6.1"
-  checksum: 10c0/15ce56608326ea0d1d9414a5c8ee6dcf0fffc79d2c16422b4ac2268e7e2d76ff5a572d37ffe747c377de12005f14b3cc22361e79fc7f1061cce81f77d2c973dc
-  languageName: node
-  linkType: hard
-
-"dotenv@npm:~16.4.5":
+"dotenv@npm:^16.0.0, dotenv@npm:^16.4.5, dotenv@npm:~16.4.5":
   version: 16.4.7
   resolution: "dotenv@npm:16.4.7"
   checksum: 10c0/be9f597e36a8daf834452daa1f4cc30e5375a5968f98f46d89b16b983c567398a330580c88395069a77473943c06b877d1ca25b4afafcdd6d4adb549e8293462
@@ -7775,6 +7759,17 @@ __metadata:
     expo: "*"
     react-native: "*"
   checksum: 10c0/9dab3f1d685b17c25ae4179823162b763a7edeea8b976f96f25e37fabbfbc190f05cd774431664e5145196f3982e34303ebf5a1f5a82a1409218ae93187f710f
+  languageName: node
+  linkType: hard
+
+"expo-crypto@npm:~15.0.8":
+  version: 15.0.8
+  resolution: "expo-crypto@npm:15.0.8"
+  dependencies:
+    base64-js: "npm:^1.3.0"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/714806a2245a0aa05b7ec0d7044cd6ec317f3da7d96298b3a4b39c3ef8f62f25fa0d64b5b9df4018151a6b65c4c4348f6a7f5ad23e09bd73364daab260745df5
   languageName: node
   linkType: hard
 
@@ -10822,15 +10817,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"log-symbols@npm:^2.2.0":
-  version: 2.2.0
-  resolution: "log-symbols@npm:2.2.0"
-  dependencies:
-    chalk: "npm:^2.0.1"
-  checksum: 10c0/574eb4205f54f0605021aa67ebb372c30ca64e8ddd439efeb8507af83c776dce789e83614e80059014d9e48dcc94c4b60cef2e85f0dc944eea27c799cec62353
-  languageName: node
-  linkType: hard
-
 "log-symbols@npm:^4.0.0, log-symbols@npm:^4.1.0":
   version: 4.1.0
   resolution: "log-symbols@npm:4.1.0"
@@ -11800,13 +11786,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mimic-fn@npm:^1.0.0":
-  version: 1.2.0
-  resolution: "mimic-fn@npm:1.2.0"
-  checksum: 10c0/ad55214aec6094c0af4c0beec1a13787556f8116ed88807cf3f05828500f21f93a9482326bcd5a077ae91e3e8795b4e76b5b4c8bb12237ff0e4043a365516cba
-  languageName: node
-  linkType: hard
-
 "mimic-fn@npm:^2.1.0":
   version: 2.1.0
   resolution: "mimic-fn@npm:2.1.0"
@@ -12019,6 +11998,7 @@ __metadata:
     apollo3-cache-persist: "npm:^0.13.0"
     expo: "npm:54.0.30"
     expo-constants: "npm:~18.0.12"
+    expo-crypto: "npm:~15.0.8"
     expo-status-bar: "npm:~3.0.8"
     react: "npm:19.1.0"
     react-dom: "npm:19.1.0"
@@ -12032,14 +12012,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ms@npm:2.0.0":
+"ms@npm:2.0.0, ms@npm:^2.1.1":
   version: 2.0.0
   resolution: "ms@npm:2.0.0"
   checksum: 10c0/f8fda810b39fd7255bbdc451c46286e549794fcc700dc9cd1d25658bbc4dc2563a5de6fe7c60f798a16a60c6ceb53f033cb353f493f0cf63e5199b702943159d
   languageName: node
   linkType: hard
 
-"ms@npm:2.1.3, ms@npm:^2.1.1, ms@npm:^2.1.3":
+"ms@npm:2.1.3, ms@npm:^2.1.3":
   version: 2.1.3
   resolution: "ms@npm:2.1.3"
   checksum: 10c0/d924b57e7312b3b63ad21fc5b3dc0af5e78d61a1fc7cfb5457edaf26326bf62be5307cc87ffb6862ef1c2b33b0233cdb5d4f01c4c958cc0d660948b65a287a48
@@ -12445,15 +12425,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"onetime@npm:^2.0.0":
-  version: 2.0.1
-  resolution: "onetime@npm:2.0.1"
-  dependencies:
-    mimic-fn: "npm:^1.0.0"
-  checksum: 10c0/b4e44a8c34e70e02251bfb578a6e26d6de6eedbed106cd78211d2fd64d28b6281d54924696554e4e966559644243753ac5df73c87f283b0927533d3315696215
-  languageName: node
-  linkType: hard
-
 "onetime@npm:^5.1.0, onetime@npm:^5.1.2":
   version: 5.1.2
   resolution: "onetime@npm:5.1.2"
@@ -12519,21 +12490,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ora@npm:^3.4.0":
-  version: 3.4.0
-  resolution: "ora@npm:3.4.0"
-  dependencies:
-    chalk: "npm:^2.4.2"
-    cli-cursor: "npm:^2.1.0"
-    cli-spinners: "npm:^2.0.0"
-    log-symbols: "npm:^2.2.0"
-    strip-ansi: "npm:^5.2.0"
-    wcwidth: "npm:^1.0.1"
-  checksum: 10c0/04cb375f222c36a16a95e6c39c473644a99a42fc34d35c37507cb836ea0a71f4d831fcd53198a460869114b2730891d63cc1047304afe5ddb078974d468edfb1
-  languageName: node
-  linkType: hard
-
-"ora@npm:^5.4.1":
+"ora@npm:^3.4.0, ora@npm:^5.4.1":
   version: 5.4.1
   resolution: "ora@npm:5.4.1"
   dependencies:
@@ -13192,14 +13149,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-is@npm:^16.12.0 || ^17.0.0 || ^18.0.0, react-is@npm:^18.0.0":
+"react-is@npm:^16.12.0 || ^17.0.0 || ^18.0.0, react-is@npm:^16.13.0, react-is@npm:^18.0.0":
   version: 18.3.1
   resolution: "react-is@npm:18.3.1"
   checksum: 10c0/f2f1e60010c683479e74c63f96b09fb41603527cd131a9959e2aee1e5a8b0caf270b365e5ca77d4a6b18aae659b60a86150bb3979073528877029b35aecd2072
   languageName: node
   linkType: hard
 
-"react-is@npm:^16.13.0, react-is@npm:^16.13.1, react-is@npm:^16.7.0":
+"react-is@npm:^16.13.1, react-is@npm:^16.7.0":
   version: 16.13.1
   resolution: "react-is@npm:16.13.1"
   checksum: 10c0/33977da7a5f1a287936a0c85639fec6ca74f4f15ef1e59a6bc20338fc73dc69555381e211f7a3529b8150a1f71e4225525b41b60b52965bda53ce7d47377ada1
@@ -13801,16 +13758,6 @@ __metadata:
   dependencies:
     path-parse: "npm:^1.0.5"
   checksum: 10c0/1301dba7c12cd9dab2ab4eee8518089f25bb7480db34b746a923ded472c4c0600ebb1ba9b8028ca843f7c6017ac76524355800c52b82633e53bd601ca288b4de
-  languageName: node
-  linkType: hard
-
-"restore-cursor@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "restore-cursor@npm:2.0.0"
-  dependencies:
-    onetime: "npm:^2.0.0"
-    signal-exit: "npm:^3.0.2"
-  checksum: 10c0/f5b335bee06f440445e976a7031a3ef53691f9b7c4a9d42a469a0edaf8a5508158a0d561ff2b26a1f4f38783bcca2c0e5c3a44f927326f6694d5b44d7a4993e6
   languageName: node
   linkType: hard
 

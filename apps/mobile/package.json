@@ -18,6 +18,7 @@
     "apollo3-cache-persist": "^0.13.0",
     "expo": "54.0.30",
     "expo-constants": "~18.0.12",
+    "expo-crypto": "~15.0.8",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
     "react-dom": "19.1.0",
