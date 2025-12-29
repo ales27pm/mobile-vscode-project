@@ -19,8 +19,19 @@ function normalizeArg(arg) {
 const forwardedArgs = process.argv.slice(2).map(normalizeArg);
 
 const jestBin = path.join(repoRoot, 'node_modules', '.bin', 'jest');
+const nodeOptions = process.env.NODE_OPTIONS ?? '';
+const localStorageOption = `--localstorage-file=${path.join(workspaceRoot, '.jest-localstorage')}`;
+const hasLocalStorageOption = nodeOptions.split(/\s+/).some(option => option === localStorageOption);
+const env = {
+  ...process.env,
+  NODE_OPTIONS: hasLocalStorageOption
+    ? nodeOptions
+    : `${nodeOptions} ${localStorageOption}`.trim(),
+};
+
 const result = spawnSync(jestBin, forwardedArgs, {
   cwd: workspaceRoot,
+  env,
   stdio: 'inherit',
 });
 
