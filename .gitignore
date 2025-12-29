@@ -11,6 +11,7 @@ apps/**/dist
 # Build artifacts
 /dist
 /build
+/.turbo
 /.expo
 *.vsix
 

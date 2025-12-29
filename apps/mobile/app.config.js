@@ -1,5 +1,21 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+const fs = require('fs');
 const path = require('path');
+
+const resolveAssetPath = (fileName) => {
+  const candidatePaths = [
+    path.join(__dirname, '..', '..', 'assets', fileName),
+    path.join(__dirname, 'assets', fileName),
+  ];
+
+  const resolvedPath = candidatePaths.find((assetPath) => fs.existsSync(assetPath));
+
+  if (!resolvedPath) {
+    throw new Error(`Missing expected asset: ${fileName}`);
+  }
+
+  return resolvedPath;
+};
 
 module.exports = ({ config }) => {
   const LOCAL_IP = process.env.LOCAL_IP || '127.0.0.1';
@@ -14,9 +30,9 @@ module.exports = ({ config }) => {
     platforms: ['ios', 'android'],
 
     // Prefer root-level assets, but also duplicated in apps/mobile/assets
-    icon: path.join(__dirname, '..', 'assets', 'icon.png'),
+    icon: resolveAssetPath('icon.png'),
     splash: {
-      image: path.join(__dirname, '..', 'assets', 'splash.png'),
+      image: resolveAssetPath('splash.png'),
       resizeMode: 'contain',
       backgroundColor: '#ffffff',
     },
