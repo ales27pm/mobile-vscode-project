@@ -21,26 +21,139 @@ on:
           - all
           - extension-only
           - mobile-only
+      mobile_platform:
+        description: 'Mobile platform to build'
+        required: false
+        default: 'android'
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+      mobile_profile:
+        description: 'EAS build profile'
+        required: false
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+      skip_backend:
+        description: 'Skip backend build'
+        required: false
+        default: false
+        type: boolean
+      skip_mobile:
+        description: 'Skip mobile builds'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '20'
   EXPO_VERSION: '5.16.5'
+  ROOT_DIR: '${{ github.workspace }}'
 
 jobs:
-  validate-and-test:
+  preflight:
     runs-on: ubuntu-latest
-    name: Validate & Test
-    timeout-minutes: 10
+    name: Preflight Checks
+    outputs:
+      yarn_available: ${{ steps.check-yarn.outputs.yarn_available }}
+      codegen_exists: ${{ steps.check-codegen.outputs.codegen_exists }}
+      lint_exists: ${{ steps.check-lint.outputs.lint_exists }}
+      package_vsix_exists: ${{ steps.check-package-vsix.outputs.package_vsix_exists }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with Corepack
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Check Yarn availability
+        id: check-yarn
+        run: |
+          if command -v yarn >/dev/null 2>&1; then
+            echo "yarn_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Installing yarn via corepack..."
+            corepack prepare yarn@1.22.22 --activate
+            echo "yarn_available=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for codegen script
+        id: check-codegen
+        run: |
+          if jq -e '.scripts.codegen' package.json >/dev/null 2>&1; then
+            echo "codegen_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "codegen_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for lint script
+        id: check-lint
+        run: |
+          if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
+            echo "lint_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "lint_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for package-vsix script
+        id: check-package-vsix
+        run: |
+          if [ -f "scripts/package-vsix.sh" ]; then
+            echo "package_vsix_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "package_vsix_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check .env file
+        run: |
+          if [ ! -f ".env" ]; then
+            if [ -f ".env.example" ]; then
+              echo "Creating .env from .env.example template..."
+              cp .env.example .env
+              echo "Note: Update LOCAL_IP in .env for mobile connectivity"
+            else
+              echo "Warning: No .env or .env.example file found"
+            fi
+          fi
+
+  validate-and-test:
+    runs-on: ubuntu-latest
+    name: Validate & Test
+    needs: preflight
+    timeout-minutes: 15
+    if: ${{ !inputs.skip_tests || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with Corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Get yarn cache directory
         id: yarn-cache-dir
@@ -54,11 +167,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - name: Install dependencies with legacy peer deps
+      - name: Install dependencies
         run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
+
+      - name: Generate GraphQL artifacts
+        if: needs.preflight.outputs.codegen_exists == 'true'
+        run: yarn codegen
 
       - name: TypeScript compilation check
         run: yarn tsc --noEmit
+
+      - name: Run lint
+        if: needs.preflight.outputs.lint_exists == 'true'
+        run: yarn lint
 
       - name: Run backend tests
         run: |
@@ -73,160 +194,61 @@ jobs:
           flags: backend
           name: backend-coverage
 
-  build-extension:
+  build-backend:
     runs-on: ubuntu-latest
-    name: Build VS Code Extension
-    needs: validate-and-test
-    if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'extension-only' || github.event_name != 'workflow_dispatch'
+    name: Build Backend
+    needs: [preflight, validate-and-test]
+    if: ${{ !inputs.skip_backend && (github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'extension-only' || github.event_name != 'workflow_dispatch') }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with Corepack
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          corepack: true
 
-      - name: Install dependencies with legacy peer deps
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
         run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
 
-      - name: Fix y-websocket import in bundle script if needed
-        id: fix-import
+      - name: Generate GraphQL artifacts
+        if: needs.preflight.outputs.codegen_exists == 'true'
+        run: yarn codegen
+
+      - name: Build backend
+        run: yarn build:backend
+
+      - name: Package VSIX (using package-vsix.sh if available)
+        id: package-vsix
         run: |
-          # Check if bundle script exists and has the problematic import
-          if [ -f "apps/backend/scripts/bundle.js" ]; then
-            echo "Checking for problematic y-websocket import..."
-            if grep -q "y-websocket/bin/utils" apps/backend/scripts/bundle.js; then
-              echo "Found problematic import, attempting to fix..."
-              # Create a backup
-              cp apps/backend/scripts/bundle.js apps/backend/scripts/bundle.js.backup
-              # Fix the import
-              sed -i "s/'y-websocket\/bin\/utils'/'y-websocket\/bin\/utils'/g" apps/backend/scripts/bundle.js
-              echo "Import fixed"
-              echo "should_fix_import=true" >> $GITHUB_OUTPUT
+          if [ -f "scripts/package-vsix.sh" ]; then
+            echo "Using package-vsix.sh script..."
+            chmod +x scripts/package-vsix.sh
+            bash scripts/package-vsix.sh
+            # Check if VSIX was created in root or apps/backend
+            if [ -f "mobile-vscode-server.vsix" ]; then
+              echo "VSIX created in root directory"
+              echo "vsix_path=mobile-vscode-server.vsix" >> $GITHUB_OUTPUT
+            elif [ -f "apps/backend/mobile-vscode-server.vsix" ]; then
+              echo "VSIX created in apps/backend"
+              echo "vsix_path=apps/backend/mobile-vscode-server.vsix" >> $GITHUB_OUTPUT
             else
-              echo "No problematic import found"
-              echo "should_fix_import=false" >> $GITHUB_OUTPUT
+              echo "VSIX not found, falling back to direct packaging"
+              cd apps/backend
+              npx @vscode/vsce package --no-dependencies --no-verify --out mobile-vscode-server.vsix
+              echo "vsix_path=apps/backend/mobile-vscode-server.vsix" >> $GITHUB_OUTPUT
             fi
           else
-            echo "No bundle script found"
-            echo "should_fix_import=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Install esbuild for backend only
-        run: |
-          # Check if bundle script exists
-          if [ -f "apps/backend/scripts/bundle.js" ]; then
-            echo "Bundle script found, installing esbuild for backend..."
+            echo "package-vsix.sh not found, using direct packaging..."
             cd apps/backend
-            # Install esbuild locally without affecting other dependencies
-            npm install esbuild@latest --no-save --legacy-peer-deps
-            cd ../..
-          fi
-
-      - name: Create .vscodeignore file
-        run: |
-          cat > apps/backend/.vscodeignore << 'EOF'
-          # VS Code extension ignore file
-          # Exclude development and unnecessary files
-          
-          # Development files
-          .devcontainer/
-          .github/
-          .vscode/
-          __mocks__/
-          scripts/
-          *.test.*
-          *.spec.*
-          jest.config.js
-          .jest-localstorage
-          
-          # Source files (we use compiled dist/)
-          src/**/*.ts
-          !src/**/*.d.ts
-          
-          # Build artifacts
-          *.vsix
-          dist/**/*.map
-          
-          # Documentation
-          CHANGELOG.md
-          README.md
-          
-          # Config files
-          tsconfig.json
-          webpack.config.js
-          
-          # Git
-          .gitignore
-          
-          # Exclude everything then selectively include
-          *
-          !dist/
-          !package.json
-          !LICENSE
-          !README.md
-          !CHANGELOG.md
-          !certs/
-          EOF
-
-      - name: Build extension
-        id: build-step
-        run: |
-          cd apps/backend
-          
-          # First, build TypeScript
-          echo "Running TypeScript compilation..."
-          npx tsc -p .
-          
-          # Then try to run bundle script if available and esbuild is present
-          if [ -f "scripts/bundle.js" ]; then
-            echo "Attempting to run bundle script..."
-            # Check if esbuild is available
-            if node -e "try { require('esbuild'); console.log('Local esbuild found'); process.exit(0) } catch(e) { console.log('Local esbuild not found, skipping bundle'); process.exit(1) }" 2>/dev/null; then
-              echo "Running bundle script..."
-              # Run bundle script with error handling
-              if node scripts/bundle.js 2>&1; then
-                echo "Bundle script completed successfully"
-                echo "bundle_success=true" >> $GITHUB_OUTPUT
-              else
-                echo "Bundle script failed, but continuing with build"
-                echo "bundle_success=false" >> $GITHUB_OUTPUT
-              fi
-            else
-              echo "Skipping bundle (esbuild not found)"
-              echo "bundle_success=skipped" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "No bundle script found"
-            echo "bundle_success=no_script" >> $GITHUB_OUTPUT
-          fi
-          
-          cd ../..
-
-      - name: Check if build was successful
-        if: steps.build-step.outputs.bundle_success == 'false'
-        run: |
-          echo "Bundle script failed, but TypeScript compilation succeeded."
-          echo "Continuing with build since TypeScript compilation was successful."
-
-      - name: Install vsce
-        run: npm install -g @vscode/vsce
-
-      - name: Package VSIX with skip verification
-        run: |
-          cd apps/backend
-          # Use --no-verify to skip npm list validation which fails due to express version conflicts
-          vsce package --no-dependencies --no-verify --out mobile-vscode-server.vsix
-          
-          # Verify the package was created
-          if [ -f "mobile-vscode-server.vsix" ]; then
-            echo "✅ VSIX created successfully: $(du -h mobile-vscode-server.vsix | cut -f1)"
-          else
-            echo "❌ VSIX creation failed"
-            exit 1
+            npx @vscode/vsce package --no-dependencies --no-verify --out mobile-vscode-server.vsix
+            echo "vsix_path=apps/backend/mobile-vscode-server.vsix" >> $GITHUB_OUTPUT
           fi
 
       - name: Create GitHub Release (on tag)
@@ -258,7 +280,7 @@ jobs:
             - First run will generate pairing token
             - Configure HTTPS certificates for production use
           files: |
-            apps/backend/mobile-vscode-server.vsix
+            ${{ steps.package-vsix.outputs.vsix_path }}
           draft: false
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
 
@@ -266,145 +288,72 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mobile-vscode-extension-${{ github.sha }}
-          path: apps/backend/mobile-vscode-server.vsix
+          path: ${{ steps.package-vsix.outputs.vsix_path }}
           retention-days: 30
           if-no-files-found: error
 
-  # Alternative build without bundle script
-  build-extension-no-bundle:
-    runs-on: ubuntu-latest
-    name: Build Extension (No Bundle)
-    needs: validate-and-test
-    if: always() && (github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'extension-only' || github.event_name != 'workflow_dispatch')
+  build-mobile:
+    runs-on: ${{ matrix.runner }}
+    name: Build Mobile (${{ matrix.platform }})
+    needs: [preflight, validate-and-test]
+    if: ${{ !inputs.skip_mobile && (github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only' || (github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
+    strategy:
+      matrix:
+        include:
+          - platform: android
+            runner: ubuntu-latest
+            if_condition: ${{ github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'android' }}
+          - platform: ios
+            runner: macos-latest
+            if_condition: ${{ github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'ios' }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with Corepack
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          corepack: true
 
-      - name: Install dependencies with legacy peer deps
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
         run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
 
-      - name: Create .vscodeignore file
-        run: |
-          cat > apps/backend/.vscodeignore << 'EOF'
-          # VS Code extension ignore file
-          # Exclude development and unnecessary files
-          
-          # Development files
-          .devcontainer/
-          .github/
-          .vscode/
-          __mocks__/
-          scripts/
-          *.test.*
-          *.spec.*
-          jest.config.js
-          .jest-localstorage
-          
-          # Source files (we use compiled dist/)
-          src/**/*.ts
-          !src/**/*.d.ts
-          
-          # Build artifacts
-          *.vsix
-          dist/**/*.map
-          
-          # Documentation
-          CHANGELOG.md
-          README.md
-          
-          # Config files
-          tsconfig.json
-          webpack.config.js
-          
-          # Git
-          .gitignore
-          
-          # Exclude everything then selectively include
-          *
-          !dist/
-          !package.json
-          !LICENSE
-          !README.md
-          !CHANGELOG.md
-          !certs/
-          EOF
-
-      - name: Build TypeScript only (no bundle)
-        run: |
-          cd apps/backend
-          echo "Running TypeScript compilation only (no bundle)..."
-          npx tsc -p .
-          echo "✅ TypeScript compilation successful"
-          cd ../..
-
-      - name: Install vsce
-        run: npm install -g @vscode/vsce
-
-      - name: Package VSIX with skip verification
-        run: |
-          cd apps/backend
-          # Use --no-verify to skip npm list validation
-          vsce package --no-dependencies --no-verify --out mobile-vscode-server-no-bundle.vsix
-          
-          if [ -f "mobile-vscode-server-no-bundle.vsix" ]; then
-            echo "✅ VSIX (no bundle) created successfully: $(du -h mobile-vscode-server-no-bundle.vsix | cut -f1)"
-          else
-            echo "❌ VSIX creation failed"
-            exit 1
-          fi
-
-      - name: Upload VSIX artifact (no bundle)
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-vscode-extension-no-bundle-${{ github.sha }}
-          path: apps/backend/mobile-vscode-server-no-bundle.vsix
-          retention-days: 30
-          if-no-files-found: error
-
-  # Rest of the jobs remain the same...
-  build-mobile-android:
-    runs-on: ubuntu-latest
-    name: Build Android App
-    needs: validate-and-test
-    if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only' || (github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/main')
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'yarn'
-
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install dependencies with legacy peer deps
-        run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
+      - name: Generate GraphQL artifacts
+        if: needs.preflight.outputs.codegen_exists == 'true'
+        run: yarn codegen
 
       - name: Build shared packages
         run: |
-          # Build all workspace packages
           yarn workspaces foreach --all -p run build 2>/dev/null || true
-          
+
       - name: Install EAS CLI
         run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
 
-      - name: Configure EAS (Development Build)
+      - name: Check EAS authentication
+        id: check-eas-auth
+        run: |
+          if [ -n "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "Using EXPO_TOKEN from secrets"
+            echo "eas_authenticated=true" >> $GITHUB_OUTPUT
+          elif npx --yes eas whoami >/dev/null 2>&1; then
+            echo "EAS already authenticated"
+            echo "eas_authenticated=true" >> $GITHUB_OUTPUT
+          else
+            echo "EAS not authenticated and no EXPO_TOKEN provided"
+            echo "eas_authenticated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build with EAS
+        if: steps.check-eas-auth.outputs.eas_authenticated == 'true'
         run: |
           cd apps/mobile
+          
           # Create minimal eas.json if not exists
           if [ ! -f "eas.json" ]; then
             cat > eas.json << 'EASJSON'
@@ -418,6 +367,9 @@ jobs:
                   "distribution": "internal",
                   "android": {
                     "buildType": "apk"
+                  },
+                  "ios": {
+                    "simulator": true
                   }
                 },
                 "preview": {
@@ -434,77 +386,42 @@ jobs:
             }
             EASJSON
           fi
-          cd ../..
-
-      - name: Build Android APK (Development)
-        run: |
-          cd apps/mobile
-          eas build --platform android --profile development --non-interactive --wait --output=./mobile-vscode-dev.apk
+          
+          # Determine build command
+          PROFILE="${{ github.event.inputs.mobile_profile || 'development' }}"
+          
+          echo "Building for ${{ matrix.platform }} with profile: $PROFILE"
+          
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            # For Android, output to a specific file
+            eas build --platform android --profile $PROFILE --non-interactive --wait --output=./mobile-vscode-$PROFILE.apk
+          else
+            # For iOS, use default output location
+            eas build --platform ios --profile $PROFILE --non-interactive --wait
+          fi
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Upload Android APK
-        if: success()
+      - name: Upload mobile artifacts
+        if: steps.check-eas-auth.outputs.eas_authenticated == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-vscode-android-${{ github.sha }}
-          path: apps/mobile/mobile-vscode-dev.apk
+          name: mobile-vscode-${{ matrix.platform }}-${{ github.event.inputs.mobile_profile || 'development' }}-${{ github.sha }}
+          path: |
+            apps/mobile/mobile-vscode-*.apk
+            apps/mobile/mobile-vscode-*.ipa
+            apps/mobile/ios/build/Build/Products/*.app
           retention-days: 30
-
-  build-mobile-ios:
-    runs-on: macos-latest
-    name: Build iOS App
-    needs: [validate-and-test, build-mobile-android]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'yarn'
-
-      - name: Install dependencies with legacy peer deps
-        run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
-
-      - name: Build shared packages
-        run: |
-          yarn workspaces foreach --all -p run build 2>/dev/null || true
-
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
-
-      - name: Build iOS Simulator Build
-        run: |
-          cd apps/mobile
-          eas build --platform ios --profile development --non-interactive --wait
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          # Optional: Add Apple credentials for real device builds
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
 
   deploy-preview:
     runs-on: ubuntu-latest
     name: Deploy Preview
     if: github.event_name == 'pull_request'
-    needs: [validate-and-test, build-extension, build-extension-no-bundle]
+    needs: [validate-and-test, build-backend, build-mobile]
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'yarn'
-
-      - name: Install dependencies with legacy peer deps
-        run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
 
       - name: Generate QR Code for Preview
         uses: crazy-max/ghaction-qrcode@v3
@@ -517,7 +434,9 @@ jobs:
             
             Scan to open in Expo Go app!
             
-            Server: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Artifacts: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            Server Endpoint: wss://mobile-vscode-${{ github.head_ref }}.example.com
           size: 300
           output: qr-preview.png
 
@@ -528,16 +447,25 @@ jobs:
             const fs = require('fs');
             const qrBase64 = fs.readFileSync('qr-preview.png', { encoding: 'base64' });
             
+            const buildBackend = context.payload.workflow_run ? context.payload.workflow_run.check_suite_id : null;
+            const buildMobile = context.payload.workflow_run ? context.payload.workflow_run.check_suite_id : null;
+            
             const comment = {
               body: `## 🚀 MobileVSCode Preview Build\n\n` +
                     `**Branch:** ${context.payload.pull_request.head.ref}\n` +
-                    `**Commit:** ${context.sha.substring(0, 7)}\n\n` +
+                    `**Commit:** ${context.sha.substring(0, 7)}\n` +
+                    `**Build:** #${context.runNumber}\n\n` +
                     `### 📦 Built Artifacts:\n` +
                     `- [VS Code Extension (.vsix)](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts)\n` +
-                    `- Android APK available in artifacts\n\n` +
+                    `- [Android APK](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts)\n\n` +
                     `### 📱 Expo Preview\n` +
                     `![QR Code](data:image/png;base64,${qrBase64})\n\n` +
                     `_Scan with Expo Go app (Android/iOS)_\n\n` +
+                    `### 🔧 Deployment Instructions:\n` +
+                    `1. Download the VSIX file and install in VS Code\n` +
+                    `2. Start the MobileVSCode server from VS Code\n` +
+                    `3. Download the Android APK on your device\n` +
+                    `4. Pair your mobile device with the pairing token\n\n` +
                     `---\n` +
                     `*Generated by GitHub Actions*`
             };
@@ -552,34 +480,74 @@ jobs:
   summary:
     runs-on: ubuntu-latest
     name: Build Summary
-    needs: [build-extension, build-extension-no-bundle, build-mobile-android]
+    needs: [preflight, build-backend, build-mobile]
     if: always()
     
     steps:
       - name: Generate Build Summary
         run: |
-          echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 MobileVSCode Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status | Artifact |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow:** \`${{ github.workflow }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Run:** [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [[ "${{ needs.build-extension.result }}" == "success" ]]; then
-            echo "| VS Code Extension (with bundle attempt) | ✅ Success | [Download VSIX](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
-          elif [[ "${{ needs.build-extension-no-bundle.result }}" == "success" ]]; then
-            echo "| VS Code Extension (no bundle) | ✅ Success | [Download VSIX](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
+          echo "### 📈 Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Artifacts |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-----------|" >> $GITHUB_STEP_SUMMARY
+          
+          # Preflight
+          if [[ "${{ needs.preflight.result }}" == "success" ]]; then
+            echo "| ✅ Preflight Checks | ✅ Success | - |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| VS Code Extension | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Preflight Checks | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
           fi
           
-          if [[ "${{ needs.build-mobile-android.result }}" == "success" ]]; then
-            echo "| Android App | ✅ Success | [Download APK](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
+          # Tests
+          if [[ "${{ needs.validate-and-test.result }}" == "success" ]]; then
+            echo "| ✅ Validate & Test | ✅ Success | [Coverage Report](https://app.codecov.io/gh/${{ github.repository }}) |" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.validate-and-test.result }}" == "skipped" ]]; then
+            echo "| ⚠️ Validate & Test | ⚠️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Android App | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Validate & Test | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Backend
+          if [[ "${{ needs.build-backend.result }}" == "success" ]]; then
+            echo "| ✅ VS Code Extension | ✅ Success | [Download VSIX](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.build-backend.result }}" == "skipped" ]]; then
+            echo "| ⚠️ VS Code Extension | ⚠️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ❌ VS Code Extension | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Mobile
+          MOBILE_BUILT=false
+          if [[ "${{ needs.build-mobile.result }}" == "success" ]]; then
+            MOBILE_BUILT=true
+          fi
+          
+          if [[ "$MOBILE_BUILT" == "true" ]]; then
+            echo "| ✅ Mobile App | ✅ Success | [Download APK/IPA](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ github.event.inputs.skip_mobile }}" == "true" ]]; then
+            echo "| ⚠️ Mobile App | ⚠️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ❌ Mobile App | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Download the VSIX file and install in VS Code" >> $GITHUB_STEP_SUMMARY
-          echo "2. Start the MobileVSCode server from VS Code" >> $GITHUB_STEP_SUMMARY
-          echo "3. Install the Android APK on your device" >> $GITHUB_STEP_SUMMARY
-          echo "4. Pair your mobile device with the pairing token" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Install Extension:** Download the `.vsix` file and install in VS Code" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Start Server:** Run `Mobile VSCode: Start Server` from VS Code command palette" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Install Mobile App:** Download the APK/IPA file to your device" >> $GITHUB_STEP_SUMMARY
+          echo "4. **Pair Device:** Open the mobile app and enter the pairing token from VS Code" >> $GITHUB_STEP_SUMMARY
+          echo "5. **Development:** Use VS Code to edit files that sync to your mobile device in real-time" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Configuration Notes:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Profile:** \`${{ github.event.inputs.mobile_profile || 'development' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms Built:** \`${{ github.event.inputs.mobile_platform || 'android' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Skip Tests:** \`${{ github.event.inputs.skip_tests || false }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Skip Backend:** \`${{ github.event.inputs.skip_backend || false }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Skip Mobile:** \`${{ github.event.inputs.skip_mobile || false }}\`" >> $GITHUB_STEP_SUMMARY
