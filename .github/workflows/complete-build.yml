@@ -1,0 +1,415 @@
+# .github/workflows/complete-build.yml
+name: Complete Build Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '.gitignore'
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - extension-only
+          - mobile-only
+
+env:
+  NODE_VERSION: '20'
+  EXPO_VERSION: '5.16.5'
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    name: Validate & Test
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Get yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache yarn dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: TypeScript compilation check
+        run: yarn tsc --noEmit
+
+      - name: Run backend tests
+        run: |
+          cd apps/backend
+          npm test -- --coverage --passWithNoTests
+          cd ../..
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./apps/backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  build-extension:
+    runs-on: ubuntu-latest
+    name: Build VS Code Extension
+    needs: validate-and-test
+    if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'extension-only' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: Create .vscodeignore file
+        run: |
+          cat > apps/backend/.vscodeignore << 'EOF'
+          # VS Code extension ignore file
+          # Exclude development and unnecessary files
+          
+          # Development files
+          .devcontainer/
+          .github/
+          .vscode/
+          __mocks__/
+          scripts/
+          *.test.*
+          *.spec.*
+          jest.config.js
+          .jest-localstorage
+          
+          # Source files (we use compiled dist/)
+          src/**/*.ts
+          !src/**/*.d.ts
+          
+          # Build artifacts
+          *.vsix
+          dist/**/*.map
+          
+          # Documentation
+          CHANGELOG.md
+          README.md
+          
+          # Config files
+          tsconfig.json
+          webpack.config.js
+          
+          # Git
+          .gitignore
+          
+          # Exclude everything then selectively include
+          *
+          !dist/
+          !package.json
+          !LICENSE
+          !README.md
+          !CHANGELOG.md
+          !certs/
+          EOF
+
+      - name: Build extension
+        run: |
+          cd apps/backend
+          npm run build
+          # Create bundle if needed
+          if [ -f "scripts/bundle.js" ]; then
+            node scripts/bundle.js
+          fi
+          cd ../..
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Package VSIX
+        run: |
+          cd apps/backend
+          vsce package --no-dependencies --out mobile-vscode-server.vsix
+          
+          # Verify the package
+          vsce ls --tree | head -20
+          echo "VSIX size: $(du -h mobile-vscode-server.vsix | cut -f1)"
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: MobileVSCode ${{ github.ref_name }}
+          body: |
+            ## MobileVSCode Extension ${{ github.ref_name }}
+            
+            ### What's Included
+            - GraphQL API server for mobile IDE
+            - Real-time collaboration with Yjs
+            - Git integration
+            - File system watching
+            - VS Code extension management
+            
+            ### Installation
+            1. Download the `.vsix` file
+            2. In VS Code: `Extensions` → `...` → `Install from VSIX`
+            3. Restart VS Code
+            
+            ### Requirements
+            - VS Code 1.80.0 or higher
+            - Node.js 18+
+            
+            ### Notes
+            - First run will generate pairing token
+            - Configure HTTPS certificates for production use
+          files: |
+            apps/backend/mobile-vscode-server.vsix
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-vscode-extension-${{ github.sha }}
+          path: apps/backend/mobile-vscode-server.vsix
+          retention-days: 30
+          if-no-files-found: error
+
+  build-mobile-android:
+    runs-on: ubuntu-latest
+    name: Build Android App
+    needs: validate-and-test
+    if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only' || (github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: Build shared packages
+        run: |
+          # Build all workspace packages
+          yarn workspaces foreach --all -p run build 2>/dev/null || true
+          
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
+
+      - name: Configure EAS (Development Build)
+        run: |
+          cd apps/mobile
+          # Create minimal eas.json if not exists
+          if [ ! -f "eas.json" ]; then
+            cat > eas.json << 'EASJSON'
+            {
+              "cli": {
+                "version": ">= 5.0.0"
+              },
+              "build": {
+                "development": {
+                  "developmentClient": true,
+                  "distribution": "internal",
+                  "android": {
+                    "buildType": "apk"
+                  }
+                },
+                "preview": {
+                  "distribution": "internal",
+                  "android": {
+                    "buildType": "apk"
+                  }
+                },
+                "production": {}
+              },
+              "submit": {
+                "production": {}
+              }
+            }
+            EASJSON
+          fi
+          cd ../..
+
+      - name: Build Android APK (Development)
+        run: |
+          cd apps/mobile
+          eas build --platform android --profile development --non-interactive --wait --output=./mobile-vscode-dev.apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload Android APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-vscode-android-${{ github.sha }}
+          path: apps/mobile/mobile-vscode-dev.apk
+          retention-days: 30
+
+  build-mobile-ios:
+    runs-on: macos-latest
+    name: Build iOS App
+    needs: [validate-and-test, build-mobile-android]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: Build shared packages
+        run: |
+          yarn workspaces foreach --all -p run build 2>/dev/null || true
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
+
+      - name: Build iOS Simulator Build
+        run: |
+          cd apps/mobile
+          eas build --platform ios --profile development --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Optional: Add Apple credentials for real device builds
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+
+  deploy-preview:
+    runs-on: ubuntu-latest
+    name: Deploy Preview
+    if: github.event_name == 'pull_request'
+    needs: [validate-and-test, build-extension]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: Generate QR Code for Preview
+        uses: crazy-max/ghaction-qrcode@v3
+        with:
+          text: |
+            📱 MobileVSCode Preview Build
+            
+            Branch: ${{ github.head_ref }}
+            Commit: ${{ github.sha }}
+            
+            Scan to open in Expo Go app!
+            
+            Server: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          size: 300
+          output: qr-preview.png
+
+      - name: Comment Preview Links on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const qrBase64 = fs.readFileSync('qr-preview.png', { encoding: 'base64' });
+            
+            const comment = {
+              body: `## 🚀 MobileVSCode Preview Build\n\n` +
+                    `**Branch:** ${context.payload.pull_request.head.ref}\n` +
+                    `**Commit:** ${context.sha.substring(0, 7)}\n\n` +
+                    `### 📦 Built Artifacts:\n` +
+                    `- [VS Code Extension (.vsix)](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts)\n` +
+                    `- Android APK available in artifacts\n\n` +
+                    `### 📱 Expo Preview\n` +
+                    `![QR Code](data:image/png;base64,${qrBase64})\n\n` +
+                    `_Scan with Expo Go app (Android/iOS)_\n\n` +
+                    `---\n` +
+                    `*Generated by GitHub Actions*`
+            };
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment.body
+            });
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Build Summary
+    needs: [build-extension, build-mobile-android]
+    if: always()
+    
+    steps:
+      - name: Generate Build Summary
+        run: |
+          echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Artifact |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.build-extension.result }}" == "success" ]]; then
+            echo "| VS Code Extension | ✅ Success | [Download VSIX](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| VS Code Extension | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.build-mobile-android.result }}" == "success" ]]; then
+            echo "| Android App | ✅ Success | [Download APK](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Android App | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the VSIX file and install in VS Code" >> $GITHUB_STEP_SUMMARY
+          echo "2. Start the MobileVSCode server from VS Code" >> $GITHUB_STEP_SUMMARY
+          echo "3. Install the Android APK on your device" >> $GITHUB_STEP_SUMMARY
+          echo "4. Pair your mobile device with the pairing token" >> $GITHUB_STEP_SUMMARY
