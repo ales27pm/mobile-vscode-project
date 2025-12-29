@@ -17,6 +17,11 @@ function normalizeArg(arg) {
 }
 
 const forwardedArgs = process.argv.slice(2).map(normalizeArg);
+const hasExplicitWorkerSetting = forwardedArgs.some(arg => arg === '--runInBand' || arg.startsWith('--maxWorkers'));
+
+if (!hasExplicitWorkerSetting) {
+  forwardedArgs.unshift('--runInBand');
+}
 
 const jestBin = path.join(repoRoot, 'node_modules', '.bin', 'jest');
 const nodeOptions = process.env.NODE_OPTIONS ?? '';
