@@ -98,12 +98,12 @@ jobs:
           # Check if bundle script exists and has the problematic import
           if [ -f "apps/backend/scripts/bundle.js" ]; then
             echo "Checking for problematic y-websocket import..."
-            if grep -q "y-websocket/bin/utils.js" apps/backend/scripts/bundle.js; then
+            if grep -q "y-websocket/bin/utils" apps/backend/scripts/bundle.js; then
               echo "Found problematic import, attempting to fix..."
               # Create a backup
               cp apps/backend/scripts/bundle.js apps/backend/scripts/bundle.js.backup
               # Fix the import
-              sed -i "s/'y-websocket\/bin\/utils.js'/'y-websocket\/bin\/utils'/g" apps/backend/scripts/bundle.js
+              sed -i "s/'y-websocket\/bin\/utils'/'y-websocket\/bin\/utils'/g" apps/backend/scripts/bundle.js
               echo "Import fixed"
               echo "should_fix_import=true" >> $GITHUB_OUTPUT
             else
