@@ -6,12 +6,14 @@ const packagesRoot = path.resolve(projectRoot, "packages");
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = Array.from(new Set([...(config.watchFolders || []), packagesRoot]));
+const defaultWatchFolders = config.watchFolders || [];
+config.watchFolders = Array.from(new Set([...defaultWatchFolders, packagesRoot]));
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(projectRoot, "apps/mobile/node_modules"),
 ];
 
+config.resolver.disableHierarchicalLookup = false;
 config.resolver.extraNodeModules = new Proxy(
   {},
   { get: (_, name) => path.join(projectRoot, "node_modules", name) }
