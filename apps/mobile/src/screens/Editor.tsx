@@ -4,16 +4,21 @@ import EditorComponent, { MonacoEditorRef } from 'editor';
 import { useYDoc } from '../hooks/useYDoc';
 import { useDocumentStore } from '../state/documentStore';
 
-export default function Editor({ route, navigation }) {
+type EditorProps = { route: { params: { workspaceUri: string; path: string } }; navigation: { setOptions: (opts: { title: string }) => void } };
+
+export default function Editor({ route, navigation }: EditorProps) {
   const { workspaceUri, path } = route.params;
   const { ydoc, isLoading, awareness } = useYDoc(workspaceUri, path);
-  const [remoteCursors, setRemoteCursors] = useState([]);
+  const [remoteCursors, setRemoteCursors] = useState<
+    Array<{ position: { lineNumber: number; column: number }; color: string; name: string }>
+  >([]);
   const editorRef = React.useRef<MonacoEditorRef>(null);
   const consumeEditorAction = useDocumentStore(state => state.consumeEditorAction);
 
 
   useEffect(() => {
-    navigation.setOptions({ title: path.split('/').pop() });
+    const title = path?.split('/').pop() ?? 'Editor';
+    navigation.setOptions({ title });
     const action = consumeEditorAction();
     if (action?.type === 'highlight-line' && editorRef.current) {
       editorRef.current.revealLineInCenter(action.payload.line, 0);

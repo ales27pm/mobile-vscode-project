@@ -1,12 +1,18 @@
 import React from 'react';
 import { View, FlatList, Text, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation } from '@apollo/client';
-import { ExtensionsDocument, InstallExtensionDocument, UninstallExtensionDocument } from 'shared/src/types';
+import { ExtensionsDocument, InstallExtensionDocument, UninstallExtensionDocument, ExtensionsQuery, InstallExtensionMutation, InstallExtensionMutationVariables, UninstallExtensionMutation, UninstallExtensionMutationVariables } from 'shared/src/types';
 
 export default function Extensions() {
-  const { data, loading, refetch } = useQuery(ExtensionsDocument);
-  const [install, { loading: iLoading }] = useMutation(InstallExtensionDocument, { onCompleted: refetch });
-  const [uninstall, { loading: uLoading }] = useMutation(UninstallExtensionDocument, { onCompleted: refetch });
+  const { data, loading, refetch } = useQuery<ExtensionsQuery>(ExtensionsDocument);
+  const [install, { loading: iLoading }] = useMutation<InstallExtensionMutation, InstallExtensionMutationVariables>(
+    InstallExtensionDocument,
+    { onCompleted: () => refetch() }
+  );
+  const [uninstall, { loading: uLoading }] = useMutation<UninstallExtensionMutation, UninstallExtensionMutationVariables>(
+    UninstallExtensionDocument,
+    { onCompleted: () => refetch() }
+  );
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 
@@ -18,12 +24,18 @@ export default function Extensions() {
         renderItem={({ item }) => (
           <View style={styles.item}>
             <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text>{item.description}</Text>
+              <Text style={styles.name}>{item.id}</Text>
+              <Text>Version: {item.version}</Text>
+              <Text>Status: {item.isActive ? 'Active' : 'Inactive'}</Text>
+              {item.extensionKind && <Text>Kind: {item.extensionKind}</Text>}
             </View>
             <Button
               title={item.installed ? "Uninstall" : "Install"}
-              onPress={() => item.installed ? uninstall({ variables: { id: item.id } }) : install({ variables: { id: item.id } })}
+              onPress={() =>
+                item.installed
+                  ? uninstall({ variables: { id: item.id } })
+                  : install({ variables: { id: item.id } })
+              }
               disabled={iLoading || uLoading}
             />
           </View>

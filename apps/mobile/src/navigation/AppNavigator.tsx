@@ -60,11 +60,11 @@ export default function AppNavigator() {
       })}
     >
       <Tab.Screen name="Explorer" component={ExplorerScreen} />
-      <Tab.Screen name="Editor" component={EditorScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen name="Git" component={GitScreen} />
+      <Tab.Screen name="Editor" component={EditorScreen as React.ComponentType<any>} />
+      <Tab.Screen name="Search" component={SearchScreen as React.ComponentType<any>} />
+      <Tab.Screen name="Git" component={GitScreen as React.ComponentType<any>} />
       <Tab.Screen name="Extensions" component={ExtensionsScreen} />
-      <Tab.Screen name="Debug" component={DebugScreen} />
+      <Tab.Screen name="Debug" component={DebugScreen as React.ComponentType<any>} />
     </Tab.Navigator>
   );
 }

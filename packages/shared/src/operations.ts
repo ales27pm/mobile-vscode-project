@@ -140,3 +140,33 @@ gql`
     }
   }
 `;
+
+gql`
+  mutation PairWithServer($pairingToken: String!) {
+    pairWithServer(pairingToken: $pairingToken)
+  }
+`;
+
+gql`
+  query Extensions {
+    extensions {
+      id
+      version
+      installed
+      isActive
+      extensionKind
+    }
+  }
+`;
+
+gql`
+  mutation InstallExtension($id: String!) {
+    installExtension(id: $id)
+  }
+`;
+
+gql`
+  mutation UninstallExtension($id: String!) {
+    uninstallExtension(id: $id)
+  }
+`;

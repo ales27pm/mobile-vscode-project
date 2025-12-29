@@ -4,7 +4,9 @@ import { useQuery } from '@apollo/client';
 import { ListWorkspacesDocument, ListWorkspacesQuery } from 'shared/src/types';
 import { useAuthStore } from '../state/authStore';
 
-export default function WorkspaceScreen({ navigation }) {
+type WorkspaceScreenProps = { navigation: { replace: (route: string, params: { workspaceUri: string; workspaceName: string }) => void } };
+
+export default function WorkspaceScreen({ navigation }: WorkspaceScreenProps) {
   const { data, loading, error, refetch } = useQuery<ListWorkspacesQuery>(ListWorkspacesDocument);
   const setToken = useAuthStore(s => s.setToken);
 

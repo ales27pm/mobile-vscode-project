@@ -55,7 +55,7 @@ jest.mock(
 const ws = { on: jest.fn(), handleUpgrade: jest.fn(), close: jest.fn() };
 jest.mock('ws', () => ({ WebSocketServer: jest.fn(() => ws) }), { virtual: true });
 
-jest.mock('graphql-ws/dist/use/ws', () => ({ useServer: jest.fn(() => ({ dispose: jest.fn() })) }), { virtual: true });
+jest.mock('graphql-ws/use/ws', () => ({ useServer: jest.fn(() => ({ dispose: jest.fn() })) }), { virtual: true });
 
 jest.mock('y-websocket/bin/utils.js', () => ({ setupWSConnection: jest.fn(), setPersistence: jest.fn() }), { virtual: true });
 
@@ -65,7 +65,7 @@ jest.mock(
     'lodash.debounce',
     () =>
         (fn: (...args: unknown[]) => void, wait = 300) => {
-            let timeout: NodeJS.Timeout | undefined;
+            let timeout: ReturnType<typeof setTimeout> | undefined;
             const debounced = (...args: unknown[]) => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => fn(...args), wait);

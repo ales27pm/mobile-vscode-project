@@ -14,10 +14,12 @@
     "start:mobile": "corepack yarn workspace mobile start",
     "build": "turbo run build",
     "dev": "turbo run start",
-    "test": "turbo run test --"
+    "test": "turbo run test --",
+    "plugin-sdk-validate": "ts-node --transpile-only scripts/plugin-sdk-validate.ts"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/typed-document-node": "^6.1.5",
     "@graphql-codegen/typescript": "^5.0.7",
     "@graphql-codegen/typescript-operations": "^5.0.7",
     "@types/cors": "^2.8.19",
@@ -28,6 +30,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
+    "ts-node": "^10.9.2",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-react": "^7.32.2",

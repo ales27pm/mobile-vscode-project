@@ -1,8 +1,10 @@
 /* eslint-disable no-unreachable */
-export function editorHtml(
-  initialValue: string,
-  language: string
-): string {
+export function editorHtml(initialValue: string, language: string): string {
+  const workerBootstrap = [
+    "self.MonacoEnvironment = { baseUrl: 'https://unpkg.com/monaco-editor@0.33.0/min/' };",
+    "importScripts('https://unpkg.com/monaco-editor@0.33.0/min/vs/base/worker/workerMain.js');",
+  ].join('\n');
+
   return `
 <!DOCTYPE html>
 <html>
@@ -45,10 +47,7 @@ export function editorHtml(
 
         require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.33.0/min/vs' } });
         window.MonacoEnvironment = { getWorkerUrl: function() {
-            return 'data:text/javascript;charset=utf-8,' + encodeURIComponent(`
-                self.MonacoEnvironment = { baseUrl: 'https://unpkg.com/monaco-editor@0.33.0/min/' };
-                importScripts('https://unpkg.com/monaco-editor@0.33.0/min/vs/base/worker/workerMain.js');
-            `);
+            return 'data:text/javascript;charset=utf-8,' + encodeURIComponent(${JSON.stringify(workerBootstrap)});
         } };
 
         require(['vs/editor/editor.main'], function () {

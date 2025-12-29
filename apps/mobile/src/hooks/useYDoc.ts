@@ -18,8 +18,9 @@ export function useYDoc(workspaceUri: string, docId: string) {
     variables: { workspaceUri, path: docId },
     fetchPolicy: 'network-only',
     onCompleted: (data) => {
-      if (data?.readFile && ydoc.getText('monaco').length === 0) {
-        ydoc.getText('monaco').insert(0, data.readFile);
+      const text: Y.Text = ydoc.getText('monaco');
+      if (data?.readFile && text.length === 0) {
+        text.insert(0, data.readFile.content);
       }
     }
   });
