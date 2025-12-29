@@ -54,6 +54,11 @@ export const typeDefs = gql`
     body: String!
   }
 
+  type FileChangeEvent {
+    type: String!
+    path: String!
+  }
+
   type Query {
     listWorkspaces: [Workspace!]!
     listDirectory(workspaceUri: String!, path: String!): [FileEntry!]!
@@ -75,7 +80,7 @@ export const typeDefs = gql`
   }
 
   type Subscription {
-    fileChange: String
+    fileChange: FileChangeEvent!
     debugEvent: DebuggerEvent!
   }
 `;

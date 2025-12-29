@@ -9,8 +9,17 @@ type ResolverContext = unknown;
 
 const isDirectoryType = (type: number) => (type & vscode.FileType.Directory) === vscode.FileType.Directory;
 
-const toWorkspacePath = (workspaceUri: string, relativePath: string) =>
-  vscode.Uri.file(path.posix.join(vscode.Uri.parse(workspaceUri).fsPath, relativePath));
+const toWorkspacePath = (workspaceUri: string, relativePath: string) => {
+  const workspace = vscode.Uri.parse(workspaceUri);
+  const segments = relativePath.split(/[\\/]+/).filter(Boolean);
+  return vscode.Uri.joinPath(workspace, ...segments);
+};
+
+const toPosixPath = (p: string) => p.split(path.sep).join(path.posix.sep);
+
+const shouldSkipDirectory = (name: string) => name === 'node_modules' || name.startsWith('.');
+
+const MAX_SEARCH_FILE_SIZE = 1024 * 1024; // 1MB
 
 async function listDirectoryEntries(workspaceUri: string, relativePath: string) {
   const dirUri = toWorkspacePath(workspaceUri, relativePath);
@@ -52,22 +61,35 @@ async function searchWorkspace(workspaceUri: string, query: string, limit: numbe
       if (results.length >= limit) break;
       const nextRelativePath = path.posix.join(relativePath, name);
       if (isDirectoryType(type)) {
+        if (shouldSkipDirectory(name)) {
+          continue;
+        }
         await walk(nextRelativePath);
       } else {
         const fileUri = toWorkspacePath(workspaceUri, nextRelativePath);
-        const data = await vscode.workspace.fs.readFile(fileUri);
-        const content = Buffer.from(data).toString('utf8');
-        const lines = content.split(/\r?\n/);
-        lines.forEach((text, idx) => {
-          if (results.length >= limit) return;
-          if (text.includes(query)) {
-            results.push({
-              path: path.posix.relative(basePath, fileUri.fsPath),
-              line: idx + 1,
-              preview: text.trim()
-            });
+        try {
+          const stat = await vscode.workspace.fs.stat(fileUri);
+          if (stat.size > MAX_SEARCH_FILE_SIZE) {
+            continue;
           }
-        });
+
+          const data = await vscode.workspace.fs.readFile(fileUri);
+          const content = Buffer.from(data).toString('utf8');
+          const lines = content.split(/\r?\n/);
+          lines.forEach((text, idx) => {
+            if (results.length >= limit) return;
+            if (text.includes(query)) {
+              results.push({
+                path: toPosixPath(path.relative(basePath, fileUri.fsPath)),
+                line: idx + 1,
+                preview: text.trim()
+              });
+            }
+          });
+        } catch {
+          // Skip files that cannot be read (binary, permissions, etc.)
+          continue;
+        }
       }
     }
   }
