@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import debounce from 'lodash.debounce';
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 
 const SNAPSHOT_DIR = '.mobile-vscode-crdt-snapshots';
 let snapshotDirAbs: string;
