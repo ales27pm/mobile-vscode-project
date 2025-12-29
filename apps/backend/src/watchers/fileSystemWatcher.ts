@@ -18,13 +18,14 @@ export function initializeFileSystemWatcher() {
 
   const publishEvent = (type: string, uri: vscode.Uri) => {
     const changeType = type.toUpperCase();
+    const relativePath = vscode.workspace.asRelativePath(uri, false);
     pubsub.publish(FS_EVENT, {
       fileChange: {
         type: changeType,
-        path: uri.fsPath
+        path: relativePath
       }
     });
-    console.log(`🔄 File ${changeType}: ${uri.fsPath}`);
+    console.log(`🔄 File ${changeType}: ${relativePath}`);
   };
 
   // Attach event listeners
