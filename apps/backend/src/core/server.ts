@@ -2,13 +2,14 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 import * as fs from 'fs';
 import { AddressInfo } from 'net';
-import express from 'express';
+import express, { Application } from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { join } from 'path';
-import { setupWSConnection, setPersistence} from 'y-websocket/bin/utils';
+import { setupWSConnection, setPersistence } from 'y-websocket/bin/utils.js';
+import type { Doc } from 'yjs';
 
 import { ensureAuthContext, setupAuthMiddleware, RequestWithUser } from './auth';
 import { bindState } from '../crdt/persistence';
@@ -33,6 +34,9 @@ export async function startServer(context: vscode.ExtensionContext) {
     }
 
     const app = express();
+    const expressApp = app as Application;
+    type ApolloExpressApp = Parameters<ApolloServer['applyMiddleware']>[0]['app'];
+    const apolloApp = app as unknown as ApolloExpressApp;
     app.use(express.json());
 
     const keyPath = join(context.extensionPath, 'certs/server.key');
@@ -48,7 +52,7 @@ export async function startServer(context: vscode.ExtensionContext) {
 
     const schema = makeExecutableSchema({ typeDefs: schemaTypeDefs, resolvers: getResolvers() });
 
-    setupAuthMiddleware(app, authContext);
+    setupAuthMiddleware(expressApp, authContext);
 
     apolloServer = new ApolloServer({
         schema,
@@ -59,7 +63,7 @@ export async function startServer(context: vscode.ExtensionContext) {
     
     if (!apolloServer || !httpServer) return;
 
-    apolloServer.applyMiddleware({ app, path: '/graphql' });
+    apolloServer.applyMiddleware({ app: apolloApp, path: '/graphql' });
 
     const gqlWsServer = new WebSocketServer({ noServer: true });
     const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
@@ -67,12 +71,13 @@ export async function startServer(context: vscode.ExtensionContext) {
     const yjsWsServer = new WebSocketServer({ noServer: true });
 
         setPersistence({
-            bindState: (docName: string, ydoc: any) => {
+            bindState: (docName: string, ydoc: Doc) => {
                 bindState(docName, ydoc);
             },
             writeState: () => {
                 // Persistence is handled by debounced savers in bindState
-            },});
+            },
+        });
 
         yjsWsServer.on('connection', setupWSConnection);
 

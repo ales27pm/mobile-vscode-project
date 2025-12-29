@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Express, Request, Response, NextFunction } from 'express';
+import { Application, Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { updateStatusBar } from '../ui/statusBar';
@@ -103,7 +103,7 @@ export function jwtAuthMiddleware(authContext: AuthContext) {
     };
 }
 
-export function setupAuthMiddleware(app: Express, authContext: AuthContext) {
+export function setupAuthMiddleware(app: Application, authContext: AuthContext) {
     app.use('/graphql', pairingMiddleware(authContext));
     app.use('/graphql', jwtAuthMiddleware(authContext));
 }
