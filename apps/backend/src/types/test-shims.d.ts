@@ -22,7 +22,7 @@ declare module 'lodash.debounce' {
     ): DebouncedFunc<T>;
 }
 declare module 'lru-cache' {
-    export default class LRUCache<K = unknown, V = unknown> {
+    export class LRUCache<K = unknown, V = unknown> {
         constructor(opts?: unknown);
         get(key: K): V | undefined;
         set(key: K, value: V): void;
