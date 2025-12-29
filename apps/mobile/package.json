@@ -18,6 +18,7 @@
     "@react-navigation/native": "~6.1.6",
     "@react-navigation/native-stack": "~6.9.12",
     "apollo3-cache-persist": "^0.13.0",
+    "babel-preset-expo": "^54.0.9",
     "expo": "54.0.30",
     "expo-constants": "~18.0.12",
     "expo-crypto": "~15.0.8",
