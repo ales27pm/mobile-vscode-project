@@ -15,7 +15,7 @@
     "build": "turbo run build",
     "dev": "turbo run start",
     "test": "turbo run test --",
-    "package:vsix": "bash scripts/package-vsix.sh",
+    "package:vsix": "sh scripts/package-vsix.sh",
     "plugin-sdk-validate": "ts-node --transpile-only scripts/plugin-sdk-validate.ts"
   },
   "devDependencies": {

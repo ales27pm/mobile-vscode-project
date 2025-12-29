@@ -1,7 +1,8 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 PKG_DIR="$ROOT/apps/backend"
 STAGE="$PKG_DIR/.vsix-staging"
 OUT="$ROOT/mobile-vscode-server.vsix"
