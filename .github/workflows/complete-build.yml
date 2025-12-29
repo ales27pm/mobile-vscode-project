@@ -58,6 +58,7 @@ on:
 env:
   NODE_VERSION: '20'
   ROOT_DIR: '${{ github.workspace }}'
+  SKIP_MOBILE: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_mobile }}
 
 jobs:
   preflight:
@@ -295,16 +296,16 @@ jobs:
     runs-on: ${{ matrix.runner }}
     name: Build Mobile (${{ matrix.platform }})
     needs: [preflight, validate-and-test]
-    if: ${{ !inputs.skip_mobile && (github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only' || (github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
+    if: ${{ !env.SKIP_MOBILE && matrix.if_condition && (github.event_name != 'workflow_dispatch' || inputs.build_type == 'all' || inputs.build_type == 'mobile-only') }}
     strategy:
       matrix:
         include:
           - platform: android
             runner: ubuntu-latest
-            if_condition: ${{ github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'android' }}
+            if_condition: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'android' }}
           - platform: ios
             runner: macos-latest
-            if_condition: ${{ github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'ios' }}
+            if_condition: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'ios' }}
     
     steps:
       - name: Checkout repository
