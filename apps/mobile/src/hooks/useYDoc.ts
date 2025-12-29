@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
-import { YWS_URL } from '../config';
+import { YJS_URL } from '../config';
 import { useQuery } from '@apollo/client';
 import { ReadFileDocument } from 'shared/src/types';
 
@@ -28,7 +28,7 @@ export function useYDoc(workspaceUri: string, docId: string) {
     // Ensure we don't create providers until we have the necessary info
     if (!workspaceUri || !docId) return;
 
-    const provider = new WebsocketProvider(YWS_URL, roomName, ydoc);
+    const provider = new WebsocketProvider(YJS_URL, roomName, ydoc);
     provider.awareness.setLocalStateField('user', {
         name: myName,
         color: myColor,
