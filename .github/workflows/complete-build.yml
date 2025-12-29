@@ -332,6 +332,10 @@ jobs:
         if: ${{ matrix.if_condition }}
         run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
 
+      - name: Install EAS CLI
+        if: ${{ matrix.if_condition }}
+        run: npm install --global eas-cli
+
       - name: Generate GraphQL artifacts
         if: ${{ matrix.if_condition && needs.preflight.outputs.codegen_exists == 'true' }}
         run: yarn codegen
@@ -348,7 +352,7 @@ jobs:
           if [ -n "${{ secrets.EXPO_TOKEN }}" ]; then
             echo "Using EXPO_TOKEN from secrets"
             echo "eas_authenticated=true" >> $GITHUB_OUTPUT
-          elif npx --yes eas whoami >/dev/null 2>&1; then
+          elif eas whoami >/dev/null 2>&1; then
             echo "EAS already authenticated"
             echo "eas_authenticated=true" >> $GITHUB_OUTPUT
           else
@@ -399,7 +403,7 @@ jobs:
           fi
           cd ../..
 
-      - name: Build with EAS (using npx as in deploy.sh)
+      - name: Build with EAS (installed CLI)
         if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         run: |
           cd apps/mobile
@@ -409,8 +413,8 @@ jobs:
           
           echo "Building for ${{ matrix.platform }} with profile: $PROFILE"
           
-          # Use npx --yes eas as in deploy.sh script
-          EAS_CMD=(npx --yes eas build --non-interactive --profile "$PROFILE" --platform "${{ matrix.platform }}")
+          # Use the installed EAS CLI
+          EAS_CMD=(eas build --non-interactive --profile "$PROFILE" --platform "${{ matrix.platform }}")
           
           # Add output directory for local builds (if needed)
           if [ "${{ matrix.platform }}" = "android" ] && [ "$PROFILE" = "development" ]; then
@@ -438,16 +442,25 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload mobile artifacts
-        if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
+        if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-vscode-${{ matrix.platform }}-${{ github.event.inputs.mobile_profile || 'development' }}-${{ github.sha }}
+          name: mobile-vscode-android-${{ github.event.inputs.mobile_profile || 'development' }}-${{ github.sha }}
           path: |
             apps/mobile/mobile-vscode-*.apk
+            apps/mobile/android/app/build/outputs/**/*.apk
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload iOS artifacts
+        if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' && matrix.platform == 'ios' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-vscode-ios-${{ github.event.inputs.mobile_profile || 'development' }}-${{ github.sha }}
+          path: |
             apps/mobile/mobile-vscode-*.ipa
             apps/mobile/ios/build/Build/Products/*.app
             apps/mobile/ios/build/*.app
-            apps/mobile/android/app/build/outputs/**/*.apk
           retention-days: 30
           if-no-files-found: warn
 
