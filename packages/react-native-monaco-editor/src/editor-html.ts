@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 export function editorHtml(
   initialValue: string,
   language: string

@@ -104,19 +104,21 @@ const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       }
     }, [remoteCursors]);
 
-    return (
-      <WebView
-        ref={webviewRef}
+  return (
+    <WebView
+      ref={webviewRef}
         originWhitelist={['*']}
         source={{ html: htmlContent, baseUrl: '' }}
         style={style}
         onMessage={handleMessage}
         javaScriptEnabled
         allowFileAccess
-        onShouldStartLoadWithRequest={event => event.url === 'about:blank'}
-      />
-    );
+      onShouldStartLoadWithRequest={event => event.url === 'about:blank'}
+    />
+  );
   }
 );
+
+MonacoEditor.displayName = 'MonacoEditor';
 
 export default MonacoEditor;

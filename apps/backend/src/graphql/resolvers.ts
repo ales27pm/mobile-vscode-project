@@ -1,97 +1,136 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
 import { pubsub } from './pubsub';
 import { FS_EVENT, DEBUG_EVENT } from '../constants';
 import { getGitProvider } from '../providers/gitProvider';
 import { getDebugProvider } from '../providers/debugProvider';
 
-export function getResolvers(pubsubInstance: typeof pubsub) {
+type ResolverContext = unknown;
+
+const isDirectoryType = (type: number) => (type & vscode.FileType.Directory) === vscode.FileType.Directory;
+
+const toWorkspacePath = (workspaceUri: string, relativePath: string) => {
+  const workspace = vscode.Uri.parse(workspaceUri);
+  const segments = relativePath.split(/[\\/]+/).filter(Boolean);
+  return vscode.Uri.joinPath(workspace, ...segments);
+};
+
+const toPosixPath = (p: string) => p.split(path.sep).join(path.posix.sep);
+
+const shouldSkipDirectory = (name: string) => name === 'node_modules' || name.startsWith('.');
+
+const MAX_SEARCH_FILE_SIZE = 1024 * 1024; // 1MB
+
+async function listDirectoryEntries(workspaceUri: string, relativePath: string) {
+  const dirUri = toWorkspacePath(workspaceUri, relativePath);
+  const entries = await vscode.workspace.fs.readDirectory(dirUri);
+  return entries.map(([name, type]) => {
+    const entryPath = path.posix.join(relativePath, name);
+    const isDirectory = isDirectoryType(type);
+    return {
+      name,
+      path: entryPath,
+      type: isDirectory ? 'directory' : 'file',
+      isDirectory,
+      size: 0,
+      mtimeMs: 0
+    };
+  });
+}
+
+async function readFileFromWorkspace(workspaceUri: string, filePath: string, encoding: BufferEncoding = 'utf8') {
+  const fileUri = toWorkspacePath(workspaceUri, filePath);
+  const content = await vscode.workspace.fs.readFile(fileUri);
+  return {
+    path: filePath,
+    content: Buffer.from(content).toString(encoding),
+    encoding
+  };
+}
+
+async function searchWorkspace(workspaceUri: string, query: string, limit: number) {
+  const results: { path: string; line: number; preview: string }[] = [];
+  const basePath = vscode.Uri.parse(workspaceUri).fsPath;
+
+  async function walk(relativePath: string) {
+    if (results.length >= limit) return;
+    const dirUri = toWorkspacePath(workspaceUri, relativePath);
+    const entries = await vscode.workspace.fs.readDirectory(dirUri);
+
+    for (const [name, type] of entries) {
+      if (results.length >= limit) break;
+      const nextRelativePath = path.posix.join(relativePath, name);
+      if (isDirectoryType(type)) {
+        if (shouldSkipDirectory(name)) {
+          continue;
+        }
+        await walk(nextRelativePath);
+      } else {
+        const fileUri = toWorkspacePath(workspaceUri, nextRelativePath);
+        try {
+          const stat = await vscode.workspace.fs.stat(fileUri);
+          if (stat.size > MAX_SEARCH_FILE_SIZE) {
+            continue;
+          }
+
+          const data = await vscode.workspace.fs.readFile(fileUri);
+          const content = Buffer.from(data).toString('utf8');
+          const lines = content.split(/\r?\n/);
+          lines.forEach((text, idx) => {
+            if (results.length >= limit) return;
+            if (text.includes(query)) {
+              results.push({
+                path: toPosixPath(path.relative(basePath, fileUri.fsPath)),
+                line: idx + 1,
+                preview: text.trim()
+              });
+            }
+          });
+        } catch {
+          // Skip files that cannot be read (binary, permissions, etc.)
+          continue;
+        }
+      }
+    }
+  }
+
+  await walk('');
+  return results;
+}
+
+export function getResolvers(pubsubInstance: typeof pubsub = pubsub) {
+  const gitProvider = getGitProvider();
+  const debugProvider = getDebugProvider();
+
   return {
     Query: {
-      workspaces: () => {
-        // Return list of workspaces (for simplicity, currently open workspace)
+      listWorkspaces: (_: ResolverContext) => {
         const folders = vscode.workspace.workspaceFolders || [];
         return folders.map(folder => ({
           uri: folder.uri.toString(),
           name: path.basename(folder.uri.fsPath)
         }));
       },
-      files: (_: any, args: { workspaceUri: string; directory: string }) => {
-        // List files in the given directory
-        const dirPath = path.join(vscode.Uri.parse(args.workspaceUri).fsPath, args.directory);
-        const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-        return entries.map(entry => ({
-          name: entry.name,
-          path: path.join(args.directory, entry.name),
-          isDirectory: entry.isDirectory()
-        }));
-      },
-      search: (_: any, args: { workspaceUri: string; query: string }) => {
-        // Very basic search implementation (could integrate ripgrep or VS Code search)
-        const results: any[] = [];
-        const baseDir = vscode.Uri.parse(args.workspaceUri).fsPath;
-        function searchDir(dir: string) {
-          const entries = fs.readdirSync(dir, { withFileTypes: true });
-          for (const entry of entries) {
-            const fullPath = path.join(dir, entry.name);
-            if (entry.isDirectory()) {
-              searchDir(fullPath);
-            } else if (entry.isFile()) {
-              const content = fs.readFileSync(fullPath, 'utf-8');
-              const lines = content.split(/\r?\n/);
-              lines.forEach((text, idx) => {
-                if (text.includes(args.query)) {
-                  results.push({
-                    file: path.relative(baseDir, fullPath),
-                    line: idx + 1,
-                    text: text.trim()
-                  });
-                }
-              });
-            }
-          }
-        }
-        searchDir(baseDir);
-        return results;
-      },
-      gitStatus: (_: any, args: { workspaceUri: string }) => {
-        const gitProvider = getGitProvider();
-        return gitProvider.getStatus(vscode.Uri.parse(args.workspaceUri));
-      }
+      listDirectory: async (_: ResolverContext, args: { workspaceUri: string; path: string }) =>
+        listDirectoryEntries(args.workspaceUri, args.path),
+      readFile: async (_: ResolverContext, args: { workspaceUri: string; path: string; encoding?: BufferEncoding }) =>
+        readFileFromWorkspace(args.workspaceUri, args.path, args.encoding ?? 'utf8'),
+      search: async (_: ResolverContext, args: { workspaceUri: string; query: string; limit: number }) =>
+        searchWorkspace(args.workspaceUri, args.query, args.limit),
+      ...gitProvider.Query,
+      ...debugProvider.Query
     },
     Mutation: {
-      openWorkspace: async (_: any, args: { path: string }) => {
-        try {
-          const uri = vscode.Uri.file(args.path);
-          await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: false });
-          return true;
-        } catch (error) {
-          console.error('Failed to open workspace:', error);
-          return false;
-        }
+      writeFile: async (
+        _: ResolverContext,
+        args: { workspaceUri: string; path: string; content: string; encoding: BufferEncoding }
+      ) => {
+        const targetUri = toWorkspacePath(args.workspaceUri, args.path);
+        await vscode.workspace.fs.writeFile(targetUri, Buffer.from(args.content, args.encoding));
+        return { ok: true };
       },
-      createFile: (_: any, args: { path: string }) => {
-        fs.writeFileSync(args.path, '');
-        return true;
-      },
-      deleteFile: (_: any, args: { path: string }) => {
-        fs.rmSync(args.path, { recursive: true, force: true });
-        return true;
-      },
-      saveFile: (_: any, args: { path: string; content: string }) => {
-        fs.writeFileSync(args.path, args.content);
-        return true;
-      },
-      executeCommand: async (_: any, args: { command: string; args: string[] }) => {
-        try {
-          const result = await vscode.commands.executeCommand(args.command, ...(args.args || []));
-          return result ? result.toString() : 'Executed';
-        } catch (err) {
-          console.error('Command execution error:', err);
-          return err instanceof Error ? err.message : 'Error';
-        }
-      }
+      ...gitProvider.Mutation,
+      ...debugProvider.Mutation
     },
     Subscription: {
       fileChange: {

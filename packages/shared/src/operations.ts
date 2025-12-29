@@ -12,27 +12,34 @@ gql`
 `;
 
 gql`
-  query ListDirectory($workspaceUri: String!, $path: String) {
+  query ListDirectory($workspaceUri: String!, $path: String!) {
     listDirectory(workspaceUri: $workspaceUri, path: $path) {
       name
       path
+      type
       isDirectory
+      size
+      mtimeMs
     }
   }
 `;
 
 gql`
-  query ReadFile($workspaceUri: String!, $path: String!) {
-    readFile(workspaceUri: $workspaceUri, path: $path)
+  query ReadFile($workspaceUri: String!, $path: String!, $encoding: String) {
+    readFile(workspaceUri: $workspaceUri, path: $path, encoding: $encoding) {
+      path
+      content
+      encoding
+    }
   }
 `;
 
 gql`
-  query Search($workspaceUri: String!, $query: String!) {
-    search(workspaceUri: $workspaceUri, query: $query) {
-      file
+  query Search($workspaceUri: String!, $query: String!, $limit: Int!) {
+    search(workspaceUri: $workspaceUri, query: $query, limit: $limit) {
+      path
       line
-      text
+      preview
     }
   }
 `;
@@ -43,36 +50,14 @@ gql`
       branch
       staged
       unstaged
+      untracked
     }
   }
 `;
 
 gql`
-  query Extensions {
-    extensions {
-      id
-      name
-      description
-      installed
-    }
-  }
-`;
-
-gql`
-  query GitDiff($workspaceUri: String!, $file: String!) {
-    gitDiff(workspaceUri: $workspaceUri, file: $file)
-  }
-`;
-
-gql`
-  mutation GitStage($workspaceUri: String!, $file: String!) {
-    gitStage(workspaceUri: $workspaceUri, file: $file)
-  }
-`;
-
-gql`
-  mutation GitUnstage($workspaceUri: String!, $file: String!) {
-    gitUnstage(workspaceUri: $workspaceUri, file: $file)
+  query GitDiff($workspaceUri: String!, $filePath: String) {
+    gitDiff(workspaceUri: $workspaceUri, filePath: $filePath)
   }
 `;
 
@@ -82,7 +67,47 @@ gql`
       name
       type
       request
+      program
+      cwd
+      args
     }
+  }
+`;
+
+gql`
+  mutation WriteFile(
+    $workspaceUri: String!
+    $path: String!
+    $content: String!
+    $encoding: String!
+  ) {
+    writeFile(workspaceUri: $workspaceUri, path: $path, content: $content, encoding: $encoding) {
+      ok
+    }
+  }
+`;
+
+gql`
+  mutation GitStage($workspaceUri: String!, $filePath: String!) {
+    gitStage(workspaceUri: $workspaceUri, filePath: $filePath)
+  }
+`;
+
+gql`
+  mutation GitUnstage($workspaceUri: String!, $filePath: String!) {
+    gitUnstage(workspaceUri: $workspaceUri, filePath: $filePath)
+  }
+`;
+
+gql`
+  mutation GitCommit($workspaceUri: String!, $message: String!) {
+    gitCommit(workspaceUri: $workspaceUri, message: $message)
+  }
+`;
+
+gql`
+  mutation GitPush($workspaceUri: String!) {
+    gitPush(workspaceUri: $workspaceUri)
   }
 `;
 
@@ -99,8 +124,8 @@ gql`
 `;
 
 gql`
-  subscription DebuggerEvent {
-    debuggerEvent {
+  subscription DebugEvent {
+    debugEvent {
       event
       body
     }
@@ -108,45 +133,9 @@ gql`
 `;
 
 gql`
-  mutation PairWithServer($pairingToken: String!) {
-    pairWithServer(pairingToken: $pairingToken)
-  }
-`;
-
-gql`
-  mutation WriteFile($workspaceUri: String!, $path: String!, $content: String!) {
-    writeFile(workspaceUri: $workspaceUri, path: $path, content: $content)
-  }
-`;
-
-gql`
-  mutation Commit($workspaceUri: String!, $message: String!) {
-    commit(workspaceUri: $workspaceUri, message: $message)
-  }
-`;
-
-gql`
-  mutation Push($workspaceUri: String!) {
-    push(workspaceUri: $workspaceUri)
-  }
-`;
-
-gql`
-  mutation InstallExtension($id: String!) {
-    installExtension(id: $id)
-  }
-`;
-
-gql`
-  mutation UninstallExtension($id: String!) {
-    uninstallExtension(id: $id)
-  }
-`;
-
-gql`
-  subscription FsEvent {
-    fsEvent {
-      event
+  subscription FileChange {
+    fileChange {
+      type
       path
     }
   }

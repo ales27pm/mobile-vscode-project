@@ -32,33 +32,35 @@ describe('gitProvider', () => {
         { path: 'a.txt', index: 'A', working_dir: ' ' },
         { path: 'b.txt', index: ' ', working_dir: 'M' },
       ],
+      not_added: ['c.txt'],
     });
 
     const status = await provider.Query.gitStatus(null, args);
     expect(status.branch).toBe('main');
     expect(status.staged).toEqual(['a.txt']);
     expect(status.unstaged).toEqual(['b.txt']);
+    expect(status.untracked).toEqual(['c.txt']);
   });
 
   it('gitDiff returns diff string', async () => {
     mockGit.diff.mockResolvedValue('diff');
-    const diff = await provider.Query.gitDiff(null, { ...args, file: 'file.txt' });
+    const diff = await provider.Query.gitDiff(null, { ...args, filePath: 'file.txt' });
     expect(diff).toBe('diff');
     expect(mockGit.diff).toHaveBeenCalledWith(['file.txt']);
   });
 
   it('gitStage stages file', async () => {
-    await provider.Mutation.gitStage(null, { ...args, file: 'x' });
+    await provider.Mutation.gitStage(null, { ...args, filePath: 'x' });
     expect(mockGit.add).toHaveBeenCalledWith('x');
   });
 
   it('gitUnstage unstages file', async () => {
-    await provider.Mutation.gitUnstage(null, { ...args, file: 'x' });
+    await provider.Mutation.gitUnstage(null, { ...args, filePath: 'x' });
     expect(mockGit.reset).toHaveBeenCalledWith(['--', 'x']);
   });
 
-  it('commit creates commit', async () => {
-    await provider.Mutation.commit(null, { ...args, message: 'm' });
+  it('gitCommit creates commit', async () => {
+    await provider.Mutation.gitCommit(null, { ...args, message: 'm' });
     expect(mockGit.commit).toHaveBeenCalledWith('m');
   });
 });
