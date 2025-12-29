@@ -562,8 +562,8 @@ jobs:
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. **Install Extension:** Download the `.vsix` file and install in VS Code" >> $GITHUB_STEP_SUMMARY
-          echo "2. **Start Server:** Run `Mobile VSCode: Start Server` from VS Code command palette" >> $GITHUB_STEP_SUMMARY
+          echo '1. **Install Extension:** Download the `.vsix` file and install in VS Code' >> $GITHUB_STEP_SUMMARY
+          echo '2. **Start Server:** Run `Mobile VSCode: Start Server` from VS Code command palette' >> $GITHUB_STEP_SUMMARY
           echo "3. **Install Mobile App:** Download the APK/IPA file to your device" >> $GITHUB_STEP_SUMMARY
           echo "4. **Pair Device:** Open the mobile app and enter the pairing token from VS Code" >> $GITHUB_STEP_SUMMARY
           echo "5. **Development:** Use VS Code to edit files that sync to your mobile device in real-time" >> $GITHUB_STEP_SUMMARY
