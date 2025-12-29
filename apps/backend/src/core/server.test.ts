@@ -14,20 +14,35 @@ const expressModule = jest.requireMock('express');
 const expressMock = expressModule.__mocks.expressMock as jest.Mock;
 
 const start = jest.fn(() => Promise.resolve());
-const applyMiddleware = jest.fn();
-const stop = jest.fn();
+const stop = jest.fn(() => Promise.resolve());
 class FakeApolloServer {
     start = start;
-    applyMiddleware = applyMiddleware;
     stop = stop;
 }
 
+const expressMiddlewareMock = jest.fn((..._args: unknown[]) => 'apolloMiddleware');
+const drainPlugin = jest.fn((..._args: unknown[]) => 'drainPlugin');
+
 jest.mock(
-    'apollo-server-express',
+    '@apollo/server',
     () => ({
         ApolloServer: jest.fn(() => new FakeApolloServer()),
-        gql: (literals: TemplateStringsArray, ...placeholders: string[]) =>
-            literals.reduce((acc, lit, i) => acc + (placeholders[i - 1] ?? '') + lit),
+    }),
+    { virtual: true }
+);
+
+jest.mock(
+    '@apollo/server/express4',
+    () => ({
+        expressMiddleware: (...args: unknown[]) => expressMiddlewareMock(...args),
+    }),
+    { virtual: true }
+);
+
+jest.mock(
+    '@apollo/server/plugin/drainHttpServer',
+    () => ({
+        ApolloServerPluginDrainHttpServer: (...args: unknown[]) => drainPlugin(...args),
     }),
     { virtual: true }
 );
@@ -91,6 +106,9 @@ describe('server start/stop', () => {
         await Promise.resolve();
         expect(expressMock).toHaveBeenCalled();
         expect(start).toHaveBeenCalled();
+        expect(expressMiddlewareMock).toHaveBeenCalled();
+        expect(expressModule.__mocks.use).toHaveBeenCalledWith('/graphql', 'apolloMiddleware');
+        expect(drainPlugin).toHaveBeenCalledWith({ httpServer: expect.any(Object) });
         expect(listen).toHaveBeenCalledWith(4000, expect.any(Function));
         expect(initializeFileSystemWatcher).toHaveBeenCalled();
         stopServer();
