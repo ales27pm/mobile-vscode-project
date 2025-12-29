@@ -1,13 +1,23 @@
 import React from 'react';
-import { SectionList, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, SectionList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { RouteProp } from '@react-navigation/native';
+import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@apollo/client';
 import { ListDirectoryDocument } from 'shared/src/types';
 import Editor from './Editor';
 
-const Stack = createNativeStackNavigator();
+type ExplorerParams = {
+  FileList: { workspaceUri?: string; path?: string; title?: string };
+  Editor: { workspaceUri?: string; path?: string };
+};
 
-function FileList({ navigation, route }) {
+type ExplorerRoute = RouteProp<{ Explorer: { workspaceUri?: string } }, 'Explorer'>;
+
+const Stack = createNativeStackNavigator<ExplorerParams>();
+
+type FileListProps = NativeStackScreenProps<ExplorerParams, 'FileList'>;
+
+function FileList({ navigation, route }: FileListProps) {
   const { workspaceUri, path = '' } = route.params || {};
   const { data, loading, refetch } = useQuery(ListDirectoryDocument, { variables: { workspaceUri, path } });
 
@@ -40,13 +50,15 @@ function FileList({ navigation, route }) {
   );
 }
 
-export default function Explorer() {
+export default function Explorer({ route }: { route?: ExplorerRoute }) {
+  const workspaceUri = route?.params?.workspaceUri;
+
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="FileList"
         component={FileList}
-        initialParams={{ workspaceUri: route.params?.workspaceUri, path: '' }}
+        initialParams={{ workspaceUri, path: '' }}
         options={({ route }) => ({ title: route.params?.title || 'Root' })}
       />
       <Stack.Screen
