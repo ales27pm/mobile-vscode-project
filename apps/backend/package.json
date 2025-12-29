@@ -6,7 +6,8 @@
   "description": "Provides GraphQL, Git and Y.js back-end for the Mobile VSCode app.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ales27pm/mobile-vscode-project.git"
+    "url": "https://github.com/ales27pm/mobile-vscode-project.git",
+    "directory": "apps/backend"
   },
   "main": "./dist/extension.js",
   "scripts": {
