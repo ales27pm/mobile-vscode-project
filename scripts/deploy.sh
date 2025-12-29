@@ -35,7 +35,7 @@ USAGE
 }
 
 section() {
-  echo "\n==> $1"
+  printf '\n==> %s\n' "$1"
 }
 
 warn() {
@@ -50,12 +50,21 @@ require_cmd() {
   fi
 }
 
+require_value() {
+  local flag="$1"
+  if [[ $# -lt 2 || -z "$2" ]]; then
+    echo "Missing value for $flag" >&2
+    usage
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --profile)
-      PROFILE="$2"; shift 2;;
+      require_value "$1" "${2-}"; PROFILE="$2"; shift 2;;
     --platform)
-      PLATFORM="$2"; shift 2;;
+      require_value "$1" "${2-}"; PLATFORM="$2"; shift 2;;
     --local)
       LOCAL_BUILD=1; shift;;
     --skip-tests)
@@ -73,6 +82,18 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+case "$PLATFORM" in
+  all|ios|android) ;;
+  *)
+    echo "Invalid --platform value: $PLATFORM (expected all|ios|android)" >&2
+    exit 1;;
+esac
+
+if [[ -z "$PROFILE" ]]; then
+  echo "Invalid --profile value: profile name cannot be empty" >&2
+  exit 1
+fi
+
 section "Preflight checks"
 for cmd in node npm npx; do
   require_cmd "$cmd"
@@ -86,8 +107,13 @@ if ! command -v yarn >/dev/null 2>&1; then
 fi
 
 ENV_FILE="$ROOT_DIR/.env"
+ENV_TEMPLATE="$ROOT_DIR/.env.example"
 if [[ ! -f "$ENV_FILE" ]]; then
-  cp "$ROOT_DIR/.env.example" "$ENV_FILE"
+  if [[ ! -f "$ENV_TEMPLATE" ]]; then
+    warn "Missing $ENV_TEMPLATE. Create it or copy from a template before running this script."
+    exit 1
+  fi
+  cp "$ENV_TEMPLATE" "$ENV_FILE"
   warn "Created .env from .env.example. Update LOCAL_IP before running mobile builds."
 fi
 if grep -q "YOUR_COMPUTER_IP_HERE" "$ENV_FILE"; then
@@ -95,7 +121,8 @@ if grep -q "YOUR_COMPUTER_IP_HERE" "$ENV_FILE"; then
 fi
 
 section "Install dependencies (Yarn workspaces)"
-corepack yarn install --silent --ignore-scripts=false
+echo "Running: corepack yarn install --ignore-scripts=false"
+corepack yarn install --ignore-scripts=false
 
 section "Generate GraphQL artifacts"
 corepack yarn codegen
