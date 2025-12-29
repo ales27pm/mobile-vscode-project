@@ -15,7 +15,7 @@ const authLink = setContext((_, { headers }) => {
   const token = useAuthStore.getState().token;
   return {
     headers: {
-      ...headers,
+      ...(headers ?? {}),
       Authorization: token ? `Bearer ${token}` : ''
     }
   };
