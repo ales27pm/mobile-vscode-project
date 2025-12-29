@@ -121,8 +121,8 @@ if grep -q "YOUR_COMPUTER_IP_HERE" "$ENV_FILE"; then
 fi
 
 section "Install dependencies (Yarn workspaces)"
-echo "Running: corepack yarn install --ignore-scripts=false"
-corepack yarn install --ignore-scripts=false
+echo "Running: corepack yarn install"
+corepack yarn install
 
 section "Generate GraphQL artifacts"
 corepack yarn codegen
