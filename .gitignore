@@ -55,3 +55,4 @@ packages/
 apps/backend/node_modules/
 mobileVSC_fixed
 apps/mobile/node_modules/
+apps/backend/.vsix-staging/
