@@ -8,10 +8,10 @@
   "scripts": {
     "codegen": "graphql-codegen --config codegen.yml",
     "lint": "eslint . --ext .ts,.tsx",
-    "build:backend": "yarn workspace mobile-vscode-server build",
-    "watch:backend": "yarn workspace mobile-vscode-server watch",
-    "build:mobile": "yarn workspace mobile build",
-    "start:mobile": "yarn workspace mobile start",
+    "build:backend": "corepack yarn workspace mobile-vscode-server build",
+    "watch:backend": "corepack yarn workspace mobile-vscode-server watch",
+    "build:mobile": "corepack yarn workspace mobile build",
+    "start:mobile": "corepack yarn workspace mobile start",
     "build": "turbo run build",
     "dev": "turbo run start",
     "test": "turbo run test --"

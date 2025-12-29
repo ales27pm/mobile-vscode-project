@@ -63,8 +63,8 @@ The server exposes two real-time endpoints for maximum efficiency:
 
 ### Prerequisites
 
-- Node.js (v18 or newer)
-- Yarn (Classic or Berry)
+- Node.js (v18 or newer) with **Corepack** available
+- Yarn 4 (the repo pins `yarn@4.10.3` via `packageManager`)
 - Visual Studio Code
 - Expo Go app on your iOS or Android device
 
@@ -78,6 +78,10 @@ cd mobile-vscode-project
 # Configure the upstream remote so you can pull the latest changes
 git remote add upstream https://github.com/ales27pm/mobile-vscode-project.git
 git fetch upstream
+
+# Enable Corepack so Yarn 4.10.3 is used automatically
+corepack enable
+corepack prepare yarn@4.10.3 --activate
 
 # Install all dependencies for all packages
 yarn install
