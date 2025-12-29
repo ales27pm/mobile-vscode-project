@@ -20,9 +20,9 @@ cp "$PKG_DIR/README.md" "$STAGE/" 2>/dev/null || true
 cp "$PKG_DIR/CHANGELOG.md" "$STAGE/" 2>/dev/null || true
 cp "$PKG_DIR"/LICENSE* "$STAGE/" 2>/dev/null || true
 
-# Install prod deps in stage (runtime deps only)
+# Install prod deps in stage (runtime deps only). Ignore lifecycle scripts since the build is already staged.
 cd "$STAGE"
-npm install --omit=dev
+npm install --omit=dev --ignore-scripts
 
 # Package
 npx vsce package -o "$OUT"
