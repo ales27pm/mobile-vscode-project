@@ -296,7 +296,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     name: Build Mobile (${{ matrix.platform }})
     needs: [preflight, validate-and-test]
-    if: ${{ (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_mobile != 'true') && matrix.if_condition && (github.event_name != 'workflow_dispatch' || inputs.build_type == 'all' || inputs.build_type == 'mobile-only') }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_mobile != 'true') && (github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only') }}
     strategy:
       matrix:
         include:
@@ -306,12 +306,18 @@ jobs:
           - platform: ios
             runner: macos-latest
             if_condition: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'ios' }}
-    
+
     steps:
+      - name: Skip platform build when disabled
+        if: ${{ !matrix.if_condition }}
+        run: echo "Skipping mobile build for ${{ matrix.platform }} based on workflow dispatch inputs"
+
       - name: Checkout repository
+        if: ${{ matrix.if_condition }}
         uses: actions/checkout@v4
 
       - name: Setup Node.js with Corepack
+        if: ${{ matrix.if_condition }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -319,20 +325,24 @@ jobs:
           corepack: true
 
       - name: Enable Corepack
+        if: ${{ matrix.if_condition }}
         run: corepack enable
 
       - name: Install dependencies
+        if: ${{ matrix.if_condition }}
         run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
 
       - name: Generate GraphQL artifacts
-        if: needs.preflight.outputs.codegen_exists == 'true'
+        if: ${{ matrix.if_condition && needs.preflight.outputs.codegen_exists == 'true' }}
         run: yarn codegen
 
       - name: Build shared packages
+        if: ${{ matrix.if_condition }}
         run: |
           yarn workspaces foreach --all -p run build 2>/dev/null || true
 
       - name: Check EAS authentication
+        if: ${{ matrix.if_condition }}
         id: check-eas-auth
         run: |
           if [ -n "${{ secrets.EXPO_TOKEN }}" ]; then
@@ -347,7 +357,7 @@ jobs:
           fi
 
       - name: Create eas.json if needed
-        if: steps.check-eas-auth.outputs.eas_authenticated == 'true'
+        if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         run: |
           cd apps/mobile
           
@@ -390,7 +400,7 @@ jobs:
           cd ../..
 
       - name: Build with EAS (using npx as in deploy.sh)
-        if: steps.check-eas-auth.outputs.eas_authenticated == 'true'
+        if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         run: |
           cd apps/mobile
           
@@ -428,7 +438,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload mobile artifacts
-        if: steps.check-eas-auth.outputs.eas_authenticated == 'true'
+        if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: mobile-vscode-${{ matrix.platform }}-${{ github.event.inputs.mobile_profile || 'development' }}-${{ github.sha }}
