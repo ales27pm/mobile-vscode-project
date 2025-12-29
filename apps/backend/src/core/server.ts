@@ -2,8 +2,10 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 import * as fs from 'fs';
 import { AddressInfo } from 'net';
-import express, { Application } from 'express';
-import { ApolloServer } from 'apollo-server-express';
+import express from 'express';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware, type ExpressContextFunctionArgument } from '@apollo/server/express4';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
@@ -34,9 +36,6 @@ export async function startServer(context: vscode.ExtensionContext) {
     }
 
     const app = express();
-    const expressApp = app as Application;
-    type ApolloExpressApp = Parameters<ApolloServer['applyMiddleware']>[0]['app'];
-    const apolloApp = app as unknown as ApolloExpressApp;
     app.use(express.json());
 
     const keyPath = join(context.extensionPath, 'certs/server.key');
@@ -52,72 +51,78 @@ export async function startServer(context: vscode.ExtensionContext) {
 
     const schema = makeExecutableSchema({ typeDefs: schemaTypeDefs, resolvers: getResolvers() });
 
-    setupAuthMiddleware(expressApp, authContext);
+    setupAuthMiddleware(app, authContext);
 
     apolloServer = new ApolloServer({
         schema,
-        context: ({ req }) => ({ user: (req as RequestWithUser).user }),
+        plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
     });
 
     await apolloServer.start();
-    
+
     if (!apolloServer || !httpServer) return;
 
-    apolloServer.applyMiddleware({ app: apolloApp, path: '/graphql' });
+    app.use(
+        '/graphql',
+        expressMiddleware(apolloServer, {
+            context: async ({ req }: ExpressContextFunctionArgument) => ({
+                user: (req as RequestWithUser).user,
+            }),
+        })
+    );
 
     const gqlWsServer = new WebSocketServer({ noServer: true });
     const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
 
     const yjsWsServer = new WebSocketServer({ noServer: true });
 
-        setPersistence({
-            bindState: (docName: string, ydoc: Doc) => {
-                bindState(docName, ydoc);
-            },
-            writeState: () => {
-                // Persistence is handled by debounced savers in bindState
-            },
-        });
+    setPersistence({
+        bindState: (docName: string, ydoc: Doc) => {
+            bindState(docName, ydoc);
+        },
+        writeState: () => {
+            // Persistence is handled by debounced savers in bindState
+        },
+    });
 
-        yjsWsServer.on('connection', setupWSConnection);
+    yjsWsServer.on('connection', setupWSConnection);
 
-        httpServer.on('upgrade', (req, socket, head) => {
-
-            if (!req.url) {
-                console.error('HTTP upgrade request missing URL. Destroying socket.');
-                socket.destroy();
-                return;
-            }
-            const host = req.headers.host || 'localhost:3000';
-            // Try to detect protocol dynamically, fallback to 'http' if not possible
-            let protocol = 'http';
-            if (
-                req.headers["x-forwarded-proto"] &&
-                typeof req.headers["x-forwarded-proto"] === 'string'
-            ) {
-                protocol = req.headers["x-forwarded-proto"].split(',')[0].trim();
-            } else if (httpServer && typeof httpServer.address === 'function') {
-                const addr = httpServer.address() as AddressInfo | string | null;
-                if (addr && typeof addr === 'object' && addr.port === 443) {
-                    protocol = 'https';
-                }
-            } else if (process.env.NODE_ENV === 'production') {
+    httpServer.on('upgrade', (req, socket, head) => {
+        if (!req.url) {
+            console.error('HTTP upgrade request missing URL. Destroying socket.');
+            socket.destroy();
+            return;
+        }
+        const host = req.headers.host || 'localhost:3000';
+        // Try to detect protocol dynamically, fallback to 'http' if not possible
+        let protocol = 'http';
+        if (
+            req.headers["x-forwarded-proto"] &&
+            typeof req.headers["x-forwarded-proto"] === 'string'
+        ) {
+            protocol = req.headers["x-forwarded-proto"].split(',')[0].trim();
+        } else if (httpServer && typeof httpServer.address === 'function') {
+            const addr = httpServer.address() as AddressInfo | string | null;
+            if (addr && typeof addr === 'object' && addr.port === 443) {
                 protocol = 'https';
             }
-            const url = new URL(req.url, `${protocol}://${host}`);
-            if (url.pathname === '/graphql') {
-                gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
-            } else if (url.pathname.startsWith('/yjs')) {
-                yjsWsServer.handleUpgrade(req, socket, head, ws => yjsWsServer.emit('connection', ws, req));
-            } else {
-                socket.destroy();
-            }
-        });
-        wsServerCleanup = () => {
-             gqlWsServerHandler.dispose();
-             yjsWsServer.close();
-             gqlWsServer.close();
-        };
+        } else if (process.env.NODE_ENV === 'production') {
+            protocol = 'https';
+        }
+        const url = new URL(req.url, `${protocol}://${host}`);
+        if (url.pathname === '/graphql') {
+            gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
+        } else if (url.pathname.startsWith('/yjs')) {
+            yjsWsServer.handleUpgrade(req, socket, head, ws => yjsWsServer.emit('connection', ws, req));
+        } else {
+            socket.destroy();
+        }
+    });
+    wsServerCleanup = () => {
+         gqlWsServerHandler.dispose();
+         yjsWsServer.close();
+         gqlWsServer.close();
+    };
 
     const config = vscode.workspace.getConfiguration('mobile-vscode-server');
     const port = config.get<number>('port', 4000);
