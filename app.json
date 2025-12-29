@@ -8,6 +8,12 @@
     "owner": "ales27pm",
     "android": {
       "package": "com.ales27pm.mobilevscode"
+    },
+    "ios": {
+      "bundleIdentifier": "com.ales27pm.mobilevscode",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     }
   }
 }
