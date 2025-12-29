@@ -123,8 +123,27 @@ Application Services (EAS) builds for the mobile app. Set `LOCAL_IP` in `.env` b
 - `--skip-tests`, `--skip-backend`, `--skip-mobile` – selectively disable stages.
 - `--profile` – choose the EAS profile (`production` by default).
 
-Remote EAS builds require authentication (`npx eas login` or `EXPO_TOKEN`), while local builds use the workspace’s credentials a
-nd write artifacts to `dist/mobile`.
+Remote EAS builds require authentication (`npx eas login` or `EXPO_TOKEN`), while local builds use the workspace’s credentials and write artifacts to `dist/mobile`.
+
+## Packaging the VS Code Backend
+
+The VS Code extension manifest lives in `apps/backend`, and `vsce package` must be executed from inside that directory. Use the helper script to build `mobile-vscode-server.vsix`:
+
+```bash
+# Preferred: builds, stages runtime dependencies, and produces the VSIX in the repo root
+corepack yarn package:vsix
+```
+
+If you package manually, change into `apps/backend` and run `vsce` with the output path pointing back to the repo root:
+
+```bash
+cd apps/backend
+# Ensure the backend is built and production dependencies are installed in the working tree
+# (the helper script handles staging and pruning dev dependencies automatically)
+vsce package --out ../mobile-vscode-server.vsix
+```
+
+The script compiles the backend, stages only runtime dependencies, and writes the packaged extension to `mobile-vscode-server.vsix`.
 
 ## Technology Stack
 
