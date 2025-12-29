@@ -152,6 +152,7 @@ gql`
     extensions {
       id
       version
+      installed
       isActive
       extensionKind
     }

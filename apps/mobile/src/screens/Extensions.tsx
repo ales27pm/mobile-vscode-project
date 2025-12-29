@@ -30,8 +30,12 @@ export default function Extensions() {
               {item.extensionKind && <Text>Kind: {item.extensionKind}</Text>}
             </View>
             <Button
-              title={item.isActive ? "Uninstall" : "Install"}
-              onPress={() => item.isActive ? uninstall({ variables: { id: item.id } }) : install({ variables: { id: item.id } })}
+              title={item.installed ? "Uninstall" : "Install"}
+              onPress={() =>
+                item.installed
+                  ? uninstall({ variables: { id: item.id } })
+                  : install({ variables: { id: item.id } })
+              }
               disabled={iLoading || uLoading}
             />
           </View>

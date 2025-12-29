@@ -62,6 +62,7 @@ export const typeDefs = gql`
   type Extension {
     id: String!
     version: String!
+    installed: Boolean!
     isActive: Boolean!
     extensionKind: String
   }

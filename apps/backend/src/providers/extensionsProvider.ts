@@ -5,6 +5,7 @@ export type ExtensionsProvider = {
     Array<{
       id: string;
       version: string;
+      installed: boolean;
       isActive: boolean;
       extensionKind?: string;
     }>
@@ -32,6 +33,7 @@ export function getExtensionsProvider(_context?: vscode.ExtensionContext): Exten
       return vscode.extensions.all.map((ext) => ({
         id: ext.id,
         version: (ext.packageJSON?.version as string | undefined) ?? "0.0.0",
+        installed: true,
         isActive: ext.isActive,
         extensionKind: extensionKindToString(ext.extensionKind),
       }));
