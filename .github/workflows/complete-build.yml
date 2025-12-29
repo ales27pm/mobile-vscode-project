@@ -308,20 +308,17 @@ jobs:
             if_condition: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.mobile_platform == 'all' || github.event.inputs.mobile_platform == 'ios' }}
 
     steps:
-      - name: Skip platform build when disabled
-        if: ${{ !matrix.if_condition }}
-        run: echo "Skipping mobile build for ${{ matrix.platform }} based on workflow dispatch inputs"
-
       - name: Checkout repository
-        if: ${{ matrix.if_condition }}
         uses: actions/checkout@v4
+        if: ${{ matrix.if_condition }}
 
       - name: Setup Node.js with Corepack
-        if: ${{ matrix.if_condition }}
         uses: actions/setup-node@v4
+        if: ${{ matrix.if_condition }}
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          corepack: true
 
       - name: Enable Corepack
         if: ${{ matrix.if_condition }}
@@ -367,35 +364,8 @@ jobs:
           # Create minimal eas.json if not exists using a cleaner approach
           if [ ! -f "eas.json" ]; then
             echo 'Creating eas.json...'
-            cat > eas.json <<'EOF'
-{
-  "cli": {
-    "version": ">= 5.0.0"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      },
-      "ios": {
-        "simulator": true
-      }
-    },
-    "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "production": {}
-  },
-  "submit": {
-    "production": {}
-  }
-}
-EOF
+            # Write minimal eas.json using Python (avoid heredoc indentation issues in YAML)
+            python -c 'import json, pathlib; cfg={"cli":{"version":">= 5.0.0"},"build":{"development":{"developmentClient":True,"distribution":"internal","android":{"buildType":"apk"},"ios":{"simulator":True}},"preview":{"distribution":"internal","android":{"buildType":"apk"}},"production":{}},"submit":{"production":{}}}; pathlib.Path("eas.json").write_text(json.dumps(cfg, indent=2) + "\n")'
             echo "eas.json created"
           else
             echo "eas.json already exists"
