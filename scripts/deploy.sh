@@ -20,6 +20,7 @@ LOCAL_BUILD=0
 SKIP_TESTS=0
 SKIP_BACKEND=0
 SKIP_MOBILE=0
+EXPO_TOKEN_ARG=""
 
 usage() {
   cat <<'USAGE'
@@ -27,6 +28,7 @@ Usage: scripts/deploy.sh [options]
   --profile <name>    EAS build profile to use (default: production)
   --platform <value>  Platform to target: all | ios | android (default: all)
   --local             Run EAS builds locally and write artifacts to dist/mobile
+  --expo-token <val>  Expo access token used for non-interactive EAS builds
   --skip-tests        Skip linting and unit tests
   --skip-backend      Skip VS Code extension packaging
   --skip-mobile       Skip mobile builds
@@ -67,6 +69,8 @@ while [[ $# -gt 0 ]]; do
       require_value "$1" "${2-}"; PLATFORM="$2"; shift 2;;
     --local)
       LOCAL_BUILD=1; shift;;
+    --expo-token)
+      require_value "$1" "${2-}"; EXPO_TOKEN_ARG="$2"; shift 2;;
     --skip-tests)
       SKIP_TESTS=1; shift;;
     --skip-backend)
@@ -92,6 +96,10 @@ esac
 if [[ -z "$PROFILE" ]]; then
   echo "Invalid --profile value: profile name cannot be empty" >&2
   exit 1
+fi
+
+if [[ -n "$EXPO_TOKEN_ARG" ]]; then
+  export EXPO_TOKEN="$EXPO_TOKEN_ARG"
 fi
 
 section "Preflight checks"
@@ -153,7 +161,7 @@ if [[ "$SKIP_MOBILE" -eq 0 ]]; then
 
   if [[ "$LOCAL_BUILD" -eq 0 ]]; then
     if ! npx --yes eas whoami >/dev/null 2>&1; then
-      echo "Expo account not detected. Set EXPO_TOKEN or run 'npx eas login' to build in the cloud." >&2
+      echo "Expo account not detected. Provide a token with --expo-token <value>, export EXPO_TOKEN, or run 'npx eas login' to build in the cloud." >&2
       popd >/dev/null
       exit 1
     fi
