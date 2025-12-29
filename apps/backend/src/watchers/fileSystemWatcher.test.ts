@@ -50,9 +50,9 @@ it('publishes events for file changes', () => {
     onChange?.(uri);
     onDelete?.(uri);
     expect(pubsub.publish).toHaveBeenCalledTimes(3);
-    expect(pubsub.publish).toHaveBeenCalledWith(FS_EVENT, { fsEvent: { event: 'create', path: 'foo.txt' } });
-    expect(pubsub.publish).toHaveBeenCalledWith(FS_EVENT, { fsEvent: { event: 'change', path: 'foo.txt' } });
-    expect(pubsub.publish).toHaveBeenCalledWith(FS_EVENT, { fsEvent: { event: 'delete', path: 'foo.txt' } });
+    expect(pubsub.publish).toHaveBeenCalledWith(FS_EVENT, { fileChange: { type: 'CREATED', path: 'foo.txt' } });
+    expect(pubsub.publish).toHaveBeenCalledWith(FS_EVENT, { fileChange: { type: 'CHANGED', path: 'foo.txt' } });
+    expect(pubsub.publish).toHaveBeenCalledWith(FS_EVENT, { fileChange: { type: 'DELETED', path: 'foo.txt' } });
 });
 
 it('does not reinitialize watcher if already set', () => {

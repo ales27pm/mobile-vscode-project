@@ -1,3 +1,11 @@
+import * as path from 'path';
+
+const toUri = (fsPath: string) => ({
+  fsPath,
+  path: fsPath,
+  toString: () => `file://${fsPath}`,
+});
+
 const vscode = {
   workspace: {
     workspaceFolders: [] as unknown[],
@@ -12,8 +20,9 @@ const vscode = {
     getConfiguration: jest.fn(() => ({ get: jest.fn() })),
   },
   Uri: {
-    parse: (s: string) => ({ fsPath: s.replace('file://',''), toString: () => s }),
-    file: (p: string) => ({ fsPath: p, toString: () => `file://${p}` }),
+    parse: (s: string) => toUri(s.replace('file://', '')),
+    file: (p: string) => toUri(p),
+    joinPath: (workspace: { fsPath: string }, ...segments: string[]) => toUri(path.join(workspace.fsPath, ...segments)),
   },
   RelativePattern: function(workspace: { uri: { fsPath: string } }, pattern: string) {
     return { baseUri: workspace.uri, pattern } as unknown;
