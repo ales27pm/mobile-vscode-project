@@ -5,6 +5,7 @@
       "ES2020"
     ],
     "module": "es2022",
+    "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,

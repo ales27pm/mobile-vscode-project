@@ -11,7 +11,7 @@ export const getGitProvider = () => ({
   Query: {
     gitStatus: async (_: unknown, { workspaceUri }: { workspaceUri: string }) => {
       const git = getGit(workspaceUri);
-      if (!git || !(await git.checkIsRepo())) return { branch: 'Not a repo', staged: [], unstaged: [] };
+      if (!git || !(await git.checkIsRepo())) return { branch: 'Not a repo', staged: [], unstaged: [], untracked: [] };
       const s = await git.status();
       const unstaged = s.files
         .filter(f => f.working_dir !== ' ')
@@ -23,34 +23,35 @@ export const getGitProvider = () => ({
         branch: s.current || 'detached',
         staged,
         unstaged,
+        untracked: s.not_added ?? [],
       };
     },
-    gitDiff: async (_: unknown, { workspaceUri, file }: { workspaceUri: string; file: string }) => {
+    gitDiff: async (_: unknown, { workspaceUri, filePath }: { workspaceUri: string; filePath?: string | null }) => {
       const git = getGit(workspaceUri);
       if (!git) return '';
-      return git.diff([file]);
+      return filePath ? git.diff([filePath]) : git.diff();
     },
   },
   Mutation: {
-    gitStage: async (_: unknown, { workspaceUri, file }: { workspaceUri: string; file: string }) => {
+    gitStage: async (_: unknown, { workspaceUri, filePath }: { workspaceUri: string; filePath: string }) => {
       const git = getGit(workspaceUri);
       if (!git) return false;
-      await git.add(file);
+      await git.add(filePath);
       return true;
     },
-    gitUnstage: async (_: unknown, { workspaceUri, file }: { workspaceUri: string; file: string }) => {
+    gitUnstage: async (_: unknown, { workspaceUri, filePath }: { workspaceUri: string; filePath: string }) => {
       const git = getGit(workspaceUri);
       if (!git) return false;
-      await git.reset(['--', file]);
+      await git.reset(['--', filePath]);
       return true;
     },
-    commit: async (_: unknown, { workspaceUri, message }: { workspaceUri: string; message: string }) => {
+    gitCommit: async (_: unknown, { workspaceUri, message }: { workspaceUri: string; message: string }) => {
       const git = getGit(workspaceUri);
       if (!git) return false;
       await git.commit(message);
       return true;
     },
-    push: async (_: unknown, { workspaceUri }: { workspaceUri: string }) => {
+    gitPush: async (_: unknown, { workspaceUri }: { workspaceUri: string }) => {
       const git = getGit(workspaceUri);
       if (!git) return false;
       await git.push();

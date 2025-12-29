@@ -18,7 +18,7 @@ const vscode = {
   RelativePattern: function(workspace: { uri: { fsPath: string } }, pattern: string) {
     return { baseUri: workspace.uri, pattern } as unknown;
   },
-  FileType: { Directory: 2 },
+  FileType: { File: 1, Directory: 2, SymbolicLink: 64, Unknown: 0 },
   commands: { executeCommand: jest.fn() },
   extensions: { all: [] as unknown[] },
   window: {

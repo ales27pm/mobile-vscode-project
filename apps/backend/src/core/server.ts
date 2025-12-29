@@ -6,13 +6,14 @@ import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
-import { useServer as useGraphQLWsServer } from 'graphql-ws/lib/use/ws';
+import { useServer as useGraphQLWsServer } from 'graphql-ws/use/ws';
 import { join } from 'path';
 import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
 
 import { ensureAuthContext, setupAuthMiddleware, RequestWithUser } from './auth';
 import { bindState } from '../crdt/persistence';
 import { getResolvers } from '../graphql/resolvers';
+import { pubsub } from '../graphql/pubsub';
 import schemaTypeDefs from '../schema';
 import { updateStatusBar } from '../ui/statusBar';
 import { initializeFileSystemWatcher, disposeFileSystemWatcher } from '../watchers/fileSystemWatcher';
