@@ -4,7 +4,9 @@ import { useLazyQuery } from '@apollo/client';
 import { SearchDocument, SearchQuery, SearchQueryVariables } from 'shared/src/types';
 import { useDocumentStore } from '../state/documentStore';
 
-export default function Search({ navigation, route }) {
+type SearchProps = { navigation: any; route: { params: { workspaceUri: string } } };
+
+export default function Search({ navigation, route }: SearchProps) {
   const { workspaceUri } = route.params;
   const [query, setQuery] = useState('');
   const [fetchSearch, { data, loading }] = useLazyQuery<SearchQuery, SearchQueryVariables>(SearchDocument);
@@ -13,7 +15,7 @@ export default function Search({ navigation, route }) {
   const sections = useMemo(() => {
     if (!data?.search) return [] as { title: string; data: SearchQuery['search'] }[];
     const grouped = data.search.reduce<Record<string, SearchQuery['search']>>((acc, item) => {
-      (acc[item.file] = acc[item.file] || []).push(item);
+      (acc[item.path] = acc[item.path] || []).push(item);
       return acc;
     }, {});
     return Object.entries(grouped).map(([file, items]) => ({ title: file, data: items }));
@@ -21,7 +23,7 @@ export default function Search({ navigation, route }) {
 
   const handlePress = (item: SearchQuery['search'][0]) => {
     setEditorAction({ type: 'highlight-line', payload: { line: item.line } });
-    navigation.navigate('Explorer', { screen: 'Editor', params: { path: item.file } });
+    navigation.navigate('Explorer', { screen: 'Editor', params: { path: item.path } });
   };
 
   return (
@@ -32,20 +34,20 @@ export default function Search({ navigation, route }) {
         placeholder="Search for code..."
         style={styles.input}
         returnKeyType="search"
-        onSubmitEditing={() => fetchSearch({ variables: { workspaceUri, query } })}
+        onSubmitEditing={() => fetchSearch({ variables: { workspaceUri, query, limit: 50 } })}
       />
-      <Button title="Search" onPress={() => fetchSearch({ variables: { workspaceUri, query } })} disabled={loading || !query} />
+      <Button title="Search" onPress={() => fetchSearch({ variables: { workspaceUri, query, limit: 50 } })} disabled={loading || !query} />
       {loading && <ActivityIndicator />}
       <SectionList
         sections={sections}
-        keyExtractor={(item, index) => `${item.file}:${item.line}:${index}`}
+        keyExtractor={(item, index) => `${item.path}:${item.line}:${index}`}
         renderSectionHeader={({ section: { title } }) => (
           <Text style={styles.section}>{title}</Text>
         )}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.result} onPress={() => handlePress(item)}>
             <Text style={styles.lineNumber}>{item.line}:</Text>
-            <Text style={styles.lineText} numberOfLines={1}>{item.text}</Text>
+            <Text style={styles.lineText} numberOfLines={1}>{item.preview}</Text>
           </TouchableOpacity>
         )}
       />

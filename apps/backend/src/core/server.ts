@@ -6,7 +6,7 @@ import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
-import { useServer as useGraphQLWsServer } from 'graphql-ws/dist/use/ws';
+import { useServer as useGraphQLWsServer } from 'graphql-ws/use/ws';
 import { join } from 'path';
 import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
 

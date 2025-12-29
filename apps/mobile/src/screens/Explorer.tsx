@@ -3,7 +3,7 @@ import { ActivityIndicator, SectionList, StyleSheet, Text, TouchableOpacity } fr
 import { RouteProp } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@apollo/client';
-import { ListDirectoryDocument } from 'shared/src/types';
+import { ListDirectoryDocument, ListDirectoryQuery, ListDirectoryQueryVariables } from 'shared/src/types';
 import Editor from './Editor';
 
 type ExplorerParams = {
@@ -19,7 +19,9 @@ type FileListProps = NativeStackScreenProps<ExplorerParams, 'FileList'>;
 
 function FileList({ navigation, route }: FileListProps) {
   const { workspaceUri, path = '' } = route.params || {};
-  const { data, loading, refetch } = useQuery(ListDirectoryDocument, { variables: { workspaceUri, path } });
+  const normalizedPath = path ?? '';
+  const variables: ListDirectoryQueryVariables = { workspaceUri: workspaceUri || '', path: normalizedPath || '' };
+  const { data, loading, refetch } = useQuery<ListDirectoryQuery, ListDirectoryQueryVariables>(ListDirectoryDocument, { variables });
 
   if (loading) return <ActivityIndicator style={StyleSheet.absoluteFill} />;
 
@@ -51,7 +53,7 @@ function FileList({ navigation, route }: FileListProps) {
 }
 
 export default function Explorer({ route }: { route?: ExplorerRoute }) {
-  const workspaceUri = route?.params?.workspaceUri;
+  const workspaceUri: string = route?.params?.workspaceUri ?? '';
 
   return (
     <Stack.Navigator>
@@ -63,7 +65,7 @@ export default function Explorer({ route }: { route?: ExplorerRoute }) {
       />
       <Stack.Screen
         name="Editor"
-        component={Editor}
+        component={Editor as React.ComponentType<any>}
         options={({ route }) => ({ title: route.params?.path?.split('/').pop() })}
       />
     </Stack.Navigator>

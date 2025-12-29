@@ -9,6 +9,8 @@ export type ExtensionsProvider = {
       extensionKind?: string;
     }>
   >;
+  install: (id: string) => Promise<boolean>;
+  uninstall: (id: string) => Promise<boolean>;
 };
 
 function extensionKindToString(kind: vscode.ExtensionKind | undefined): string | undefined {
@@ -24,7 +26,7 @@ function extensionKindToString(kind: vscode.ExtensionKind | undefined): string |
   }
 }
 
-export function getExtensionsProvider(_context: vscode.ExtensionContext): ExtensionsProvider {
+export function getExtensionsProvider(_context?: vscode.ExtensionContext): ExtensionsProvider {
   return {
     async listInstalled() {
       return vscode.extensions.all.map((ext) => ({
@@ -34,5 +36,23 @@ export function getExtensionsProvider(_context: vscode.ExtensionContext): Extens
         extensionKind: extensionKindToString(ext.extensionKind),
       }));
     },
+    async install(id) {
+      try {
+        await vscode.commands.executeCommand("workbench.extensions.installExtension", id);
+        return true;
+      } catch (error) {
+        console.error("Failed to install extension", id, error);
+        return false;
+      }
+    },
+    async uninstall(id) {
+      try {
+        await vscode.commands.executeCommand("workbench.extensions.uninstallExtension", id);
+        return true;
+      } catch (error) {
+        console.error("Failed to uninstall extension", id, error);
+        return false;
+      }
+    }
   };
 }

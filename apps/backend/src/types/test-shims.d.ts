@@ -1,14 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare module 'yjs' {
-    namespace Y {
-        interface Doc {
-            on(event: string, listener: (...args: any[]) => void): void;
-            destroy(): void;
-        }
+    export class Text {
+        length: number;
+        insert(index: number, content: string): void;
+        toString(): string;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Y: any;
-    export = Y;
+    export class Doc {
+        on(event: string, listener: (...args: any[]) => void): void;
+        destroy(): void;
+        getText(name: string): Text;
+    }
+    export function encodeStateAsUpdate(doc: Doc): Uint8Array;
+    export function applyUpdate(doc: Doc, update: Uint8Array): void;
+}
+declare module 'graphql-ws/use/ws' {
+    export * from 'graphql-ws/dist/use/ws';
 }
 declare module 'lodash.debounce' {
     export interface DebouncedFunc<T extends (...args: any[]) => any> {

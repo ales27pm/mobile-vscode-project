@@ -4,6 +4,7 @@ import { pubsub } from './pubsub';
 import { FS_EVENT, DEBUG_EVENT } from '../constants';
 import { getGitProvider } from '../providers/gitProvider';
 import { getDebugProvider } from '../providers/debugProvider';
+import { getExtensionsProvider } from '../providers/extensionsProvider';
 
 type ResolverContext = unknown;
 
@@ -101,6 +102,7 @@ async function searchWorkspace(workspaceUri: string, query: string, limit: numbe
 export function getResolvers(pubsubInstance: typeof pubsub = pubsub) {
   const gitProvider = getGitProvider();
   const debugProvider = getDebugProvider();
+  const extensionsProvider = getExtensionsProvider();
 
   return {
     Query: {
@@ -118,7 +120,8 @@ export function getResolvers(pubsubInstance: typeof pubsub = pubsub) {
       search: async (_: ResolverContext, args: { workspaceUri: string; query: string; limit: number }) =>
         searchWorkspace(args.workspaceUri, args.query, args.limit),
       ...gitProvider.Query,
-      ...debugProvider.Query
+      ...debugProvider.Query,
+      extensions: () => extensionsProvider.listInstalled(),
     },
     Mutation: {
       writeFile: async (
@@ -130,7 +133,12 @@ export function getResolvers(pubsubInstance: typeof pubsub = pubsub) {
         return { ok: true };
       },
       ...gitProvider.Mutation,
-      ...debugProvider.Mutation
+      ...debugProvider.Mutation,
+      pairWithServer: () => {
+        throw new Error('pairWithServer is handled by middleware');
+      },
+      installExtension: (_: ResolverContext, { id }: { id: string }) => extensionsProvider.install(id),
+      uninstallExtension: (_: ResolverContext, { id }: { id: string }) => extensionsProvider.uninstall(id)
     },
     Subscription: {
       fileChange: {

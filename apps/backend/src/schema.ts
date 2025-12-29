@@ -59,6 +59,13 @@ export const typeDefs = gql`
     path: String!
   }
 
+  type Extension {
+    id: String!
+    version: String!
+    isActive: Boolean!
+    extensionKind: String
+  }
+
   type Query {
     listWorkspaces: [Workspace!]!
     listDirectory(workspaceUri: String!, path: String!): [FileEntry!]!
@@ -67,6 +74,7 @@ export const typeDefs = gql`
     gitStatus(workspaceUri: String!): GitStatus!
     gitDiff(workspaceUri: String!, filePath: String): String!
     getLaunchConfigurations(workspaceUri: String!): [LaunchConfiguration!]!
+    extensions: [Extension!]!
   }
 
   type Mutation {
@@ -77,6 +85,9 @@ export const typeDefs = gql`
     gitPush(workspaceUri: String!): Boolean!
     startDebugging(workspaceUri: String!, configName: String!): Boolean!
     stopDebugging: Boolean!
+    pairWithServer(pairingToken: String!): String!
+    installExtension(id: String!): Boolean!
+    uninstallExtension(id: String!): Boolean!
   }
 
   type Subscription {

@@ -65,7 +65,7 @@ jest.mock(
     'lodash.debounce',
     () =>
         (fn: (...args: unknown[]) => void, wait = 300) => {
-            let timeout: NodeJS.Timeout | undefined;
+            let timeout: ReturnType<typeof setTimeout> | undefined;
             const debounced = (...args: unknown[]) => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => fn(...args), wait);

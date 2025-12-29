@@ -2,8 +2,26 @@ import React, { useState, useCallback } from 'react';
 import { View, Button, Text, SectionList, ActivityIndicator, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, Platform } from 'react-native';
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import { useErrorAlert } from '../hooks/useErrorAlert';
-import { GitStatusDocument, GitDiffDocument, GitStageDocument, GitUnstageDocument, CommitDocument, PushDocument } from 'shared/src/types';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {
+  GitStatusDocument,
+  GitDiffDocument,
+  GitStageDocument,
+  GitUnstageDocument,
+  GitCommitDocument,
+  GitPushDocument,
+  GitStatusQuery,
+  GitDiffQuery,
+  GitDiffQueryVariables,
+  GitStageMutation,
+  GitStageMutationVariables,
+  GitUnstageMutation,
+  GitUnstageMutationVariables,
+  GitCommitMutation,
+  GitCommitMutationVariables,
+  GitPushMutation,
+  GitPushMutationVariables,
+} from 'shared/src/types';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 const ChangeItem = React.memo(function ChangeItem({ file, staged, onStage, onUnstage, onViewDiff, loading }: {
   file: string;
@@ -70,9 +88,11 @@ function CommitModal({ visible, message, onMessage, onCommit, onCancel, loading 
   );
 }
 
-export default function Git({ route }) {
+type GitProps = { route: { params: { workspaceUri: string } } };
+
+export default function Git({ route }: GitProps) {
   const { workspaceUri } = route.params;
-  const { data, loading, refetch } = useQuery(GitStatusDocument, { variables: { workspaceUri }, fetchPolicy: 'cache-and-network' });
+  const { data, loading, refetch } = useQuery<GitStatusQuery>(GitStatusDocument, { variables: { workspaceUri }, fetchPolicy: 'cache-and-network' });
 
   const [commitMessage, setCommitMessage] = useState('');
   const [isCommitModalVisible, setCommitModalVisible] = useState(false);
@@ -85,15 +105,15 @@ export default function Git({ route }) {
   const pushError = useErrorAlert('Push failed');
   const diffError = useErrorAlert('Failed to load diff');
 
-  const [stage, { loading: stageLoading }] = useMutation(GitStageDocument, {
+  const [stage, { loading: stageLoading }] = useMutation<GitStageMutation, GitStageMutationVariables>(GitStageDocument, {
     onCompleted: () => refetch(),
     onError: stageError,
   });
-  const [unstage, { loading: unstageLoading }] = useMutation(GitUnstageDocument, {
+  const [unstage, { loading: unstageLoading }] = useMutation<GitUnstageMutation, GitUnstageMutationVariables>(GitUnstageDocument, {
     onCompleted: () => refetch(),
     onError: unstageError,
   });
-  const [commit, { loading: cLoading }] = useMutation(CommitDocument, {
+  const [commit, { loading: cLoading }] = useMutation<GitCommitMutation, GitCommitMutationVariables>(GitCommitDocument, {
     onCompleted: () => {
       setCommitModalVisible(false);
       setCommitMessage('');
@@ -101,14 +121,14 @@ export default function Git({ route }) {
     },
     onError: commitError,
   });
-  const [push, { loading: pLoading }] = useMutation(PushDocument, {
+  const [push, { loading: pLoading }] = useMutation<GitPushMutation, GitPushMutationVariables>(GitPushDocument, {
     onError: pushError,
   });
-  const [getDiff] = useLazyQuery(GitDiffDocument, {
+  const [getDiff] = useLazyQuery<GitDiffQuery, GitDiffQueryVariables>(GitDiffDocument, {
     onError: diffError,
   });
   const handleViewDiff = useCallback(async (file: string) => {
-    const res = await getDiff({ variables: { workspaceUri, file } });
+    const res = await getDiff({ variables: { workspaceUri, filePath: file } });
     if (res.data?.gitDiff) {
       setDiff(res.data.gitDiff);
     } else {
@@ -118,11 +138,11 @@ export default function Git({ route }) {
   }, [getDiff, workspaceUri]);
 
   const handleStage = useCallback((file: string) => {
-    stage({ variables: { workspaceUri, file } });
+    stage({ variables: { workspaceUri, filePath: file } });
   }, [stage, workspaceUri]);
 
   const handleUnstage = useCallback((file: string) => {
-    unstage({ variables: { workspaceUri, file } });
+    unstage({ variables: { workspaceUri, filePath: file } });
   }, [unstage, workspaceUri]);
 
 const renderChange = useCallback(({ item, section }: { item: { key: string; file: string }; section: { title: string } }) => {

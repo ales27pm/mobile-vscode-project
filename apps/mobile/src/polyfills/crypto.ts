@@ -1,21 +1,8 @@
 import * as ExpoCrypto from "expo-crypto";
 
-type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Uint8ClampedArray
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array;
+type GlobalWithCrypto = typeof globalThis & { crypto?: Partial<Crypto> & { getRandomValues?: <T extends ArrayBufferView>(array: T) => T } };
 
-type CryptoWithRandomValues = {
-  getRandomValues?: <T extends TypedArray>(array: T) => T;
-};
-
-type GlobalWithCrypto = typeof globalThis & { crypto?: CryptoWithRandomValues };
-
-function asUint8Array(view: TypedArray): Uint8Array {
+function asUint8Array(view: ArrayBufferView): Uint8Array {
   return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 }
 
@@ -50,11 +37,12 @@ function tryFillFromExpoAsync(u8: Uint8Array): boolean {
 
 (function ensureCrypto() {
   const g = globalThis as GlobalWithCrypto;
-  g.crypto ??= {};
+  g.crypto ??= {} as Crypto;
 
   if (typeof g.crypto.getRandomValues !== "function") {
-    g.crypto.getRandomValues = <T extends TypedArray>(arr: T): T => {
-      const u8 = asUint8Array(arr);
+    g.crypto.getRandomValues = <T extends ArrayBufferView | null>(arr: T): T => {
+      if (!arr) return arr;
+      const u8 = asUint8Array(arr as ArrayBufferView);
 
       try {
         if (tryFillFromExpoSync(u8)) return arr;

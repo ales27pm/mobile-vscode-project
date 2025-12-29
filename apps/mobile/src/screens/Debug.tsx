@@ -3,10 +3,12 @@ import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'rea
 import { Picker } from '@react-native-picker/picker';
 import { useQuery, useMutation, useSubscription } from '@apollo/client';
 import { useErrorAlert } from '../hooks/useErrorAlert';
-import { GetLaunchConfigurationsDocument, StartDebuggingDocument, StopDebuggingDocument, DebuggerEventDocument } from 'shared/src/types';
+import { GetLaunchConfigurationsDocument, StartDebuggingDocument, StopDebuggingDocument, DebugEventDocument } from 'shared/src/types';
 import { useDebugStore } from '../state/debugStore';
 
-export default function Debug({ route }) {
+type DebugProps = { route: { params: { workspaceUri: string } } };
+
+export default function Debug({ route }: DebugProps) {
   const { workspaceUri } = route.params;
   const [selectedConfig, setSelectedConfig] = React.useState<string | null>(null);
 
@@ -41,9 +43,9 @@ export default function Debug({ route }) {
 
   const { logs, appendLog, clearLogs, setActive, isActive } = useDebugStore();
 
-  useSubscription(DebuggerEventDocument, {
+  useSubscription(DebugEventDocument, {
     onSubscriptionData: ({ subscriptionData }) => {
-      const event = subscriptionData.data?.debuggerEvent;
+      const event = subscriptionData.data?.debugEvent;
       if (!event) return;
       if (event.event === 'start') { setActive(true); clearLogs(); }
       if (event.event === 'stop') setActive(false);
