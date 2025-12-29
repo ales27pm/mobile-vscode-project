@@ -106,6 +106,26 @@ corepack yarn start:mobile
 
 Scan the QR code with Expo Go and enter the pairing token when prompted to securely connect to your desktop.
 
+## End-to-End Deployment
+
+Use `scripts/deploy.sh` to automate the full release pipeline:
+
+```bash
+scripts/deploy.sh \
+  --profile production \
+  --platform all        # ios | android | all
+```
+
+The script performs dependency installation, GraphQL code generation, linting, tests, VSIX packaging for the backend, and Expo
+Application Services (EAS) builds for the mobile app. Set `LOCAL_IP` in `.env` before building the mobile client. Useful flags:
+
+- `--local` – run EAS builds locally and store artifacts in `dist/mobile`.
+- `--skip-tests`, `--skip-backend`, `--skip-mobile` – selectively disable stages.
+- `--profile` – choose the EAS profile (`production` by default).
+
+Remote EAS builds require authentication (`npx eas login` or `EXPO_TOKEN`), while local builds use the workspace’s credentials a
+nd write artifacts to `dist/mobile`.
+
 ## Technology Stack
 
 | Category    | Technology                                                         |
