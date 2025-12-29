@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/dist/use/ws'; // Corrected import path
@@ -8,7 +9,7 @@ import { typeDefs, resolvers } from './schema';
 
 const PORT = 4000; // Changed from 4 to 4000 for valid port number
 const app = express();
-const server = createServer(app);
+const server: http.Server = createServer(app);
 
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
