@@ -7,35 +7,41 @@ import { GRAPHQL_URL, WS_URL } from './config';
 import { useAuthStore } from './state/authStore';
 
 const httpLink = new HttpLink({
-  uri: GRAPHQL_URL,
-  fetch,
+  uri: GRAPHQL_URL
 });
 
+// Authentication middleware (if auth tokens are needed)
 const authLink = setContext((_, { headers }) => {
   const token = useAuthStore.getState().token;
   return {
     headers: {
       ...headers,
-      Authorization: token ? `Bearer ${token}` : '',
-    },
+      Authorization: token ? `Bearer ${token}` : ''
+    }
   };
 });
 
+// WebSocket link for subscriptions
 const wsLink = new GraphQLWsLink(createClient({
   url: WS_URL,
+  // Optionally, include authentication on WebSocket connection as well
   connectionParams: () => {
     const token = useAuthStore.getState().token;
-    return { headers: { Authorization: token ? `Bearer ${token}` : '' } };
-  },
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
 }));
 
+// Split traffic: use WS for subscriptions, HTTP for queries/mutations
 const splitLink = split(
   ({ query }) => {
-    const { kind, operation } = getMainDefinition(query);
-    return kind === 'OperationDefinition' && operation === 'subscription';
+    const def = getMainDefinition(query);
+    return def.kind === 'OperationDefinition' && def.operation === 'subscription';
   },
   wsLink,
   authLink.concat(httpLink)
 );
 
-export const client = new ApolloClient({ link: splitLink, cache: new InMemoryCache() });
+export const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: splitLink
+});

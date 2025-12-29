@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import EditorComponent, { MonacoEditorRef } from 'packages/editor';
+import EditorComponent, { MonacoEditorRef } from 'editor';
 import { useYDoc } from '../hooks/useYDoc';
 import { useDocumentStore } from '../state/documentStore';
 

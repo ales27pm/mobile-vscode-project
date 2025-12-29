@@ -1,11 +1,23 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "strict": true,
+    "jsx": "react-native",
+    "types": [
+      "react-native",
+      "expo-router"
+    ],
+    "baseUrl": "./",
     "paths": {
-      "shared/*": ["../../packages/shared/src/*"],
-      "packages/*": ["../../packages/*"],
-      "react-native-monaco-editor": ["../../packages/react-native-monaco-editor/src"]
+      "@shared/*": [
+        "../shared/*"
+      ],
+      "packages/*": [
+        "../../packages/*/src"
+      ]
     }
-  }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

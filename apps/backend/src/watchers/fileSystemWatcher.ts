@@ -4,29 +4,39 @@ import { FS_EVENT } from '../constants';
 
 let fileWatcher: vscode.FileSystemWatcher | null = null;
 
+/**
+ * Initialize a watcher for all files in the workspace.
+ * Publishes events through PubSub on file creation, change, or deletion.
+ */
 export function initializeFileSystemWatcher() {
-    if (fileWatcher) {
-        return;
-    }
+  if (fileWatcher) {
+    return;
+  }
 
-    fileWatcher = vscode.workspace.createFileSystemWatcher('**/*');
+  // Watch all files under the workspace (could be refined for performance)
+  fileWatcher = vscode.workspace.createFileSystemWatcher('**/*');
 
-    const publishEvent = (event: string, uri: vscode.Uri) => {
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-        if (workspaceFolder) {
-            const relPath = vscode.workspace.asRelativePath(uri, false);
-            pubsub.publish(FS_EVENT, {
-                fsEvent: { event, path: relPath }
-            });
-        }
-    };
+  const publishEvent = (type: string, uri: vscode.Uri) => {
+    const changeType = type.toUpperCase();
+    pubsub.publish(FS_EVENT, {
+      fileChange: {
+        type: changeType,
+        path: uri.fsPath
+      }
+    });
+    console.log(`🔄 File ${changeType}: ${uri.fsPath}`);
+  };
 
-    fileWatcher.onDidCreate(uri => publishEvent('create', uri));
-    fileWatcher.onDidChange(uri => publishEvent('change', uri));
-    fileWatcher.onDidDelete(uri => publishEvent('delete', uri));
+  // Attach event listeners
+  fileWatcher.onDidCreate(uri => publishEvent('CREATED', uri));
+  fileWatcher.onDidChange(uri => publishEvent('CHANGED', uri));
+  fileWatcher.onDidDelete(uri => publishEvent('DELETED', uri));
 }
 
+/** Dispose of the file system watcher */
 export function disposeFileSystemWatcher() {
-    fileWatcher?.dispose();
+  if (fileWatcher) {
+    fileWatcher.dispose();
     fileWatcher = null;
+  }
 }

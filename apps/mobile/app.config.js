@@ -1,0 +1,25 @@
+// apps/mobile/app.config.js
+import 'dotenv/config';
+
+export default ({ config }) => ({
+  ...config,
+  expo: {
+    name: 'MobileVSCode',
+    slug: 'mobile-vscode',
+    scheme: 'mobilevscode',
+    version: '0.1.0',
+    platforms: ['ios','android'],
+    orientation: 'portrait',
+    icon: './assets/icon.png',
+    splash: {
+      image: './assets/splash.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
+    updates: { fallbackToCacheTimeout: 0 },
+    assetBundlePatterns: ['**/*'],
+    ios: { bundleIdentifier: 'com.codex.mobilevscode', supportsTablet: true },
+    android: { package: 'com.codex.mobilevscode' },
+    extra: { LOCAL_IP: process.env.LOCAL_IP || '127.0.0.1' },
+  },
+});

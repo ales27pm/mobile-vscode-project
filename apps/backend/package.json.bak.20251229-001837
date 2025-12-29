@@ -38,7 +38,7 @@
     "graphql-subscriptions": "^2.0.0",
     "graphql-ws": "^5.11.0",
     "ws": "^8.13.0",
-    "y-websocket": "1.5.3",
+    "y-websocket": "^1.5.5",
     "yjs": "^13.6.1"
   },
   "devDependencies": {

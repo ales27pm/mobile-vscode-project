@@ -10,4 +10,4 @@ const PORT = 4000;
 
 export const GRAPHQL_URL = `https://${LOCAL_IP}:${PORT}/graphql`;
 export const WS_URL = `wss://${LOCAL_IP}:${PORT}/graphql`;
-export const YWS_URL = `wss://${LOCAL_IP}:${PORT}/yjs`;
+export const YJS_URL = `wss://${LOCAL_IP}:${PORT}/yjs`;

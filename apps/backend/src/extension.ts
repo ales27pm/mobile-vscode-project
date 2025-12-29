@@ -2,27 +2,32 @@ import * as vscode from 'vscode';
 import { startServer, stopServer } from './core/server';
 import { getStatusBar } from './ui/statusBar';
 
-export function activate(context: vscode.ExtensionContext) {
-    console.log('MobileVSCode Server extension is now active.');
+export async function activate(context: vscode.ExtensionContext) {
+  console.log('MobileVSCode Server extension is now active.');
 
-    const statusBar = getStatusBar();
-    context.subscriptions.push(statusBar);
-    statusBar.show();
+  // Initialize and show a status bar item for server status
+  const statusBar = getStatusBar();
+  context.subscriptions.push(statusBar);
+  statusBar.show();
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('mobile-vscode-server.start', () => {
-            void startServer(context);
-        })
-    );
+  // Automatically start the backend server when extension activates
+  await startServer(context);
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('mobile-vscode-server.stop', () => {
-            stopServer();
-        })
-    );
+  // Register commands for manual control as well
+  context.subscriptions.push(
+    vscode.commands.registerCommand('mobile-vscode-server.start', async () => {
+      await startServer(context);
+    })
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('mobile-vscode-server.stop', () => {
+      stopServer();
+    })
+  );
 }
 
 export function deactivate() {
-    stopServer();
-    console.log('MobileVSCode Server extension deactivated.');
+  // Cleanup on extension deactivation
+  stopServer();
+  console.log('MobileVSCode Server extension deactivated.');
 }

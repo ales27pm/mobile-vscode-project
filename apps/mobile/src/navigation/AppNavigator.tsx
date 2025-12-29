@@ -1,67 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuthStore } from '../state/authStore';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { NavigationContainerRef } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
-import AuthScreen from '../screens/AuthScreen';
-import WorkspaceScreen from '../screens/WorkspaceScreen';
-import MainTabNavigator from './MainTabNavigator';
+// Import screens
+import ExplorerScreen from '../screens/Explorer';
+import EditorScreen from '../screens/Editor';
+import SearchScreen from '../screens/Search';
+import GitScreen from '../screens/Git';
+import ExtensionsScreen from '../screens/Extensions';
+import DebugScreen from '../screens/Debug';
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
-  const { token, loadToken } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  // (Optional) state or effect for handling navigation readiness, auth, etc.
+  const [isReady, setReady] = useState(false);
 
   useEffect(() => {
-    const bootstrapAsync = async () => {
-      await loadToken();
-      setIsLoading(false);
-    };
-    bootstrapAsync();
-  }, [loadToken]);
+    // Any startup logic, e.g., check auth, then:
+    setReady(true);
+  }, []);
 
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  if (!isReady) {
+    // Could return a loading indicator
+    return null;
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        {token ? (
-          <>
-            <Stack.Screen
-              name="WorkspaceSelector"
-              component={WorkspaceScreen}
-              options={{ title: 'Select Workspace' }}
-            />
-            <Stack.Screen
-              name="MainApp"
-              component={MainTabNavigator}
-              options={{ headerShown: false }}
-            />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Auth"
-            component={AuthScreen}
-            options={{ title: 'Pair with VS Code' }}
-          />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Tab.Navigator
+      initialRouteName="Explorer"
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+          switch (route.name) {
+            case 'Explorer':
+              iconName = 'folder';
+              break;
+            case 'Editor':
+              iconName = 'code-slash';
+              break;
+            case 'Search':
+              iconName = 'search';
+              break;
+            case 'Git':
+              iconName = 'git-branch';
+              break;
+            case 'Extensions':
+              iconName = 'extensions'; // hypothetical icon name
+              break;
+            case 'Debug':
+              iconName = 'bug';
+              break;
+            default:
+              iconName = 'ellipse';
+          }
+          return <Ionicons name={iconName as any} size={size} color={color} />;
+        }
+      })}
+    >
+      <Tab.Screen name="Explorer" component={ExplorerScreen} />
+      <Tab.Screen name="Editor" component={EditorScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Git" component={GitScreen} />
+      <Tab.Screen name="Extensions" component={ExtensionsScreen} />
+      <Tab.Screen name="Debug" component={DebugScreen} />
+    </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

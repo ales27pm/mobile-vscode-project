@@ -1,4 +1,4 @@
-import { gql } from 'graphql-tag';
+import { gql } from 'apollo-server-express';
 
 export default gql`
   type Workspace {
@@ -19,60 +19,40 @@ export default gql`
   }
   
   type GitStatus {
-    branch: String!
-    staged: [String!]!
-    unstaged: [String!]!
-  }
-
-  type DebugConfiguration {
-    name: String!
-    type: String!
-    request: String!
-  }
-
-  type DebuggerEvent {
-    event: String!
-    body: String!
-  }
-
-  type FSEvent {
-    event: String!
-    path: String!
-  }
-
-  type Extension {
-    id: String!
-    name: String!
-    description: String!
-    installed: Boolean!
+    branch: String
+    ahead: Int
+    behind: Int
+    changes: [String!]
   }
 
   type Query {
-    listWorkspaces: [Workspace!]!
-    listDirectory(workspaceUri: String!, path: String): [File!]!
-    readFile(workspaceUri: String!, path: String!): String
+    workspaces: [Workspace!]!
+    files(workspaceUri: String!, directory: String!): [File!]!
     search(workspaceUri: String!, query: String!): [SearchResult!]!
-    gitStatus(workspaceUri: String!): GitStatus!
-    gitDiff(workspaceUri: String!, file: String!): String!
-    getLaunchConfigurations(workspaceUri: String!): [DebugConfiguration!]!
-    extensions: [Extension!]!
+    gitStatus(workspaceUri: String!): GitStatus
   }
 
   type Mutation {
-    pairWithServer(pairingToken: String!): String
-    writeFile(workspaceUri: String!, path: String!, content: String!): Boolean!
-    gitStage(workspaceUri: String!, file: String!): Boolean!
-    gitUnstage(workspaceUri: String!, file: String!): Boolean!
-    commit(workspaceUri: String!, message: String!): Boolean!
-    push(workspaceUri: String!): Boolean!
-    startDebugging(workspaceUri: String!, configName: String!): Boolean!
-    stopDebugging: Boolean!
-    installExtension(id: String!): Boolean!
-    uninstallExtension(id: String!): Boolean!
+    openWorkspace(path: String!): Boolean!
+    createFile(path: String!): Boolean!
+    deleteFile(path: String!): Boolean!
+    saveFile(path: String!, content: String!): Boolean!
+    executeCommand(command: String!, args: [String!]): String
+  }
+
+  enum FileChangeType {
+    CREATED
+    CHANGED
+    DELETED
+  }
+
+  type FileChange {
+    type: FileChangeType!
+    path: String!
   }
 
   type Subscription {
-    fsEvent: FSEvent!
-    debuggerEvent: DebuggerEvent!
+    fileChange: FileChange!
+    debugEvent: String!
   }
 `;

@@ -3,15 +3,12 @@ import * as https from 'https';
 import * as fs from 'fs';
 import { AddressInfo } from 'net';
 import express from 'express';
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware, type ExpressContextFunctionArgument } from '@apollo/server/express4';
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
-import { useServer } from 'graphql-ws/lib/use/ws';
+import { useServer as useGraphQLWsServer } from 'graphql-ws/lib/use/ws';
 import { join } from 'path';
-import { setupWSConnection, setPersistence } from 'y-websocket/bin/utils.js';
-import type { Doc } from 'yjs';
+import { setupWSConnection, setPersistence, Doc } from 'y-websocket/bin/utils.js';
 
 import { ensureAuthContext, setupAuthMiddleware, RequestWithUser } from './auth';
 import { bindState } from '../crdt/persistence';
@@ -22,131 +19,135 @@ import { initializeFileSystemWatcher, disposeFileSystemWatcher } from '../watche
 
 let httpServer: https.Server | null = null;
 let apolloServer: ApolloServer | null = null;
+let gqlWss: WebSocketServer | null = null;
+let yjsWss: WebSocketServer | null = null;
 let wsServerCleanup: (() => void) | null = null;
 
+/**
+ * Starts the Express/Apollo server and WebSocket servers.
+ */
 export async function startServer(context: vscode.ExtensionContext) {
-    if (httpServer) {
-        vscode.window.showWarningMessage('MobileVSCode Server is already running.');
-        return;
-    }
+  if (httpServer) {
+    vscode.window.showWarningMessage('MobileVSCode Server is already running.');
+    return;
+  }
 
-    const authContext = await ensureAuthContext();
-    if (!authContext) {
-        return;
-    }
+  // Ensure user is authenticated (could be a no-op or prompt, depending on auth setup)
+  const authContext = await ensureAuthContext();
+  if (!authContext) {
+    // If auth is required and not provided, we abort start.
+    vscode.window.showErrorMessage('Authentication failed. Server not started.');
+    return;
+  }
 
-    const app = express();
-    app.use(express.json());
+  // Prepare Express app
+  const app = express();
+  app.use(express.json());
+  setupAuthMiddleware(app); // (Optional) attach auth middleware if needed
 
-    const keyPath = join(context.extensionPath, 'certs/server.key');
-    const certPath = join(context.extensionPath, 'certs/server.crt');
-    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-        vscode.window.showErrorMessage('Server certificates not found. Please reinstall the extension.');
-        return;
-    }
+  // Load SSL certificate and key for HTTPS
+  const keyPath = join(context.extensionPath, 'certs', 'server.key');
+  const certPath = join(context.extensionPath, 'certs', 'server.crt');
+  const useHttps = fs.existsSync(keyPath) && fs.existsSync(certPath);
+  let serverOptions: https.ServerOptions | undefined;
+  if (useHttps) {
     const key = fs.readFileSync(keyPath);
     const cert = fs.readFileSync(certPath);
+    serverOptions = { key, cert };
+  } else {
+    vscode.window.showWarningMessage('Using insecure HTTP. For production, configure HTTPS certificates.');
+  }
 
-    httpServer = https.createServer({ key, cert }, app);
+  // Create HTTP or HTTPS server
+  httpServer = useHttps 
+    ? https.createServer(serverOptions!, app) 
+    : https.createServer(app);
 
-    const schema = makeExecutableSchema({ typeDefs: schemaTypeDefs, resolvers: getResolvers() });
+  // GraphQL Schema and Resolvers
+  const schema = makeExecutableSchema({
+    typeDefs: schemaTypeDefs,
+    resolvers: getResolvers(pubsub)
+  });
 
-    setupAuthMiddleware(app, authContext);
+  // Set up Apollo Server with the schema
+  apolloServer = new ApolloServer({
+    schema,
+    context: ({ req }) => ensureAuthContext(req as RequestWithUser)  // attach auth info to context if needed
+  });
+  await apolloServer.start();
+  apolloServer.applyMiddleware({ app, path: '/graphql' });
 
-    apolloServer = new ApolloServer({
-        schema,
-        plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
-    });
+  // Set up WebSocket servers for GraphQL and Yjs (HMR/collaboration)
+  gqlWss = new WebSocketServer({ noServer: true });
+  const wsCleanup = useGraphQLWsServer({ schema }, gqlWss);  // GraphQL subscriptions server
+  wsServerCleanup = wsCleanup.dispose;
+  yjsWss = new WebSocketServer({ noServer: true });          // Yjs WebSocket (CRDT sync)
 
-    await apolloServer.start();
+  // Persistence for Yjs (to keep documents in memory or file between sessions)
+  setPersistence({
+    bindState: (docName: string, ydoc: Doc) => {
+      bindState(docName, ydoc);
+    },
+    writeState: async () => {
+      /* Optionally, persist Yjs document updates */
+    }
+  });
 
-    if (!apolloServer || !httpServer) return;
+  // Handle upgrade requests for WebSocket routes
+  httpServer.on('upgrade', (request, socket, head) => {
+    const { url } = request;
+    if (url === '/graphql') {
+      gqlWss!.handleUpgrade(request, socket, head, ws => {
+        gqlWss!.emit('connection', ws, request);
+      });
+    } else if (url === '/yjs') {
+      yjsWss!.handleUpgrade(request, socket, head, ws => {
+        // Use Y-WebSocket server handling
+        setupWSConnection(ws, request);
+      });
+    } else {
+      // Unknown route, destroy socket
+      socket.destroy();
+    }
+  });
 
-    app.use(
-        '/graphql',
-        expressMiddleware(apolloServer, {
-            context: async ({ req }: ExpressContextFunctionArgument) => ({
-                user: (req as RequestWithUser).user,
-            }),
-        })
-    );
+  // Start listening on a port
+  const port = 4000;
+  httpServer.listen(port, () => {
+    const address = httpServer!.address() as AddressInfo;
+    updateStatusBar(`Server running at ${useHttps ? 'https' : 'http'}://${address.address}:${address.port}`);
+    console.log(`🚀 GraphQL server ready at ${useHttps ? 'https' : 'http'}://localhost:${port}/graphql`);
+  });
 
-    const gqlWsServer = new WebSocketServer({ noServer: true });
-    const gqlWsServerHandler = useServer({ schema }, gqlWsServer);
-
-    const yjsWsServer = new WebSocketServer({ noServer: true });
-
-    setPersistence({
-        bindState: (docName: string, ydoc: Doc) => {
-            bindState(docName, ydoc);
-        },
-        writeState: () => {
-            // Persistence is handled by debounced savers in bindState
-        },
-    });
-
-    yjsWsServer.on('connection', setupWSConnection);
-
-    httpServer.on('upgrade', (req, socket, head) => {
-        if (!req.url) {
-            console.error('HTTP upgrade request missing URL. Destroying socket.');
-            socket.destroy();
-            return;
-        }
-        const host = req.headers.host || 'localhost:3000';
-        // Try to detect protocol dynamically, fallback to 'http' if not possible
-        let protocol = 'http';
-        if (
-            req.headers["x-forwarded-proto"] &&
-            typeof req.headers["x-forwarded-proto"] === 'string'
-        ) {
-            protocol = req.headers["x-forwarded-proto"].split(',')[0].trim();
-        } else if (httpServer && typeof httpServer.address === 'function') {
-            const addr = httpServer.address() as AddressInfo | string | null;
-            if (addr && typeof addr === 'object' && addr.port === 443) {
-                protocol = 'https';
-            }
-        } else if (process.env.NODE_ENV === 'production') {
-            protocol = 'https';
-        }
-        const url = new URL(req.url, `${protocol}://${host}`);
-        if (url.pathname === '/graphql') {
-            gqlWsServer.handleUpgrade(req, socket, head, ws => gqlWsServer.emit('connection', ws, req));
-        } else if (url.pathname.startsWith('/yjs')) {
-            yjsWsServer.handleUpgrade(req, socket, head, ws => yjsWsServer.emit('connection', ws, req));
-        } else {
-            socket.destroy();
-        }
-    });
-    wsServerCleanup = () => {
-         gqlWsServerHandler.dispose();
-         yjsWsServer.close();
-         gqlWsServer.close();
-    };
-
-    const config = vscode.workspace.getConfiguration('mobile-vscode-server');
-    const port = config.get<number>('port', 4000);
-
-    httpServer.listen(port, () => {
-        console.log(`🚀 MobileVSCode Server ready at https://localhost:${port}`);
-    });
-
-    initializeFileSystemWatcher();
+  // Initialize file system watcher (for HMR or file sync)
+  initializeFileSystemWatcher();
 }
 
+/**
+ * Stops the server and cleans up resources.
+ */
 export function stopServer() {
-    disposeFileSystemWatcher();
-    if (httpServer) {
-        wsServerCleanup?.();
-        httpServer.close(() => {
-            console.log('MobileVSCode Server stopped.');
-            updateStatusBar(false);
-            vscode.window.showInformationMessage('MobileVSCode Server stopped.');
-        });
-        apolloServer?.stop();
-        httpServer = null;
-        apolloServer = null;
-    } else {
-        vscode.window.showInformationMessage('MobileVSCode Server is not running.');
-    }
+  if (httpServer) {
+    httpServer.close();
+    httpServer = null;
+  }
+  if (apolloServer) {
+    apolloServer.stop();
+    apolloServer = null;
+  }
+  if (gqlWss) {
+    gqlWss.close();
+    gqlWss = null;
+  }
+  if (yjsWss) {
+    yjsWss.close();
+    yjsWss = null;
+  }
+  if (wsServerCleanup) {
+    wsServerCleanup();
+    wsServerCleanup = null;
+  }
+  disposeFileSystemWatcher();
+  updateStatusBar('Server stopped');
+  console.log('🛑 MobileVSCode Server stopped.');
 }

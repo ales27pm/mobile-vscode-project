@@ -1,0 +1,17 @@
+import fs from "fs";
+import path from "path";
+
+const ROOT = path.resolve(process.cwd());
+const pkgPath = path.join(ROOT, "package.json");
+
+const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+
+pkg.overrides ??= {};
+pkg.overrides.react = "19.1.0";
+pkg.overrides["react-dom"] = "19.1.0";
+
+// (Optional) lock react-test-renderer too, helps Jest/Expo consistency
+pkg.overrides["react-test-renderer"] = "19.1.0";
+
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n", "utf8");
+console.log("[enforce_react_overrides] set npm overrides for react/react-dom/react-test-renderer to 19.1.0");

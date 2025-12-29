@@ -1,34 +1,6 @@
 {
   "name": "shared",
-  "version": "0.0.0",
-  "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "react-native": "dist/index.js",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./types": {
-      "default": "./dist/types.js",
-      "types": "./dist/types.d.ts"
-    },
-    "./src/types": {
-      "default": "./src/types.ts"
-    },
-    "./package.json": "./package.json"
-  },
-  "scripts": {
-    "build": "tsc -p .",
-    "clean": "rimraf dist"
-  },
-  "dependencies": {
-    "@apollo/client": "^3.14.0",
-    "graphql": "^16.10.0"
-  },
-  "devDependencies": {
-    "rimraf": "^6.0.1",
-    "typescript": "^5.9.2"
-  }
+  "version": "0.0.1",
+  "main": "index.ts",
+  "private": true
 }
