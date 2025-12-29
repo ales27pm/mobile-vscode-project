@@ -58,7 +58,7 @@ on:
 env:
   NODE_VERSION: '20'
   ROOT_DIR: '${{ github.workspace }}'
-  SKIP_MOBILE: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_mobile }}
+  SKIP_MOBILE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_mobile == 'true' }}
 
 jobs:
   preflight:
