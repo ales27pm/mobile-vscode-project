@@ -2,6 +2,7 @@ import { startServer, stopServer } from './server';
 import * as vscode from 'vscode';
 import { ensureAuthContext } from './auth';
 import { initializeFileSystemWatcher, disposeFileSystemWatcher } from '../watchers/fileSystemWatcher';
+import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 
 jest.mock('./auth');
 jest.mock('../watchers/fileSystemWatcher');
@@ -15,39 +16,41 @@ const expressMock = expressModule.__mocks.expressMock as jest.Mock;
 
 const start = jest.fn(() => Promise.resolve());
 const stop = jest.fn(() => Promise.resolve());
+const applyMiddleware = jest.fn(({ app, path }: { app: { use: jest.Mock }; path?: string }) => app.use(path ?? '/', 'apolloMiddleware'));
 class FakeApolloServer {
     start = start;
     stop = stop;
+    applyMiddleware = applyMiddleware;
 }
 
-const expressMiddlewareMock = jest.fn((..._args: unknown[]) => 'apolloMiddleware');
-const drainPlugin = jest.fn((..._args: unknown[]) => 'drainPlugin');
-
 jest.mock(
-    '@apollo/server',
+    'apollo-server-express',
     () => ({
         ApolloServer: jest.fn(() => new FakeApolloServer()),
+        gql: jest.fn((strings: TemplateStringsArray, ...values: unknown[]) =>
+            strings.reduce((acc, part, index) => `${acc}${part}${index < values.length ? values[index] : ''}`, '')
+        ),
     }),
     { virtual: true }
 );
 
 jest.mock(
-    '@apollo/server/express4',
+    '@graphql-tools/schema',
     () => ({
-        expressMiddleware: (...args: unknown[]) => expressMiddlewareMock(...args),
+        makeExecutableSchema: jest.fn(
+            () =>
+                new GraphQLSchema({
+                    query: new GraphQLObjectType({
+                        name: 'Query',
+                        fields: {
+                            ping: { type: GraphQLString },
+                        },
+                    }),
+                })
+        ),
     }),
     { virtual: true }
 );
-
-jest.mock(
-    '@apollo/server/plugin/drainHttpServer',
-    () => ({
-        ApolloServerPluginDrainHttpServer: (...args: unknown[]) => drainPlugin(...args),
-    }),
-    { virtual: true }
-);
-
-jest.mock('@graphql-tools/schema', () => ({ makeExecutableSchema: jest.fn(() => 'schema') }), { virtual: true });
 
 const ws = { on: jest.fn(), handleUpgrade: jest.fn(), close: jest.fn() };
 jest.mock('ws', () => ({ WebSocketServer: jest.fn(() => ws) }), { virtual: true });
@@ -106,9 +109,8 @@ describe('server start/stop', () => {
         await Promise.resolve();
         expect(expressMock).toHaveBeenCalled();
         expect(start).toHaveBeenCalled();
-        expect(expressMiddlewareMock).toHaveBeenCalled();
+        expect(applyMiddleware).toHaveBeenCalledWith({ app: expect.any(Object), path: '/graphql' });
         expect(expressModule.__mocks.use).toHaveBeenCalledWith('/graphql', 'apolloMiddleware');
-        expect(drainPlugin).toHaveBeenCalledWith({ httpServer: expect.any(Object) });
         expect(listen).toHaveBeenCalledWith(4000, expect.any(Function));
         expect(initializeFileSystemWatcher).toHaveBeenCalled();
         stopServer();

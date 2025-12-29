@@ -40,7 +40,7 @@ export async function ensureAuthContext(): Promise<AuthContext | null> {
     const newPairingToken = Math.random().toString(36).substring(2, 8).toUpperCase();
     const tooltip = `Pairing Token: ${newPairingToken}`;
 
-    updateStatusBar(true, tooltip);
+    updateStatusBar(tooltip, tooltip);
     vscode.window.showInformationMessage(`MobileVSCode Pairing Token: ${newPairingToken}`);
 
     return {
@@ -74,7 +74,7 @@ export function pairingMiddleware(authContext: AuthContext) {
         authContext.isPaired = true;
         const clientToken = jwt.sign({ paired: true }, authContext.jwtSecret, { expiresIn: '30d' });
 
-        updateStatusBar(true, 'Client Paired');
+        updateStatusBar('Client Paired');
         vscode.window.showInformationMessage('MobileVSCode Client Paired Successfully.');
 
         return res.json({ data: { pairWithServer: clientToken } });
