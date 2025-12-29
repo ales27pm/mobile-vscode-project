@@ -7,7 +7,7 @@
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}/apps/backend"],
       "outFiles": ["${workspaceFolder}/apps/backend/dist/**/*.js"],
-      "preLaunchTask": "yarn: build:backend"
+      "preLaunchTask": "build:backend"
     }
   ]
 }
