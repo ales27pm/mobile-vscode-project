@@ -1,0 +1,217 @@
+# .github/workflows/ci-cd.yml
+name: Full CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      build_all:
+        description: 'Build all platforms'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '20'
+  EXPO_VERSION: 'latest'
+  REGISTRY: ghcr.io
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    name: Lint and Test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run ESLint
+        run: yarn eslint .
+
+      - name: TypeScript compilation check
+        run: yarn tsc --noEmit
+
+      - name: Run backend tests
+        run: |
+          cd apps/backend
+          yarn test --coverage --passWithNoTests
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./apps/backend/coverage
+          flags: backend
+
+  build-backend:
+    runs-on: ubuntu-latest
+    name: Build Backend Services
+    needs: lint-test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build all packages
+        run: |
+          yarn workspaces foreach --all run build
+
+      - name: Create backend bundle
+        run: |
+          cd apps/backend
+          yarn bundle
+          cd ../..
+
+      - name: Package VSIX
+        run: |
+          cd apps/backend
+          npx @vscode/vsce package --no-dependencies --out mobile-vscode-server.vsix
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: |
+            apps/backend/dist/
+            apps/backend/mobile-vscode-server.vsix
+            apps/shared/src/
+            packages/editor/dist/
+          retention-days: 7
+
+  build-mobile:
+    runs-on: macos-latest
+    name: Build Mobile Apps
+    needs: lint-test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          yarn workspace shared-app build
+          yarn workspace editor build
+          yarn workspace react-native-monaco-editor build
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
+
+      - name: Build Android (Production)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        run: |
+          cd apps/mobile
+          eas build --platform android --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS (Production)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        run: |
+          cd apps/mobile
+          eas build --platform ios --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+
+      - name: Build Development versions
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd apps/mobile
+          eas build --platform all --profile development --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-backend, build-mobile]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download backend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: ./artifacts
+
+      - name: Generate release notes
+        run: |
+          echo "## 🚀 MobileVSCode Release ${{ github.ref_name }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### What's New" >> release_notes.md
+          echo "- Full-stack mobile IDE platform" >> release_notes.md
+          echo "- Collaborative code editing" >> release_notes.md
+          echo "- VS Code extension ecosystem" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Download Links" >> release_notes.md
+          echo "- **VS Code Extension**: [mobile-vscode-server.vsix](artifact-link)" >> release_notes.md
+          echo "- **Android App**: Available on Google Play (coming soon)" >> release_notes.md
+          echo "- **iOS App**: Available on TestFlight" >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: MobileVSCode ${{ github.ref_name }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+          files: |
+            ./artifacts/mobile-vscode-server.vsix
+
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify Status
+    needs: [create-release]
+    if: always()
+    
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+          channel: '#mobile-vscode'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
