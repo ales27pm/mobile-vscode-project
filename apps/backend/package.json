@@ -21,19 +21,84 @@
     "vscode": "^1.80.0"
   },
   "activationEvents": [
-    "onCommand:mobile-vscode-server.start"
+    "onStartupFinished",
+    "onView:mobileVscode.statusView",
+    "onCommand:mobile-vscode-server.start",
+    "onCommand:mobile-vscode-server.stop",
+    "onCommand:mobile-vscode-server.restart",
+    "onCommand:mobile-vscode-server.openStatus",
+    "onCommand:mobile-vscode-server.openSettings",
+    "onCommand:mobile-vscode-server.copyUrl",
+    "onCommand:mobile-vscode-server.copyPairingToken",
+    "onCommand:mobile-vscode-server.openLogs"
   ],
   "contributes": {
     "commands": [
-      {
-        "command": "mobile-vscode-server.start",
-        "title": "Start Mobile VSCode Server"
-      },
-      {
-        "command": "mobile-vscode-server.stop",
-        "title": "Stop Mobile VSCode Server"
+      { "command": "mobile-vscode-server.start", "title": "MobileVSCode: Start Server" },
+      { "command": "mobile-vscode-server.stop", "title": "MobileVSCode: Stop Server" },
+      { "command": "mobile-vscode-server.restart", "title": "MobileVSCode: Restart Server" },
+      { "command": "mobile-vscode-server.openStatus", "title": "MobileVSCode: Open Status" },
+      { "command": "mobile-vscode-server.openSettings", "title": "MobileVSCode: Open Settings" },
+      { "command": "mobile-vscode-server.copyUrl", "title": "MobileVSCode: Copy Server URL" },
+      { "command": "mobile-vscode-server.copyPairingToken", "title": "MobileVSCode: Copy Pairing Token" },
+      { "command": "mobile-vscode-server.openLogs", "title": "MobileVSCode: Open Logs" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mobileVscode",
+          "title": "MobileVSCode",
+          "icon": "resources/mobilevscode.svg"
+        }
+      ]
+    },
+    "views": {
+      "mobileVscode": [
+        {
+          "id": "mobileVscode.statusView",
+          "name": "Status"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MobileVSCode Server",
+      "properties": {
+        "mobile-vscode-server.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the backend server automatically when VS Code starts."
+        },
+        "mobile-vscode-server.host": {
+          "type": "string",
+          "default": "0.0.0.0",
+          "description": "Network interface to bind. Use 0.0.0.0 for LAN access."
+        },
+        "mobile-vscode-server.port": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port the backend server listens on."
+        },
+        "mobile-vscode-server.useHttps": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable HTTPS. Requires certs/server.key and certs/server.crt in the extension folder."
+        },
+        "mobile-vscode-server.logLevel": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "debug"],
+          "default": "info",
+          "description": "Logging verbosity for the backend."
+        },
+        "mobile-vscode-server.jwtSecret": {
+          "type": "string",
+          "default": "",
+          "description": "Persistent secret used to sign pairing/session tokens. Generated automatically when missing.",
+          "scope": "application"
+        }
       }
-    ]
+    }
   },
   "dependencies": {
     "@apollo/client": "^3.5.10",
