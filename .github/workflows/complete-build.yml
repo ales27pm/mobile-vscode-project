@@ -297,6 +297,7 @@ jobs:
     needs: [preflight, validate-and-test]
     if: ${{ (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_mobile != 'true') && (github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only') }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - platform: android
@@ -364,55 +365,80 @@ jobs:
             exit 0
           fi
 
-      - name: Create eas.json if needed
+      - name: Ensure apps/mobile has eas.json (no requireCommit)
         if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         run: |
           set -euo pipefail
           cd apps/mobile
 
           if [ ! -f "eas.json" ]; then
-            echo 'Creating eas.json...'
-            python -c 'import json, pathlib; cfg={"cli":{"version":">= 16.0.0","appVersionSource":"remote","requireCommit":False},"build":{"development":{"distribution":"internal","android":{"buildType":"apk"},"ios":{"simulator":True}},"preview":{"distribution":"internal","android":{"buildType":"apk"},"ios":{"simulator":False}},"production":{"distribution":"store","android":{"buildType":"app-bundle"},"ios":{"simulator":False}}}}; pathlib.Path("eas.json").write_text(json.dumps(cfg, indent=2) + "\n")'
-            echo "eas.json created"
+            echo "Creating apps/mobile/eas.json..."
+            python - <<'PY'
+            import json
+            from pathlib import Path
+            cfg = {
+              "cli": {
+                "version": ">= 16.0.0",
+                "appVersionSource": "remote",
+                "requireCommit": False
+              },
+              "build": {
+                "development": {
+                  "distribution": "internal",
+                  "android": {"buildType": "apk"},
+                  "ios": {"simulator": True}
+                },
+                "preview": {
+                  "distribution": "internal",
+                  "android": {"buildType": "apk"},
+                  "ios": {"simulator": False}
+                },
+                "production": {
+                  "distribution": "store",
+                  "android": {"buildType": "app-bundle"},
+                  "ios": {"simulator": False}
+                }
+              }
+            }
+            Path("eas.json").write_text(json.dumps(cfg, indent=2) + "\n")
+            print("apps/mobile/eas.json written")
+            PY
           else
-            echo "eas.json already exists"
+            echo "apps/mobile/eas.json already exists"
           fi
 
           cd ../..
 
-      - name: Link EAS project (CI-safe)
+      - name: Link EAS project (CI-safe) and keep working tree clean
         if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
         run: |
           set -euo pipefail
+
+          # Link the EAS project in the app directory.
+          # Some EAS commands may touch .expo/settings.json and/or app.json in that directory.
           cd apps/mobile
 
-          # Ensure projectId is present for dynamic Expo config setups
-          mkdir -p .expo
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          pid = "${EAS_PROJECT_ID}".strip()
-          p = Path(".expo/settings.json")
-          data = {}
-          if p.exists():
-            try:
-              data = json.loads(p.read_text())
-            except Exception:
-              data = {}
-          data["projectId"] = pid
-          p.write_text(json.dumps(data, indent=2) + "\n")
-          print("Wrote .expo/settings.json with projectId:", pid)
-          PY
-
-          # Link the EAS project non-interactively
           eas project:init --non-interactive --id "${EAS_PROJECT_ID}" --force
+
+          # IMPORTANT:
+          # EAS build in non-interactive mode requires a clean working tree.
+          # If EAS init touched tracked files, restore them so the tree is clean.
+          # (This avoids the "working tree is dirty" abort you hit.)
+          if git status --porcelain | grep -q .; then
+            echo "Working tree changed during EAS init. Restoring tracked changes..."
+            git restore --worktree --staged . || true
+            git checkout -- . || true
+          fi
+
+          echo "Working tree status after restore:"
+          git status --porcelain || true
 
           cd ../..
 
-      - name: Build with EAS (remote) + download artifact
+      - name: Build with EAS (remote) + download artifact (clean tree enforced)
         if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -421,6 +447,13 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts
           cd apps/mobile
+
+          # Double-check clean working tree before build to prevent EAS abort.
+          if git status --porcelain | grep -q .; then
+            echo "::error::apps/mobile working tree is dirty before build. Aborting to avoid EAS clean-tree failure."
+            git status --porcelain
+            exit 1
+          fi
 
           PROFILE="${{ github.event.inputs.mobile_profile || 'development' }}"
           PLATFORM="${{ matrix.platform }}"
@@ -510,11 +543,13 @@ jobs:
           OUT="../artifacts/mobile-vscode-${PLATFORM}-${PROFILE}.${EXT}"
           echo "Downloading to: ${OUT}"
           curl -fL --retry 3 --retry-delay 2 -o "${OUT}" "${ARTIFACT_URL}"
+
+          echo "Artifacts directory:"
           ls -lah "../artifacts"
 
           cd ../..
 
-      - name: Upload mobile artifacts
+      - name: Upload Android artifacts
         if: ${{ matrix.if_condition && steps.check-eas-auth.outputs.eas_authenticated == 'true' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
