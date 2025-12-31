@@ -15,6 +15,7 @@
     "react-native-webview": ">=13.0.0"
   },
   "scripts": {
-    "test": "echo 'no tests'"
+    "test": "echo 'no tests'",
+    "build": "tsc -p tsconfig.json"
   }
 }
