@@ -4,7 +4,6 @@
   "main": "src/index.tsx",
   "dependencies": {
     "lodash.debounce": "^4.0.8",
-    "lodash.debounce": "^4.0.8",
     "react-native-monaco-editor": "^0.1.0"
   },
   "peerDependencies": {
