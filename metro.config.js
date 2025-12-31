@@ -3,6 +3,7 @@ const { getDefaultConfig } = require("expo/metro-config");
 
 const projectRoot = __dirname;
 const packagesRoot = path.resolve(projectRoot, "packages");
+const sharedSrc = path.resolve(packagesRoot, "shared/src");
 
 const config = getDefaultConfig(projectRoot);
 
@@ -14,6 +15,10 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.disableHierarchicalLookup = false;
+config.resolver.alias = {
+  ...(config.resolver.alias || {}),
+  shared: sharedSrc,
+};
 config.resolver.extraNodeModules = new Proxy(
   {},
   { get: (_, name) => path.join(projectRoot, "node_modules", name) }
