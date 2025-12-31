@@ -3,7 +3,7 @@ const { getDefaultConfig } = require("expo/metro-config");
 
 const projectRoot = __dirname;
 const packagesRoot = path.resolve(projectRoot, "packages");
-const sharedSrc = path.resolve(packagesRoot, "shared/src");
+const sharedSrc = path.resolve(projectRoot, "packages/shared/src");
 
 const config = getDefaultConfig(projectRoot);
 
