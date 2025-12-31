@@ -7,14 +7,9 @@
     "react-native-monaco-editor": "^0.1.0"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*",
-    "react-native-webview": "*"
-  },
-  "devDependencies": {
-    "react": "18.2.0",
-    "react-native": "0.71.8",
-    "react-native-webview": "11.26.0"
+    "react": ">=19.0.0",
+    "react-native": ">=0.81.0",
+    "react-native-webview": ">=13.0.0"
   },
   "scripts": {
     "test": "echo 'no tests'"
