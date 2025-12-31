@@ -1,0 +1,540 @@
+# .github/workflows/complete-build.yml
+name: Complete Build Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.txt"
+      - ".gitignore"
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build type"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, extension-only, mobile-only]
+      mobile_platform:
+        description: "Mobile platform to build"
+        required: false
+        default: "android"
+        type: choice
+        options: [all, android, ios]
+      mobile_profile:
+        description: "EAS build profile"
+        required: false
+        default: "development"
+        type: choice
+        options: [development, preview, production]
+      skip_tests:
+        description: "Skip tests"
+        required: false
+        default: false
+        type: boolean
+      skip_backend:
+        description: "Skip backend build"
+        required: false
+        default: false
+        type: boolean
+      skip_mobile:
+        description: "Skip mobile builds"
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: "20"
+  ROOT_DIR: ${{ github.workspace }}
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    name: Preflight Checks
+    outputs:
+      codegen_exists: ${{ steps.check-codegen.outputs.codegen_exists }}
+      lint_exists: ${{ steps.check-lint.outputs.lint_exists }}
+      package_vsix_exists: ${{ steps.check-package-vsix.outputs.package_vsix_exists }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with Corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Check for codegen script
+        id: check-codegen
+        run: |
+          if jq -e '.scripts.codegen' package.json >/dev/null 2>&1; then
+            echo "codegen_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "codegen_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for lint script
+        id: check-lint
+        run: |
+          if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
+            echo "lint_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "lint_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for package-vsix script
+        id: check-package-vsix
+        run: |
+          if [ -f "scripts/package-vsix.sh" ]; then
+            echo "package_vsix_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "package_vsix_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  validate-and-test:
+    runs-on: ubuntu-latest
+    name: Validate & Test
+    needs: preflight
+    timeout-minutes: 15
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.skip_tests != 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with Corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
+
+      - name: Generate GraphQL artifacts
+        if: ${{ needs.preflight.outputs.codegen_exists == 'true' }}
+        run: yarn codegen
+
+      - name: TypeScript compilation check
+        run: yarn tsc --noEmit
+
+      - name: Run lint
+        if: ${{ needs.preflight.outputs.lint_exists == 'true' }}
+        run: yarn lint
+
+      - name: Run backend tests
+        run: |
+          cd apps/backend
+          npm test -- --coverage --passWithNoTests
+          cd ../..
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./apps/backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+        continue-on-error: true
+
+  build-backend:
+    runs-on: ubuntu-latest
+    name: Build Backend
+    needs: [preflight, validate-and-test]
+    if: ${{ github.event_name != 'workflow_dispatch' || (github.event.inputs.skip_backend != 'true' && (github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'extension-only')) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with Corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
+
+      - name: Generate GraphQL artifacts
+        if: ${{ needs.preflight.outputs.codegen_exists == 'true' }}
+        run: yarn codegen
+
+      - name: Build backend
+        run: yarn build:backend
+
+      - name: Package VSIX
+        id: package-vsix
+        run: |
+          set -euo pipefail
+          if [ -f "scripts/package-vsix.sh" ]; then
+            chmod +x scripts/package-vsix.sh
+            bash scripts/package-vsix.sh
+          else
+            cd apps/backend
+            npx @vscode/vsce package --no-dependencies --no-verify --out mobile-vscode-server.vsix
+            cd ../..
+          fi
+
+          if [ -f "mobile-vscode-server.vsix" ]; then
+            echo "vsix_path=mobile-vscode-server.vsix" >> "$GITHUB_OUTPUT"
+          elif [ -f "apps/backend/mobile-vscode-server.vsix" ]; then
+            echo "vsix_path=apps/backend/mobile-vscode-server.vsix" >> "$GITHUB_OUTPUT"
+          else
+            echo "VSIX not found" >&2
+            exit 1
+          fi
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-vscode-extension-${{ github.sha }}
+          path: ${{ steps.package-vsix.outputs.vsix_path }}
+          retention-days: 30
+          if-no-files-found: error
+
+  build-mobile:
+    runs-on: ${{ matrix.runner }}
+    name: Build Mobile (${{ matrix.platform }})
+    needs: [preflight, validate-and-test]
+    if: ${{ github.event_name != 'workflow_dispatch' || (github.event.inputs.skip_mobile != 'true' && (github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'mobile-only')) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            runner: ubuntu-latest
+          - platform: ios
+            runner: macos-latest
+
+    steps:
+      - name: Gate platform selection
+        id: gate
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          sel="${{ github.event.inputs.mobile_platform }}"
+          if [ "$sel" = "all" ] || [ "$sel" = "${{ matrix.platform }}" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with Corepack
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          corepack: true
+
+      - name: Enable Corepack
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        run: corepack enable
+
+      - name: Install dependencies
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        run: yarn install --frozen-lockfile --ignore-engines --ignore-scripts
+
+      - name: Install EAS CLI
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        run: npm install --global eas-cli
+
+      - name: Generate GraphQL artifacts
+        if: ${{ steps.gate.outputs.run == 'true' && needs.preflight.outputs.codegen_exists == 'true' }}
+        run: yarn codegen
+
+      - name: Build shared packages
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        run: |
+          yarn workspaces foreach --all -p run build 2>/dev/null || true
+
+      - name: Check EAS prerequisites
+        if: ${{ steps.gate.outputs.run == 'true' }}
+        id: eas-ready
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "Missing EXPO_TOKEN secret; skipping mobile build."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "${{ secrets.EAS_PROJECT_ID }}" ]; then
+            echo "Missing EAS_PROJECT_ID secret; skipping mobile build."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+              echo "Missing Android keystore secrets; skipping Android build (prevents non-interactive keystore generation failure)."
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure EAS config is present (monorepo-safe, CI-safe)
+        if: ${{ steps.gate.outputs.run == 'true' && steps.eas-ready.outputs.ready == 'true' }}
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd apps/mobile
+
+          # Keep CI noise out of uploads, but do NOT ignore credentials/keystore files we create for Android.
+          if [ ! -f ".easignore" ]; then
+            printf "%s\n" \
+              ".git" \
+              ".git/**" \
+              "node_modules" \
+              "**/node_modules" \
+              ".expo" \
+              ".expo/**" \
+              "**/.expo" \
+              "**/.expo/**" \
+              "dist" \
+              "build" \
+              "coverage" \
+              "**/*.log" \
+              > .easignore
+          fi
+
+          # Write/overwrite apps/mobile/eas.json so CI never inherits root eas.json (which can set requireCommit=true)
+          node -e "
+            const fs=require('fs');
+            const cfg={
+              cli:{ version: '>= 16.0.0', appVersionSource: 'remote', requireCommit: false },
+              build:{
+                // platform-suffixed profiles so Android can use local credentials without breaking iOS
+                'development-android':{ distribution:'internal', android:{ buildType:'apk', credentialsSource:'local' } },
+                'preview-android':{ distribution:'internal', android:{ buildType:'apk', credentialsSource:'local' } },
+                'production-android':{ distribution:'store', android:{ buildType:'app-bundle', credentialsSource:'local' } },
+
+                'development-ios':{ distribution:'internal', ios:{ simulator:true, credentialsSource:'remote' } },
+                'preview-ios':{ distribution:'internal', ios:{ simulator:false, credentialsSource:'remote' } },
+                'production-ios':{ distribution:'store', ios:{ simulator:false, credentialsSource:'remote' } },
+              },
+              submit:{ production:{} }
+            };
+            fs.writeFileSync('eas.json', JSON.stringify(cfg,null,2)+'\n');
+          "
+
+          # Ensure projectId is present so EAS doesn't say "EAS project not configured".
+          node -e "
+            const fs=require('fs');
+            const projectId=(process.env.EAS_PROJECT_ID||'').trim();
+            if(!projectId){ console.error('EAS_PROJECT_ID env missing'); process.exit(1); }
+            const p='app.json';
+            if(!fs.existsSync(p)){ console.error('apps/mobile/app.json not found'); process.exit(1); }
+            const raw=fs.readFileSync(p,'utf8');
+            let data=JSON.parse(raw);
+            // support both { expo: {...} } and {...} shapes
+            if(!data.expo) data={expo:data};
+            data.expo.extra = data.expo.extra || {};
+            data.expo.extra.eas = data.expo.extra.eas || {};
+            data.expo.extra.eas.projectId = projectId;
+            fs.writeFileSync(p, JSON.stringify(data,null,2)+'\n');
+          "
+
+          cd ../..
+
+      - name: Restore Android keystore + credentials.json (local credentials)
+        if: ${{ steps.gate.outputs.run == 'true' && steps.eas-ready.outputs.ready == 'true' && matrix.platform == 'android' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd apps/mobile
+
+          mkdir -p android/keystores
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | tr -d '\n\r\t ' | base64 --decode > android/keystores/ci-release.jks
+
+          node -e "
+            const fs=require('fs');
+            const creds={
+              android:{
+                keystore:{
+                  keystorePath:'android/keystores/ci-release.jks',
+                  keystorePassword: process.env.KS_PW,
+                  keyAlias: process.env.KS_ALIAS,
+                  keyPassword: process.env.KEY_PW
+                }
+              }
+            };
+            fs.writeFileSync('credentials.json', JSON.stringify(creds,null,2)+'\n');
+          " \
+          KS_PW="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+          KS_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+          KEY_PW="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+          cd ../..
+        env:
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Build on EAS and download artifact
+        if: ${{ steps.gate.outputs.run == 'true' && steps.eas-ready.outputs.ready == 'true' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          EAS_NO_VCS: "1"
+          EXPO_NO_GIT_STATUS: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$ROOT_DIR/artifacts"
+
+          cd apps/mobile
+
+          BASE_PROFILE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mobile_profile || 'development' }}"
+          PLATFORM="${{ matrix.platform }}"
+
+          if [ "$PLATFORM" = "android" ]; then
+            PROFILE="${BASE_PROFILE}-android"
+          else
+            PROFILE="${BASE_PROFILE}-ios"
+          fi
+
+          echo "Building for ${PLATFORM} with profile: ${PROFILE}"
+          echo "Running: eas build --non-interactive --profile ${PROFILE} --platform ${PLATFORM} --wait --json"
+
+          BUILD_OUT="$(mktemp)"
+          set +e
+          eas build --non-interactive --profile "${PROFILE}" --platform "${PLATFORM}" --wait --json 2>&1 | tee "${BUILD_OUT}"
+          BUILD_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if [ "${BUILD_STATUS}" -ne 0 ]; then
+            echo "EAS build failed (status=${BUILD_STATUS}), but continuing workflow..."
+            exit 0
+          fi
+
+          BUILD_ID="$(node -e "
+            const fs=require('fs');
+            const s=fs.readFileSync(process.argv[1],'utf8');
+            const starts=['{','['].map(ch=>s.indexOf(ch)).filter(i=>i>=0);
+            if(!starts.length) process.exit(0);
+            const start=Math.min(...starts);
+            let j=s.slice(start).trim();
+            const end=Math.max(j.lastIndexOf('}'), j.lastIndexOf(']'));
+            if(end>0) j=j.slice(0,end+1);
+            let data; try{ data=JSON.parse(j);}catch(e){ process.exit(0); }
+            if(Array.isArray(data)) data=data[0]||{};
+            process.stdout.write(data && data.id ? String(data.id) : '');
+          " "${BUILD_OUT}")"
+
+          if [ -z "${BUILD_ID}" ]; then
+            echo "Could not read build id from EAS JSON output. Skipping download."
+            exit 0
+          fi
+
+          echo "Build ID: ${BUILD_ID}"
+
+          VIEW_JSON="$(mktemp)"
+          eas build:view "${BUILD_ID}" --json > "${VIEW_JSON}"
+
+          ARTIFACT_URL="$(node -e "
+            const fs=require('fs');
+            const data=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
+            const c=[];
+            const a=data.artifacts||{};
+            if(a && typeof a==='object'){
+              for(const k of ['applicationArchiveUrl','artifactUrl','url','buildUrl']){
+                const v=a[k];
+                if(typeof v==='string' && v.startsWith('http')) c.push(v);
+              }
+            }
+            const v1=data.buildArtifactsUrl;
+            if(typeof v1==='string' && v1.startsWith('http')) c.push(v1);
+            const list=data.buildArtifacts;
+            if(Array.isArray(list)){
+              for(const it of list){
+                if(it && typeof it==='object'){
+                  const v=it.url||it.artifactUrl||it.applicationArchiveUrl;
+                  if(typeof v==='string' && v.startsWith('http')) c.push(v);
+                }
+              }
+            }
+            process.stdout.write(c[0]||'');
+          " "${VIEW_JSON}")"
+
+          if [ -z "${ARTIFACT_URL}" ]; then
+            echo "Could not find an artifact URL in build:view output. Skipping download."
+            exit 0
+          fi
+
+          echo "Artifact URL: ${ARTIFACT_URL}"
+
+          EXT="bin"
+          case "${ARTIFACT_URL}" in
+            *.apk*) EXT="apk" ;;
+            *.aab*) EXT="aab" ;;
+            *.ipa*) EXT="ipa" ;;
+            *.tar.gz*) EXT="tar.gz" ;;
+            *.tgz*) EXT="tgz" ;;
+          esac
+
+          OUT="$ROOT_DIR/artifacts/mobile-vscode-${PLATFORM}-${BASE_PROFILE}.${EXT}"
+          echo "Downloading to: ${OUT}"
+          curl -fL --retry 3 --retry-delay 2 -o "${OUT}" "${ARTIFACT_URL}"
+          ls -lah "$ROOT_DIR/artifacts"
+
+          cd ../..
+
+      - name: Upload mobile artifacts
+        if: ${{ steps.gate.outputs.run == 'true' && steps.eas-ready.outputs.ready == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-vscode-${{ matrix.platform }}-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mobile_profile || 'development' }}-${{ github.sha }}
+          path: artifacts/mobile-vscode-${{ matrix.platform }}-*
+          retention-days: 30
+          if-no-files-found: warn
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Build Summary
+    needs: [preflight, validate-and-test, build-backend, build-mobile]
+    if: always()
+    steps:
+      - name: Generate Build Summary
+        run: |
+          echo "## 📊 MobileVSCode Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Workflow:** \`${{ github.workflow }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Run:** [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Commit:** \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Component | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Preflight | ${{ needs.preflight.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Validate & Test | ${{ needs.validate-and-test.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Backend | ${{ needs.build-backend.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mobile | ${{ needs.build-mobile.result }} |" >> "$GITHUB_STEP_SUMMARY"

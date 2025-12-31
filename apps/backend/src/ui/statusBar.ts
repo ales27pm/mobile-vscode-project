@@ -1,25 +1,65 @@
 import * as vscode from 'vscode';
+import { getServerUiState, onDidChangeServerUiState, ServerUiState } from './uiState';
 
-let statusBarItem: vscode.StatusBarItem;
+let statusBarItem: vscode.StatusBarItem | null = null;
 
-/** Create (or return existing) status bar item for server status */
-export function getStatusBar(): vscode.StatusBarItem {
-  if (!statusBarItem) {
-    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    statusBarItem.text = "$(rocket) Mobile Server: Inactive";
-    statusBarItem.tooltip = "Mobile VSCode backend status";
-    statusBarItem.command = "mobile-vscode-server.start";  // clicking will start the server
+export function initStatusBar(context: vscode.ExtensionContext): vscode.StatusBarItem {
+  if (statusBarItem) {
+    return statusBarItem;
   }
+
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBarItem.command = 'mobile-vscode-server.openStatus';
+  statusBarItem.tooltip = 'MobileVSCode Server';
+
+  render(getServerUiState());
+
+  const sub = onDidChangeServerUiState((state) => render(state));
+  context.subscriptions.push(statusBarItem, sub);
+
+  statusBarItem.show();
   return statusBarItem;
 }
 
-/** Update the status bar text to reflect current status */
-export function updateStatusBar(message: string, tooltip?: string) {
-  if (!statusBarItem) {
-    return;
+function render(state: ServerUiState) {
+  if (!statusBarItem) return;
+
+  let icon = 'circle-slash';
+  let text = 'Stopped';
+  let tooltipLines: string[] = [];
+
+  switch (state.status) {
+    case 'inactive':
+      icon = 'circle-slash';
+      text = 'Inactive';
+      tooltipLines.push('Extension is loaded but server has not started.');
+      break;
+    case 'starting':
+      icon = 'sync~spin';
+      text = 'Starting…';
+      tooltipLines.push('Starting backend server…');
+      break;
+    case 'running':
+      icon = 'radio-tower';
+      text = 'Running';
+      if (state.url) tooltipLines.push(`Server: ${state.url}`);
+      if (state.pairingToken) tooltipLines.push(`Pairing Token: ${state.pairingToken}`);
+      tooltipLines.push('Click for status and actions.');
+      break;
+    case 'stopped':
+      icon = 'circle-slash';
+      text = 'Stopped';
+      tooltipLines.push('Server is not running.');
+      tooltipLines.push('Click for actions.');
+      break;
+    case 'error':
+      icon = 'warning';
+      text = 'Error';
+      if (state.message) tooltipLines.push(state.message);
+      tooltipLines.push('Click for details/actions.');
+      break;
   }
-  statusBarItem.text = `$(rocket) Mobile Server: ${message}`;
-  if (tooltip) {
-    statusBarItem.tooltip = tooltip;
-  }
+
+  statusBarItem.text = `$(${icon}) MobileVSCode: ${text}`;
+  statusBarItem.tooltip = tooltipLines.join('\n');
 }

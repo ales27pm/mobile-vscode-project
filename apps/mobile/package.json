@@ -25,6 +25,7 @@
     "expo": "54.0.30",
     "expo-constants": "~18.0.12",
     "expo-crypto": "~15.0.8",
+    "expo-dev-client": "6.0.20",
     "expo-status-bar": "~3.0.8",
     "isomorphic-webcrypto": "^2.3.8",
     "react": "19.1.0",

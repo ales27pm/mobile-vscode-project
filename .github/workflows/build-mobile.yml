@@ -1,0 +1,227 @@
+# .github/workflows/build-mobile.yml
+name: Build Mobile Apps
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/shared/**'
+      - 'packages/**'
+      - '.github/workflows/build-mobile.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/shared/**'
+      - 'packages/**'
+
+env:
+  NODE_VERSION: '20'
+  EXPO_VERSION: 'latest'
+  PNPM_VERSION: '8'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    name: Setup and Tests
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: TypeScript compilation check
+        run: yarn tsc --noEmit
+
+      - name: Build shared packages
+        run: |
+          yarn workspace shared-app build
+          yarn workspace editor build
+          yarn workspace react-native-monaco-editor build
+
+      - name: Validate GraphQL operations
+        run: |
+          cd apps/mobile
+          npx @graphql-codegen/cli --config ../../codegen.yml
+          cd ../..
+
+  build-android:
+    runs-on: ubuntu-latest
+    name: Build Android APK
+    needs: setup
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build shared packages
+        run: |
+          yarn workspace shared-app build
+          yarn workspace editor build
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
+
+      - name: Configure EAS
+        run: |
+          cd apps/mobile
+          eas build:configure
+
+      - name: Build Android APK (Development)
+        run: |
+          cd apps/mobile
+          eas build --platform android --profile development --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download Android build artifact
+        if: success()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: android-build-*
+          merge-multiple: true
+
+      - name: Upload Android APK artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-development
+          path: |
+            *.apk
+            *.aab
+          retention-days: 7
+
+  build-ios:
+    runs-on: macos-latest
+    name: Build iOS App
+    needs: setup
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          yarn workspace shared-app build
+          yarn workspace editor build
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
+
+      - name: Configure EAS
+        run: |
+          cd apps/mobile
+          eas build:configure
+
+      - name: Build iOS App (Development)
+        run: |
+          cd apps/mobile
+          eas build --platform ios --profile development --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+
+      - name: Download iOS build artifact
+        if: success()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ios-build-*
+          merge-multiple: true
+
+      - name: Upload iOS IPA artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa-development
+          path: |
+            *.ipa
+            *.app
+          retention-days: 7
+
+  deploy-preview:
+    runs-on: ubuntu-latest
+    name: Deploy Preview Build
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          yarn workspace shared-app build
+          yarn workspace editor build
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@${{ env.EXPO_VERSION }}
+
+      - name: Create Preview Build
+        run: |
+          cd apps/mobile
+          eas build --platform all --profile preview --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Comment Preview Links on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const comment = {
+              body: `🚀 Mobile App Preview Builds:\n\n` +
+                    `• Android: [Download APK](https://expo.dev/accounts/YOUR_ACCOUNT/projects/mobile-vscode/builds/[BUILD_ID])\n` +
+                    `• iOS: [Download IPA](https://expo.dev/accounts/YOUR_ACCOUNT/projects/mobile-vscode/builds/[BUILD_ID])\n\n` +
+                    `_Note: iOS build requires TestFlight access._`
+            };
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment.body
+            });

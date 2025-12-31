@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="MobileVSCode">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="100%" stop-color="#7C4DFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="108" height="108" rx="24" fill="url(#grad)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M64 32v12"/>
+    <path d="M48 92l16-40 16 40"/>
+    <path d="M56 92h16"/>
+    <path d="M38 48c-8 8-8 24 0 32"/>
+    <path d="M90 48c8 8 8 24 0 32"/>
+    <path d="M26 40c-14 14-14 34 0 48" opacity="0.8"/>
+    <path d="M102 40c14 14 14 34 0 48" opacity="0.8"/>
+  </g>
+</svg>

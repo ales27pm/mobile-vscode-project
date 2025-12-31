@@ -1,0 +1,128 @@
+# .github/workflows/build-extension.yml
+name: Build VS Code Extension
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/backend/**'
+      - 'packages/**'
+      - '.github/workflows/build-extension.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/backend/**'
+      - 'packages/**'
+
+env:
+  NODE_VERSION: '20'
+  VS_CODE_VERSION: '1.80.0'
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    name: Test Backend
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: TypeScript compilation check
+        run: yarn tsc --noEmit
+
+      - name: Run backend tests
+        run: |
+          cd apps/backend
+          yarn test --coverage
+          cd ../..
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./apps/backend/coverage
+          flags: backend
+          name: backend-coverage
+
+  build-vsix:
+    runs-on: ubuntu-latest
+    name: Package VSIX Extension
+    needs: test-backend
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build backend extension
+        run: |
+          cd apps/backend
+          yarn build
+          cd ../..
+
+      - name: Install vsce
+        run: yarn global add @vscode/vsce
+
+      - name: Package VSIX
+        run: |
+          cd apps/backend
+          vsce package --no-dependencies --out mobile-vscode-server.vsix
+          
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-vscode-extension
+          path: apps/backend/mobile-vscode-server.vsix
+          retention-days: 7
+
+      - name: Upload VSIX to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: apps/backend/mobile-vscode-server.vsix
+          draft: false
+          prerelease: false
+
+  publish-marketplace:
+    runs-on: ubuntu-latest
+    name: Publish to VS Code Marketplace
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-vsix
+    
+    steps:
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mobile-vscode-extension
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          vsce publish -p $VSCE_PAT mobile-vscode-server.vsix
