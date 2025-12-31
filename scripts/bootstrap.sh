@@ -137,7 +137,7 @@ const mobilePkg = readJSON(mobilePkgPath);
 ensure(rootPkg, 'overrides', {});
 rootPkg.overrides['react'] = '19.1.0';
 rootPkg.overrides['react-dom'] = '19.1.0';
-rootPkg.overrides['react-native'] = '0.83.1';
+rootPkg.overrides['react-native'] = '0.81.4';
 
 // Also force y-websocket to an existing version (1.5.5 is not on npm).
 rootPkg.overrides['y-websocket'] = '1.5.3';
@@ -159,7 +159,7 @@ mobilePkg.dependencies['expo-status-bar'] = '~3.0.8';
 // React / RN expected by Expo SDK 54
 mobilePkg.dependencies['react'] = '19.1.0';
 mobilePkg.dependencies['react-dom'] = '19.1.0';
-mobilePkg.dependencies['react-native'] = '0.83.1';
+mobilePkg.dependencies['react-native'] = '0.81.4';
 
 // Keep your polyfills
 mobilePkg.dependencies['react-native-url-polyfill'] = mobilePkg.dependencies['react-native-url-polyfill'] || '^3.0.0';
@@ -173,7 +173,7 @@ mobilePkg.dependencies['expo-status-bar'] = '~3.0.8';
 mobilePkg.overrides = mobilePkg.overrides || {};
 mobilePkg.overrides['react'] = '19.1.0';
 mobilePkg.overrides['react-dom'] = '19.1.0';
-mobilePkg.overrides['react-native'] = '0.83.1';
+mobilePkg.overrides['react-native'] = '0.81.4';
 mobilePkg.overrides['y-websocket'] = '1.5.3';
 
 writeJSON(mobilePkgPath, mobilePkg);
