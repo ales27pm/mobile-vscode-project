@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Button, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useQuery } from '@apollo/client';
-import { ListWorkspacesDocument, ListWorkspacesQuery } from 'shared/src/types';
+import { ListWorkspacesDocument, ListWorkspacesQuery } from 'shared/types';
 import { useAuthStore } from '../state/authStore';
 
 type WorkspaceScreenProps = { navigation: { replace: (route: string, params: { workspaceUri: string; workspaceName: string }) => void } };

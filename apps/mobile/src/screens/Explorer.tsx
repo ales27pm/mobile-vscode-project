@@ -3,7 +3,7 @@ import { ActivityIndicator, SectionList, StyleSheet, Text, TouchableOpacity } fr
 import { RouteProp } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@apollo/client';
-import { ListDirectoryDocument, ListDirectoryQuery, ListDirectoryQueryVariables } from 'shared/src/types';
+import { ListDirectoryDocument, ListDirectoryQuery, ListDirectoryQueryVariables } from 'shared/types';
 import Editor from './Editor';
 
 type ExplorerParams = {

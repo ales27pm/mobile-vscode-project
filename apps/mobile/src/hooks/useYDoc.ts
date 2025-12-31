@@ -3,7 +3,7 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { YJS_URL } from '../config';
 import { useQuery } from '@apollo/client';
-import { ReadFileDocument } from 'shared/src/types';
+import { ReadFileDocument } from 'shared/types';
 
 const colors = ['#30bced', '#6eeb83', '#ffbc42', '#ecd444', '#ee6352', '#9ac2c9', '#8acb88', '#1be7ff'];
 const myColor = colors[Math.floor(Math.random() * colors.length)];

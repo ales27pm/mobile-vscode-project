@@ -20,7 +20,7 @@ import {
   GitCommitMutationVariables,
   GitPushMutation,
   GitPushMutationVariables,
-} from 'shared/src/types';
+} from 'shared/types';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 const ChangeItem = React.memo(function ChangeItem({ file, staged, onStage, onUnstage, onViewDiff, loading }: {

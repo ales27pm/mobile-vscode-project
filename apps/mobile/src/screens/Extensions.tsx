@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, FlatList, Text, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation } from '@apollo/client';
-import { ExtensionsDocument, InstallExtensionDocument, UninstallExtensionDocument, ExtensionsQuery, InstallExtensionMutation, InstallExtensionMutationVariables, UninstallExtensionMutation, UninstallExtensionMutationVariables } from 'shared/src/types';
+import { ExtensionsDocument, InstallExtensionDocument, UninstallExtensionDocument, ExtensionsQuery, InstallExtensionMutation, InstallExtensionMutationVariables, UninstallExtensionMutation, UninstallExtensionMutationVariables } from 'shared/types';
 
 export default function Extensions() {
   const { data, loading, refetch } = useQuery<ExtensionsQuery>(ExtensionsDocument);

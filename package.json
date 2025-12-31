@@ -43,10 +43,10 @@
     "ws": "^8.18.0"
   },
   "overrides": {
-    "react": "19.1.0",
+    "react": "19.2.3",
     "react-native": "0.81.4",
     "y-websocket": "1.5.3",
-    "react-dom": "19.1.0"
+    "react-dom": "19.2.3"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.30",

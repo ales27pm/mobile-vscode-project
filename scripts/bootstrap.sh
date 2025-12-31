@@ -135,8 +135,8 @@ const mobilePkg = readJSON(mobilePkgPath);
 
 // Root: keep workspaces, add overrides that match Expo SDK 54 expectations.
 ensure(rootPkg, 'overrides', {});
-rootPkg.overrides['react'] = '19.1.0';
-rootPkg.overrides['react-dom'] = '19.1.0';
+rootPkg.overrides['react'] = '19.2.3';
+rootPkg.overrides['react-dom'] = '19.2.3';
 rootPkg.overrides['react-native'] = '0.81.4';
 
 // Also force y-websocket to an existing version (1.5.5 is not on npm).
@@ -157,8 +157,8 @@ mobilePkg.dependencies['expo-constants'] = mobilePkg.dependencies['expo-constant
 mobilePkg.dependencies['expo-status-bar'] = '~3.0.8';
 
 // React / RN expected by Expo SDK 54
-mobilePkg.dependencies['react'] = '19.1.0';
-mobilePkg.dependencies['react-dom'] = '19.1.0';
+mobilePkg.dependencies['react'] = '19.2.3';
+mobilePkg.dependencies['react-dom'] = '19.2.3';
 mobilePkg.dependencies['react-native'] = '0.81.4';
 
 // Keep your polyfills
@@ -171,8 +171,8 @@ mobilePkg.dependencies['expo-status-bar'] = '~3.0.8';
 
 // NPM override duplication is fine but keep consistent
 mobilePkg.overrides = mobilePkg.overrides || {};
-mobilePkg.overrides['react'] = '19.1.0';
-mobilePkg.overrides['react-dom'] = '19.1.0';
+mobilePkg.overrides['react'] = '19.2.3';
+mobilePkg.overrides['react-dom'] = '19.2.3';
 mobilePkg.overrides['react-native'] = '0.81.4';
 mobilePkg.overrides['y-websocket'] = '1.5.3';
 

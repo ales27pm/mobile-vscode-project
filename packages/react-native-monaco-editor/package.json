@@ -8,6 +8,7 @@
     "react-native-webview": "*"
   },
   "scripts": {
-    "test": "echo 'no tests'"
+    "test": "echo 'no tests'",
+    "build": "tsc -p tsconfig.json"
   }
 }

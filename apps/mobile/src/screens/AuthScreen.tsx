@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, TextInput, Button, StyleSheet, Text } from "react-native";
 import { useMutation } from "@apollo/client";
-import { PairWithServerDocument } from "shared/src/types";
+import { PairWithServerDocument } from "shared/types";
 import { useAuthStore } from "../state/authStore";
 
 export default function AuthScreen() {

@@ -3,7 +3,7 @@ import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'rea
 import { Picker } from '@react-native-picker/picker';
 import { useQuery, useMutation, useSubscription } from '@apollo/client';
 import { useErrorAlert } from '../hooks/useErrorAlert';
-import { GetLaunchConfigurationsDocument, StartDebuggingDocument, StopDebuggingDocument, DebugEventDocument } from 'shared/src/types';
+import { GetLaunchConfigurationsDocument, StartDebuggingDocument, StopDebuggingDocument, DebugEventDocument } from 'shared/types';
 import { useDebugStore } from '../state/debugStore';
 
 type DebugProps = { route: { params: { workspaceUri: string } } };
