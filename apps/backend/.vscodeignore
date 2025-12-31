@@ -1,0 +1,23 @@
+# Exclude development sources and tooling from the VSIX bundle.
+src/**
+__mocks__/**
+scripts/**
+coverage/**
+*.log
+.vscode/**
+*.tsbuildinfo
+tsconfig.json
+webpack.config.js
+jest.config.js
+package.json.bak.*
+yarn-error.log
+
+# Keep built output, runtime assets, certificates, and production dependencies.
+!dist/**
+!resources/**
+!node_modules/**
+!certs/**
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE*
