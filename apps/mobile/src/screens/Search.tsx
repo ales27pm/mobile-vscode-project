@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, TextInput, Button, SectionList, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLazyQuery } from '@apollo/client';
-import { SearchDocument, SearchQuery, SearchQueryVariables } from 'shared/src/types';
+import { SearchDocument, SearchQuery, SearchQueryVariables } from 'shared/types';
 import { useDocumentStore } from '../state/documentStore';
 
 type SearchProps = { navigation: any; route: { params: { workspaceUri: string } } };
