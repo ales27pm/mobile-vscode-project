@@ -69,36 +69,25 @@ public final class MobileVSCodeSecureStoreModule: Module {
   private func setValue(_ value: String, for key: String, service: String) throws {
     let valueData = Data(value.utf8)
     let query = baseQuery(for: key, service: service)
-    let updateAttributes: [String: Any] = [
-      kSecValueData as String: valueData,
-      kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-    ]
+    var addQuery = query
+    addQuery[kSecValueData as String] = valueData
+    addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
 
-    let updateStatus = SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
+    let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
 
-    switch updateStatus {
+    switch addStatus {
     case errSecSuccess:
       return
-    case errSecItemNotFound:
-      var addQuery = query
-      updateAttributes.forEach { addQuery[$0.key] = $0.value }
-      let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-
-      if addStatus == errSecSuccess {
-        return
+    case errSecDuplicateItem:
+      // Match Keychain's supported update path: keep the item's immutable
+      // accessibility metadata and replace only its secret value.
+      let updateAttributes = [kSecValueData as String: valueData]
+      let updateStatus = SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
+      guard updateStatus == errSecSuccess else {
+        throw secureStoreError(operation: "update", status: updateStatus)
       }
-
-      if addStatus == errSecDuplicateItem {
-        let retryStatus = SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
-        guard retryStatus == errSecSuccess else {
-          throw secureStoreError(operation: "update", status: retryStatus)
-        }
-        return
-      }
-
-      throw secureStoreError(operation: "write", status: addStatus)
     default:
-      throw secureStoreError(operation: "update", status: updateStatus)
+      throw secureStoreError(operation: "write", status: addStatus)
     }
   }
 
