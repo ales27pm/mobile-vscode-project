@@ -1,33 +1,10 @@
 import Constants from 'expo-constants';
+import { normalizeServerOrigin } from '../shared/normalizeServerOrigin';
 
 type MobileVscodeExtra = {
   MOBILE_VSCODE_SERVER_URL?: unknown;
   LOCAL_IP?: unknown;
 };
-
-function normalizeServerOrigin(rawValue: string): string {
-  const value = rawValue.trim();
-
-  if (value.includes('YOUR_COMPUTER_IP_HERE')) {
-    throw new Error('Replace YOUR_COMPUTER_IP_HERE in the MobileVSCode server URL.');
-  }
-
-  const url = new URL(value);
-
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('MobileVSCode server URL must use http:// or https://.');
-  }
-
-  if (url.username || url.password || url.search || url.hash) {
-    throw new Error('MobileVSCode server URL must be a plain origin without credentials, query, or fragment.');
-  }
-
-  if (url.pathname !== '/' && url.pathname !== '') {
-    throw new Error('MobileVSCode server URL must not include /graphql, /yjs, or another path.');
-  }
-
-  return `${url.protocol}//${url.host}`;
-}
 
 const extra = (Constants.expoConfig?.extra ?? {}) as MobileVscodeExtra;
 const configuredUrl =
