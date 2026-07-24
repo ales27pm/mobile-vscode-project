@@ -48,6 +48,8 @@ export async function ensureAuthContext(): Promise<AuthContext | null> {
 
 export type RequestWithUser = Request & { user?: string | jwt.JwtPayload };
 
+export const PAIRING_OPERATION_NAME = 'PairWithServer';
+
 export function pairingMiddleware(authContext: AuthContext) {
   return (req: RequestWithUser, res: Response, next: NextFunction) => {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
@@ -55,7 +57,7 @@ export function pairingMiddleware(authContext: AuthContext) {
     }
 
     const { operationName, variables } = req.body;
-    if (operationName !== 'pairWithServer') {
+    if (operationName !== PAIRING_OPERATION_NAME) {
       return next();
     }
 

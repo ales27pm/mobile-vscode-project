@@ -1,0 +1,9 @@
+{
+  "platforms": ["android", "apple"],
+  "apple": {
+    "modules": ["MobileVSCodeSecureStoreModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.mobilevscodesecurestore.MobileVSCodeSecureStoreModule"]
+  }
+}
