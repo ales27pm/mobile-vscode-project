@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.util.Log
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
@@ -165,21 +166,27 @@ class MobileVSCodeSecureStoreModule : Module() {
       cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(tagLength, iv))
       return@synchronized String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8)
     } catch (error: KeyPermanentlyInvalidatedException) {
+      Log.w(TAG, "Secure storage key was permanently invalidated.", error)
       invalidateValue(persistedKey, alias)
       return@synchronized null
     } catch (error: AEADBadTagException) {
+      Log.w(TAG, "Secure storage authentication failed.", error)
       invalidateValue(persistedKey, alias)
       return@synchronized null
     } catch (error: BadPaddingException) {
+      Log.w(TAG, "Secure storage padding validation failed.", error)
       invalidateValue(persistedKey, alias)
       return@synchronized null
     } catch (error: UnrecoverableKeyException) {
+      Log.w(TAG, "Secure storage key could not be recovered.", error)
       invalidateValue(persistedKey, alias)
       return@synchronized null
     } catch (error: JSONException) {
+      Log.w(TAG, "Secure storage payload was invalid JSON.", error)
       preferences().edit().remove(persistedKey).commit()
       return@synchronized null
     } catch (error: IllegalArgumentException) {
+      Log.w(TAG, "Secure storage payload was malformed.", error)
       preferences().edit().remove(persistedKey).commit()
       return@synchronized null
     } catch (error: MobileVSCodeSecureStoreException) {
@@ -206,6 +213,7 @@ class MobileVSCodeSecureStoreModule : Module() {
   }
 
   companion object {
+    private const val TAG = "MVSC-SecureStore"
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     private const val PREFERENCES_NAME = "MobileVSCodeSecureStore"
     private const val KEYSTORE_ALIAS_PREFIX = "mobile-vscode-secure-store"
