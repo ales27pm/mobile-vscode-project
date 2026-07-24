@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { deleteItemAsync, getItemAsync, setItemAsync } from '../../modules/mobile-vscode-secure-store';
 import { create } from 'zustand';
 
 const TOKEN_KEY = 'mobile-vscode.auth-token';
@@ -16,15 +16,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setToken: async token => {
     if (token) {
-      await SecureStore.setItemAsync(TOKEN_KEY, token, {
-        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      });
+      await setItemAsync(TOKEN_KEY, token);
       set({ token, isHydrated: true });
       return;
     }
 
     try {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await deleteItemAsync(TOKEN_KEY);
     } finally {
       set({ token: null, isHydrated: true });
     }
@@ -34,7 +32,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (get().isHydrated) return;
 
     try {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const token = await getItemAsync(TOKEN_KEY);
       set({ token });
     } catch (error) {
       console.warn('Unable to load the MobileVSCode session token.', error);

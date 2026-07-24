@@ -50,7 +50,6 @@ module.exports = ({ config }) => {
   const existingAts = existingInfoPlist.NSAppTransportSecurity || {};
   const existingPlugins = Array.isArray(baseConfig.plugins) ? baseConfig.plugins : [];
   const managedPluginNames = new Set([
-    'expo-secure-store',
     './plugins/with-mobile-vscode-networking',
   ]);
 
@@ -104,8 +103,7 @@ module.exports = ({ config }) => {
 
     plugins: [
       ...existingPlugins.filter(plugin => !managedPluginNames.has(pluginName(plugin))),
-      ['expo-secure-store', { configureAndroidBackup: true }],
-      ['./plugins/with-mobile-vscode-networking', { allowCleartext }],
+      ['./plugins/with-mobile-vscode-networking', { allowCleartext, disableBackup: true }],
     ],
 
     extra: {
