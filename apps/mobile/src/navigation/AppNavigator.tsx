@@ -1,70 +1,66 @@
-import React, { useEffect, useState } from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AuthScreen from '../screens/AuthScreen';
+import WorkspaceScreen from '../screens/WorkspaceScreen';
+import { useAuthStore } from '../state/authStore';
+import MainTabNavigator from './MainTabNavigator';
 
-// Import screens
-import ExplorerScreen from '../screens/Explorer';
-import EditorScreen from '../screens/Editor';
-import SearchScreen from '../screens/Search';
-import GitScreen from '../screens/Git';
-import ExtensionsScreen from '../screens/Extensions';
-import DebugScreen from '../screens/Debug';
+export type RootStackParamList = {
+  Auth: undefined;
+  WorkspaceList: undefined;
+  MainApp: { workspaceUri: string; workspaceName: string };
+};
 
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  // (Optional) state or effect for handling navigation readiness, auth, etc.
-  const [isReady, setReady] = useState(false);
+  const token = useAuthStore(state => state.token);
+  const isHydrated = useAuthStore(state => state.isHydrated);
+  const loadToken = useAuthStore(state => state.loadToken);
 
   useEffect(() => {
-    // Any startup logic, e.g., check auth, then:
-    setReady(true);
-  }, []);
+    void loadToken();
+  }, [loadToken]);
 
-  if (!isReady) {
-    // Could return a loading indicator
-    return null;
+  if (!isHydrated) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
-    <Tab.Navigator
-      initialRouteName="Explorer"
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ color, size }) => {
-          let iconName;
-          switch (route.name) {
-            case 'Explorer':
-              iconName = 'folder';
-              break;
-            case 'Editor':
-              iconName = 'code-slash';
-              break;
-            case 'Search':
-              iconName = 'search';
-              break;
-            case 'Git':
-              iconName = 'git-branch';
-              break;
-            case 'Extensions':
-              iconName = 'extensions'; // hypothetical icon name
-              break;
-            case 'Debug':
-              iconName = 'bug';
-              break;
-            default:
-              iconName = 'ellipse';
-          }
-          return <Ionicons name={iconName as any} size={size} color={color} />;
-        }
-      })}
-    >
-      <Tab.Screen name="Explorer" component={ExplorerScreen} />
-      <Tab.Screen name="Editor" component={EditorScreen as React.ComponentType<any>} />
-      <Tab.Screen name="Search" component={SearchScreen as React.ComponentType<any>} />
-      <Tab.Screen name="Git" component={GitScreen as React.ComponentType<any>} />
-      <Tab.Screen name="Extensions" component={ExtensionsScreen} />
-      <Tab.Screen name="Debug" component={DebugScreen as React.ComponentType<any>} />
-    </Tab.Navigator>
+    <Stack.Navigator>
+      {token ? (
+        <>
+          <Stack.Screen
+            name="WorkspaceList"
+            component={WorkspaceScreen}
+            options={{ title: 'Workspaces' }}
+          />
+          <Stack.Screen
+            name="MainApp"
+            component={MainTabNavigator}
+            options={{ headerShown: false }}
+          />
+        </>
+      ) : (
+        <Stack.Screen
+          name="Auth"
+          component={AuthScreen}
+          options={{ title: 'Pair Device' }}
+        />
+      )}
+    </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

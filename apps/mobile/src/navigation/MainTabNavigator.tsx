@@ -1,45 +1,68 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from '@expo/vector-icons/MaterialCommunityIcons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import ExplorerScreen from '../screens/Explorer';
+import SearchScreen from '../screens/Search';
+import GitScreen from '../screens/Git';
+import ExtensionsScreen from '../screens/Extensions';
+import DebugScreen from '../screens/Debug';
+import type { RootStackParamList } from './AppNavigator';
 
-import Explorer from '../screens/Explorer';
-import Git from '../screens/Git';
-import Extensions from '../screens/Extensions';
-import Search from '../screens/Search';
-import Debug from '../screens/Debug';
+type MainTabParamList = {
+  Explorer: { workspaceUri: string; workspaceName: string };
+  Search: { workspaceUri: string };
+  Git: { workspaceUri: string };
+  Extensions: undefined;
+  Debug: { workspaceUri: string };
+};
 
-const Tab = createBottomTabNavigator();
+type Props = NativeStackScreenProps<RootStackParamList, 'MainApp'>;
 
-const iconMap: Record<string, string> = {
-  Explorer: 'file-tree',
-  Search: 'magnify',
-  Git: 'source-branch',
-  Extensions: 'puzzle',
+const Tab = createBottomTabNavigator<MainTabParamList>();
+
+const icons: Record<keyof MainTabParamList, React.ComponentProps<typeof Ionicons>['name']> = {
+  Explorer: 'folder',
+  Search: 'search',
+  Git: 'git-branch',
+  Extensions: 'extension-puzzle',
   Debug: 'bug',
 };
 
-type MainTabNavigatorProps = { route: { params?: { workspaceUri?: string } } };
+export default function MainTabNavigator({ route }: Props) {
+  const { workspaceUri, workspaceName } = route.params;
 
-export default function MainTabNavigator({ route }: MainTabNavigatorProps) {
-  const { workspaceUri } = route.params || {};
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => (
-          <Icon
-            name={(iconMap[route.name as keyof typeof iconMap] ?? 'file') as keyof typeof Icon.glyphMap}
-            size={size}
-            color={color}
-          />
-        ),
+      initialRouteName="Explorer"
+      screenOptions={({ route: tabRoute }) => ({
         headerShown: false,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name={icons[tabRoute.name]} size={size} color={color} />
+        ),
       })}
     >
-      <Tab.Screen name="Explorer" component={Explorer as React.ComponentType<any>} initialParams={{ workspaceUri }} />
-      <Tab.Screen name="Search" component={Search as React.ComponentType<any>} initialParams={{ workspaceUri }} />
-      <Tab.Screen name="Git" component={Git as React.ComponentType<any>} initialParams={{ workspaceUri }} />
-      <Tab.Screen name="Extensions" component={Extensions as React.ComponentType<any>} initialParams={{ workspaceUri }} />
-      <Tab.Screen name="Debug" component={Debug as React.ComponentType<any>} initialParams={{ workspaceUri }} />
+      <Tab.Screen
+        name="Explorer"
+        component={ExplorerScreen as React.ComponentType<any>}
+        initialParams={{ workspaceUri, workspaceName }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen as React.ComponentType<any>}
+        initialParams={{ workspaceUri }}
+      />
+      <Tab.Screen
+        name="Git"
+        component={GitScreen as React.ComponentType<any>}
+        initialParams={{ workspaceUri }}
+      />
+      <Tab.Screen name="Extensions" component={ExtensionsScreen} />
+      <Tab.Screen
+        name="Debug"
+        component={DebugScreen as React.ComponentType<any>}
+        initialParams={{ workspaceUri }}
+      />
     </Tab.Navigator>
   );
 }

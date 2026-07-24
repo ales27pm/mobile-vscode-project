@@ -23,7 +23,10 @@ export default function Search({ navigation, route }: SearchProps) {
 
   const handlePress = (item: SearchQuery['search'][0]) => {
     setEditorAction({ type: 'highlight-line', payload: { line: item.line } });
-    navigation.navigate('Explorer', { screen: 'Editor', params: { path: item.path } });
+    navigation.navigate('Explorer', {
+      screen: 'Editor',
+      params: { workspaceUri, path: item.path },
+    });
   };
 
   return (
